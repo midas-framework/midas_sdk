@@ -1,5 +1,5 @@
 name = "midas_sdk"
-version = "0.1.2"
+version = "0.1.3"
 target = "javascript"
 
 description = "A bag of SDK's that can be used with midas."

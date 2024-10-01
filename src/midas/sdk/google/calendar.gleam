@@ -43,7 +43,11 @@ pub fn list_events(token, calendar_id, time_min) {
 pub fn list_events_request(token, calendar_id, time_min) {
   let path = "/calendar/v3/calendars/" <> calendar_id <> "/events"
   get(token, path)
-  |> request.set_query([#("timeMin", time_min)])
+  |> request.set_query([
+    #("timeMin", time_min),
+    #("orderBy", "startTime"),
+    #("singleEvents", "true"),
+  ])
 }
 
 pub fn list_events_response(response: response.Response(BitArray)) {
