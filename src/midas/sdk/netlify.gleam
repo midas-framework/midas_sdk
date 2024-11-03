@@ -75,7 +75,7 @@ fn key_find(items, key) {
   |> result.replace_error("Did not find key: " <> key)
 }
 
-const api_host = "api.netlify.com"
+pub const api_host = "api.netlify.com"
 
 fn base_request(token) {
   request.new()

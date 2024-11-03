@@ -29,6 +29,10 @@ const auth_path = "/i/oauth2/authorize"
 pub fn authenticate(client_id, redirect_uri, scopes) {
   let state = int.to_string(int.random(1_000_000_000))
   let challenge = int.to_string(int.random(1_000_000_000))
+  do_authenticate(client_id, redirect_uri, scopes, state, challenge)
+}
+
+pub fn do_authenticate(client_id, redirect_uri, scopes, state, challenge) {
   let url = auth_url(client_id, redirect_uri, scopes, state, challenge)
 
   use redirect <- t.do(t.follow(url))
