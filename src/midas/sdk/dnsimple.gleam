@@ -22,8 +22,12 @@ const auth_host = "dnsimple.com"
 const auth_path = "/oauth/authorize"
 
 pub fn authenticate(app) {
-  let App(client_id, client_secret, redirect_uri) = app
   let state = int.to_string(int.random(1_000_000_000))
+  do_authenticate(app, state)
+}
+
+pub fn do_authenticate(app, state) {
+  let App(client_id, client_secret, redirect_uri) = app
   let url = auth_url(client_id, redirect_uri, state)
   use redirect <- t.do(t.follow(url))
   use #(code, returned_state) <- t.try(
@@ -106,7 +110,7 @@ pub fn token_response(response) {
   Ok(token)
 }
 
-const api_host = "api.dnsimple.com"
+pub const api_host = "api.dnsimple.com"
 
 fn base_request(token) {
   request.new()

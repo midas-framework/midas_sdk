@@ -103,7 +103,7 @@ pub fn token_response(response) {
   Ok(token)
 }
 
-const api_host = "api.linkedin.com"
+pub const api_host = "api.linkedin.com"
 
 fn base_request(token) {
   request.new()

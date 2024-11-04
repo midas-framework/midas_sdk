@@ -85,7 +85,7 @@ fn key_find(items, key) {
   |> result.replace_error("Did not find key: " <> key)
 }
 
-const api_host = "api.twitter.com"
+pub const api_host = "api.twitter.com"
 
 const token_path = "/2/oauth2/token"
 
