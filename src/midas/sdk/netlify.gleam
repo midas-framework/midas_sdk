@@ -10,6 +10,7 @@ import gleam/option.{None, Some}
 import gleam/result.{try}
 import gleam/string
 import gleam/uri.{Uri}
+import midas/sdk/netlify/gen
 import midas/task as t
 import snag
 
@@ -110,30 +111,19 @@ pub fn list_sites_request(token) {
 }
 
 pub fn list_sites_response(response: response.Response(BitArray)) {
-  let decoder = dynamic.list(site_decoder)
-  use videos <- try(
+  let decoder = dynamic.list(gen.decode_site)
+  use sites <- try(
     json.decode_bits(response.body, decoder)
     |> result.map_error(fn(reason) {
       snag.new(string.inspect(reason))
       |> snag.layer("failed to decode sites")
     }),
   )
-  Ok(videos)
+  Ok(sites)
 }
 
-fn site_decoder(raw) {
-  dynamic.decode4(
-    Site,
-    dynamic.field("id", dynamic.string),
-    dynamic.field("state", dynamic.string),
-    dynamic.field("name", dynamic.string),
-    dynamic.field("url", dynamic.string),
-  )(raw)
-}
-
-pub type Site {
-  Site(id: String, state: String, name: String, url: String)
-}
+pub type Site =
+  gen.Site
 
 pub fn deploy_site(token, site_id, files) {
   use zipped <- t.do(t.zip(files))
