@@ -122,6 +122,30 @@ pub fn list_sites_response(response: response.Response(BitArray)) {
   Ok(sites)
 }
 
+pub fn create_site(token) {
+  let request = create_site_request(token)
+  use response <- t.do(t.fetch(request))
+  use response <- t.try(create_site_response(response))
+  t.Done(response)
+}
+
+pub fn create_site_request(token) {
+  let path = "/api/v1/sites"
+  post(token, path, "application/json", <<"{}">>)
+}
+
+pub fn create_site_response(response: response.Response(BitArray)) {
+  let decoder = gen.decode_site
+  use sites <- try(
+    json.decode_bits(response.body, decoder)
+    |> result.map_error(fn(reason) {
+      snag.new(string.inspect(reason))
+      |> snag.layer("failed to decode sites")
+    }),
+  )
+  Ok(sites)
+}
+
 pub type Site =
   gen.Site
 
