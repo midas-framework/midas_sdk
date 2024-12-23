@@ -1,8 +1,11 @@
 import gleam/dynamic
 import gleam/http
 import gleam/http/request
+import gleam/int
 import gleam/json
+import gleam/option.{None, Some}
 import gleam/string
+import gleam/uri.{Uri}
 import midas/task as t
 import snag
 
@@ -69,4 +72,51 @@ pub fn create_post(access_token, handle, text, at) {
     _ -> Error(snag.new("Did not get a 200 response"))
   })
   t.done(uri)
+}
+
+// oauth uses well know to specify
+// https://bsky.social/.well-known/oauth-authorization-server
+
+const auth_host = api_host
+
+const authorization_path = "/oauth/authorize"
+
+pub type App {
+  App(client_id: String, redirect_uri: String)
+}
+
+pub fn authorize(app) {
+  let state = int.to_string(int.random(1_000_000_000))
+  do_authorize(app, state)
+}
+
+fn do_authorize(app, state) {
+  let App(client_id, redirect_uri) = app
+  let url = auth_url(client_id, redirect_uri, state)
+  use redirect <- t.do(t.follow(url))
+  todo
+  t.done(Nil)
+}
+
+fn auth_url(client_id, redirect_uri, state) {
+  let query = [
+    #("client_id", client_id),
+    #("response_type", "code"),
+    // #("grant_type", "authorization_code"),
+    #("state", state),
+    #("redirect_uri", redirect_uri),
+    #("scope", "atproto"),
+    #("dpop_bound_access_tokens", "true"),
+  ]
+  let query = Some(uri.query_to_string(query))
+  Uri(
+    Some("https"),
+    None,
+    Some(auth_host),
+    None,
+    authorization_path,
+    query,
+    None,
+  )
+  |> uri.to_string
 }
