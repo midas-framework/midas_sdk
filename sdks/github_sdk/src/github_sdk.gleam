@@ -1,5 +1,6 @@
+import github_sdk/operations
 import gleam/bit_array
-import gleam/dynamic
+import gleam/dynamic/decode
 import gleam/http
 import gleam/http/request
 import gleam/http/response
@@ -10,7 +11,6 @@ import gleam/option.{None, Some}
 import gleam/result
 import gleam/string
 import gleam/uri.{Uri}
-import midas/sdk/github/operations
 import midas/task as t
 import snag
 
@@ -39,8 +39,7 @@ pub fn do_authenticate(app, state) {
     False -> Error(snag.new("returned state was not equal to sent state"))
   })
 
-  let request =
-    token_request(client_id, client_secret, redirect_uri, code, state)
+  let request = token_request(client_id, client_secret, redirect_uri, code)
   use response <- t.do(t.fetch(request))
   use token <- t.try(token_response(response))
   t.Done(token)
@@ -78,11 +77,11 @@ fn key_find(items, key) {
   |> result.replace_error("Did not find key: " <> key)
 }
 
-pub const api_host = auth_host
+pub const api_host = "api.github.com"
 
 const token_path = "/login/oauth/access_token"
 
-pub fn token_request(client_id, client_secret, redirect_uri, code, state) {
+pub fn token_request(client_id, client_secret, redirect_uri, code) {
   let query = [
     #("client_id", client_id),
     #("client_secret", client_secret),
@@ -91,7 +90,7 @@ pub fn token_request(client_id, client_secret, redirect_uri, code, state) {
   ]
 
   request.new()
-  |> request.set_host(api_host)
+  |> request.set_host(auth_host)
   |> request.set_method(http.Post)
   |> request.set_path(token_path)
   |> request.prepend_header("content-type", "application/x-www-form-urlencoded")
@@ -101,23 +100,29 @@ pub fn token_request(client_id, client_secret, redirect_uri, code, state) {
 
 pub fn token_response(response) {
   let response.Response(status: status, body: body, ..) = response
-  let assert Ok(body) = bit_array.to_string(body)
+
   case status {
     200 -> {
-      let decoder = dynamic.field("access_token", dynamic.string)
-      let assert Ok(token) = json.decode(body, decoder)
+      let assert Ok(token) =
+        json.parse_bits(body, {
+          use error <- decode.field("access_token", decode.string)
+          decode.success(error)
+        })
       Ok(token)
     }
     _ -> {
-      let decoder = dynamic.field("error", dynamic.string)
-      let assert Ok(error) = json.decode(body, decoder)
+      let assert Ok(error) =
+        json.parse_bits(body, {
+          use error <- decode.field("error", decode.string)
+          decode.success(error)
+        })
       snag.error(error)
       |> snag.context("fetching token")
     }
   }
 }
 
-fn base_request(token) {
+pub fn base_request(token) {
   request.new()
   |> request.set_host(api_host)
   |> request.prepend_header("Authorization", string.append("Bearer ", token))
@@ -126,12 +131,7 @@ fn base_request(token) {
 
 fn handle_errors(response) {
   case response {
-    Ok(Ok(data)) -> Ok(data)
-    Ok(Error(message)) ->
-      // snag.new(option.unwrap(message, "no error message"))
-      snag.new(message)
-      |> snag.layer("error from api")
-      |> Error
+    Ok(response) -> Ok(response)
     Error(reason) ->
       snag.new(string.inspect(reason))
       |> snag.layer("failed to decode")

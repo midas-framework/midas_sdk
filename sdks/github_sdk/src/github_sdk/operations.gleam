@@ -1,13 +1,13 @@
-import decode/zero
+import github_sdk/schema
+import github_sdk/utils
 import gleam/bool
+import gleam/dynamic/decode
 import gleam/http
 import gleam/http/response
 import gleam/int
+import gleam/json
 import gleam/option
 import gleam/result
-import midas/sdk/github/schema
-import midas/sdk/utils
-import midas/task
 
 pub fn packages_list_docker_migration_conflicting_packages_for_user_request(
   base,
@@ -25,12 +25,12 @@ pub fn packages_list_docker_migration_conflicting_packages_for_user_request(
 pub fn packages_list_docker_migration_conflicting_packages_for_user_response(
   response,
 ) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, body:, ..) = response
   case status {
     200 ->
-      utils.decode_bits(body, zero.list(schema.package_decoder()))
+      json.parse_bits(body, decode.list(schema.package_decoder()))
       |> result.map(Ok)
-    _ -> "API doesn't describe default response" |> Error |> Ok
+    _ -> response |> Error |> Ok
   }
 }
 
@@ -45,10 +45,10 @@ pub fn interactions_remove_restrictions_for_org_request(base, org) {
 }
 
 pub fn interactions_remove_restrictions_for_org_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, ..) = response
   case status {
     204 -> Ok(Nil) |> Ok
-    _ -> "API doesn't describe default response" |> Error |> Ok
+    _ -> response |> Error |> Ok
   }
 }
 
@@ -61,7 +61,7 @@ pub fn interactions_set_restrictions_for_org_request(
   let path = "/orgs/" <> org <> "/interaction-limits"
   let query = []
   let body =
-    utils.json_to_bits(schema.interaction_limit_to_json(interaction_limit))
+    utils.json_to_bits(schema.interaction_limit_encode(interaction_limit))
   base
   |> utils.set_method(method)
   |> utils.append_path(path)
@@ -70,12 +70,14 @@ pub fn interactions_set_restrictions_for_org_request(
 }
 
 pub fn interactions_set_restrictions_for_org_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, body:, ..) = response
   case status {
     200 ->
-      utils.decode_bits(body, schema.interaction_limit_response_decoder())
+      json.parse_bits(body, schema.interaction_limit_response_decoder())
       |> result.map(Ok)
-    _ -> "API doesn't describe default response" |> Error |> Ok
+    _ ->
+      json.parse_bits(body, schema.validation_error_decoder())
+      |> result.map(Error)
   }
 }
 
@@ -90,12 +92,12 @@ pub fn interactions_get_restrictions_for_org_request(base, org) {
 }
 
 pub fn interactions_get_restrictions_for_org_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, body:, ..) = response
   case status {
     200 ->
-      utils.decode_bits(body, zero.failure(Nil, "Unsupported schema"))
+      json.parse_bits(body, decode.failure(Nil, "Unsupported schema"))
       |> result.map(Ok)
-    _ -> "API doesn't describe default response" |> Error |> Ok
+    _ -> response |> Error |> Ok
   }
 }
 
@@ -110,12 +112,12 @@ pub fn gitignore_get_all_templates_request(base) {
 }
 
 pub fn gitignore_get_all_templates_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, body:, ..) = response
   case status {
     200 ->
-      utils.decode_bits(body, zero.failure(Nil, "Unsupported schema"))
+      json.parse_bits(body, decode.failure(Nil, "Unsupported schema"))
       |> result.map(Ok)
-    _ -> "API doesn't describe default response" |> Error |> Ok
+    _ -> response |> Error |> Ok
   }
 }
 
@@ -145,10 +147,10 @@ pub fn actions_create_workflow_dispatch_request(
 }
 
 pub fn actions_create_workflow_dispatch_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, ..) = response
   case status {
     204 -> Ok(Nil) |> Ok
-    _ -> "API doesn't describe default response" |> Error |> Ok
+    _ -> response |> Error |> Ok
   }
 }
 
@@ -175,10 +177,10 @@ pub fn code_security_attach_configuration_request(
 }
 
 pub fn code_security_attach_configuration_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, body:, ..) = response
   case status {
-    202 -> utils.decode_bits(body, zero.dynamic) |> result.map(Ok)
-    _ -> "API doesn't describe default response" |> Error |> Ok
+    202 -> json.parse_bits(body, decode.dynamic) |> result.map(Ok)
+    _ -> response |> Error |> Ok
   }
 }
 
@@ -193,12 +195,12 @@ pub fn repos_get_pages_health_check_request(base, owner, repo) {
 }
 
 pub fn repos_get_pages_health_check_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, body:, ..) = response
   case status {
     200 ->
-      utils.decode_bits(body, schema.pages_health_check_decoder())
+      json.parse_bits(body, schema.pages_health_check_decoder())
       |> result.map(Ok)
-    _ -> "API doesn't describe default response" |> Error |> Ok
+    _ -> response |> Error |> Ok
   }
 }
 
@@ -230,15 +232,15 @@ pub fn code_scanning_get_variant_analysis_repo_task_request(
 }
 
 pub fn code_scanning_get_variant_analysis_repo_task_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, body:, ..) = response
   case status {
     200 ->
-      utils.decode_bits(
+      json.parse_bits(
         body,
         schema.code_scanning_variant_analysis_repo_task_decoder(),
       )
       |> result.map(Ok)
-    _ -> "API doesn't describe default response" |> Error |> Ok
+    _ -> response |> Error |> Ok
   }
 }
 
@@ -266,10 +268,10 @@ pub fn repos_list_attestations_request(
 }
 
 pub fn repos_list_attestations_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, body:, ..) = response
   case status {
-    200 -> utils.decode_bits(body, zero.dynamic) |> result.map(Ok)
-    _ -> "API doesn't describe default response" |> Error |> Ok
+    200 -> json.parse_bits(body, decode.dynamic) |> result.map(Ok)
+    _ -> response |> Error |> Ok
   }
 }
 
@@ -289,10 +291,10 @@ pub fn users_get_context_for_user_request(
 }
 
 pub fn users_get_context_for_user_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, body:, ..) = response
   case status {
-    200 -> utils.decode_bits(body, schema.hovercard_decoder()) |> result.map(Ok)
-    _ -> "API doesn't describe default response" |> Error |> Ok
+    200 -> json.parse_bits(body, schema.hovercard_decoder()) |> result.map(Ok)
+    _ -> response |> Error |> Ok
   }
 }
 
@@ -307,10 +309,10 @@ pub fn users_unfollow_request(base, username) {
 }
 
 pub fn users_unfollow_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, ..) = response
   case status {
     204 -> Ok(Nil) |> Ok
-    _ -> "API doesn't describe default response" |> Error |> Ok
+    _ -> response |> Error |> Ok
   }
 }
 
@@ -325,10 +327,10 @@ pub fn users_follow_request(base, username) {
 }
 
 pub fn users_follow_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, ..) = response
   case status {
     204 -> Ok(Nil) |> Ok
-    _ -> "API doesn't describe default response" |> Error |> Ok
+    _ -> response |> Error |> Ok
   }
 }
 
@@ -343,10 +345,10 @@ pub fn users_check_person_is_followed_by_authenticated_request(base, username) {
 }
 
 pub fn users_check_person_is_followed_by_authenticated_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, ..) = response
   case status {
     204 -> Ok(Nil) |> Ok
-    _ -> "API doesn't describe default response" |> Error |> Ok
+    _ -> response |> Error |> Ok
   }
 }
 
@@ -361,10 +363,10 @@ pub fn activity_unstar_repo_for_authenticated_user_request(base, owner, repo) {
 }
 
 pub fn activity_unstar_repo_for_authenticated_user_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, ..) = response
   case status {
     204 -> Ok(Nil) |> Ok
-    _ -> "API doesn't describe default response" |> Error |> Ok
+    _ -> response |> Error |> Ok
   }
 }
 
@@ -379,10 +381,10 @@ pub fn activity_star_repo_for_authenticated_user_request(base, owner, repo) {
 }
 
 pub fn activity_star_repo_for_authenticated_user_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, ..) = response
   case status {
     204 -> Ok(Nil) |> Ok
-    _ -> "API doesn't describe default response" |> Error |> Ok
+    _ -> response |> Error |> Ok
   }
 }
 
@@ -401,10 +403,10 @@ pub fn activity_check_repo_is_starred_by_authenticated_user_request(
 }
 
 pub fn activity_check_repo_is_starred_by_authenticated_user_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, ..) = response
   case status {
     204 -> Ok(Nil) |> Ok
-    _ -> "API doesn't describe default response" |> Error |> Ok
+    _ -> response |> Error |> Ok
   }
 }
 
@@ -433,12 +435,12 @@ pub fn orgs_list_pat_grant_repositories_request(
 }
 
 pub fn orgs_list_pat_grant_repositories_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, body:, ..) = response
   case status {
     200 ->
-      utils.decode_bits(body, zero.list(schema.minimal_repository_decoder()))
+      json.parse_bits(body, decode.list(schema.minimal_repository_decoder()))
       |> result.map(Ok)
-    _ -> "API doesn't describe default response" |> Error |> Ok
+    _ -> response |> Error |> Ok
   }
 }
 
@@ -489,10 +491,10 @@ pub fn actions_list_workflow_runs_request(
 }
 
 pub fn actions_list_workflow_runs_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, body:, ..) = response
   case status {
-    200 -> utils.decode_bits(body, zero.dynamic) |> result.map(Ok)
-    _ -> "API doesn't describe default response" |> Error |> Ok
+    200 -> json.parse_bits(body, decode.dynamic) |> result.map(Ok)
+    _ -> response |> Error |> Ok
   }
 }
 
@@ -512,12 +514,12 @@ pub fn packages_list_docker_migration_conflicting_packages_for_organization_requ
 pub fn packages_list_docker_migration_conflicting_packages_for_organization_response(
   response,
 ) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, body:, ..) = response
   case status {
     200 ->
-      utils.decode_bits(body, zero.list(schema.package_decoder()))
+      json.parse_bits(body, decode.list(schema.package_decoder()))
       |> result.map(Ok)
-    _ -> "API doesn't describe default response" |> Error |> Ok
+    _ -> response |> Error |> Ok
   }
 }
 
@@ -546,10 +548,10 @@ pub fn issues_update_milestone_request(
 }
 
 pub fn issues_update_milestone_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, body:, ..) = response
   case status {
-    200 -> utils.decode_bits(body, schema.milestone_decoder()) |> result.map(Ok)
-    _ -> "API doesn't describe default response" |> Error |> Ok
+    200 -> json.parse_bits(body, schema.milestone_decoder()) |> result.map(Ok)
+    _ -> response |> Error |> Ok
   }
 }
 
@@ -570,10 +572,11 @@ pub fn issues_delete_milestone_request(base, owner, repo, milestone_number) {
 }
 
 pub fn issues_delete_milestone_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, body:, ..) = response
   case status {
     204 -> Ok(Nil) |> Ok
-    _ -> "API doesn't describe default response" |> Error |> Ok
+    _ ->
+      json.parse_bits(body, schema.basic_error_decoder()) |> result.map(Error)
   }
 }
 
@@ -594,10 +597,11 @@ pub fn issues_get_milestone_request(base, owner, repo, milestone_number) {
 }
 
 pub fn issues_get_milestone_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, body:, ..) = response
   case status {
-    200 -> utils.decode_bits(body, schema.milestone_decoder()) |> result.map(Ok)
-    _ -> "API doesn't describe default response" |> Error |> Ok
+    200 -> json.parse_bits(body, schema.milestone_decoder()) |> result.map(Ok)
+    _ ->
+      json.parse_bits(body, schema.basic_error_decoder()) |> result.map(Error)
   }
 }
 
@@ -612,9 +616,9 @@ pub fn repos_download_zipball_archive_request(base, owner, repo, ref) {
 }
 
 pub fn repos_download_zipball_archive_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, ..) = response
   case status {
-    _ -> "API doesn't describe default response" |> Error |> Ok
+    _ -> response |> Error |> Ok
   }
 }
 
@@ -636,10 +640,10 @@ pub fn issues_remove_all_labels_request(base, owner, repo, issue_number) {
 }
 
 pub fn issues_remove_all_labels_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, ..) = response
   case status {
     204 -> Ok(Nil) |> Ok
-    _ -> "API doesn't describe default response" |> Error |> Ok
+    _ -> response |> Error |> Ok
   }
 }
 
@@ -661,12 +665,12 @@ pub fn issues_add_labels_request(base, owner, repo, issue_number) {
 }
 
 pub fn issues_add_labels_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, body:, ..) = response
   case status {
     200 ->
-      utils.decode_bits(body, zero.list(schema.label_decoder()))
+      json.parse_bits(body, decode.list(schema.label_decoder()))
       |> result.map(Ok)
-    _ -> "API doesn't describe default response" |> Error |> Ok
+    _ -> response |> Error |> Ok
   }
 }
 
@@ -688,12 +692,12 @@ pub fn issues_set_labels_request(base, owner, repo, issue_number) {
 }
 
 pub fn issues_set_labels_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, body:, ..) = response
   case status {
     200 ->
-      utils.decode_bits(body, zero.list(schema.label_decoder()))
+      json.parse_bits(body, decode.list(schema.label_decoder()))
       |> result.map(Ok)
-    _ -> "API doesn't describe default response" |> Error |> Ok
+    _ -> response |> Error |> Ok
   }
 }
 
@@ -725,12 +729,12 @@ pub fn issues_list_labels_on_issue_request(
 }
 
 pub fn issues_list_labels_on_issue_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, body:, ..) = response
   case status {
     200 ->
-      utils.decode_bits(body, zero.list(schema.label_decoder()))
+      json.parse_bits(body, decode.list(schema.label_decoder()))
       |> result.map(Ok)
-    _ -> "API doesn't describe default response" |> Error |> Ok
+    _ -> response |> Error |> Ok
   }
 }
 
@@ -758,10 +762,10 @@ pub fn actions_remove_repo_access_to_self_hosted_runner_group_in_org_request(
 pub fn actions_remove_repo_access_to_self_hosted_runner_group_in_org_response(
   response,
 ) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, ..) = response
   case status {
     204 -> Ok(Nil) |> Ok
-    _ -> "API doesn't describe default response" |> Error |> Ok
+    _ -> response |> Error |> Ok
   }
 }
 
@@ -789,10 +793,10 @@ pub fn actions_add_repo_access_to_self_hosted_runner_group_in_org_request(
 pub fn actions_add_repo_access_to_self_hosted_runner_group_in_org_response(
   response,
 ) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, ..) = response
   case status {
     204 -> Ok(Nil) |> Ok
-    _ -> "API doesn't describe default response" |> Error |> Ok
+    _ -> response |> Error |> Ok
   }
 }
 
@@ -815,15 +819,15 @@ pub fn teams_list_pending_invitations_legacy_request(
 }
 
 pub fn teams_list_pending_invitations_legacy_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, body:, ..) = response
   case status {
     200 ->
-      utils.decode_bits(
+      json.parse_bits(
         body,
-        zero.list(schema.organization_invitation_decoder()),
+        decode.list(schema.organization_invitation_decoder()),
       )
       |> result.map(Ok)
-    _ -> "API doesn't describe default response" |> Error |> Ok
+    _ -> response |> Error |> Ok
   }
 }
 
@@ -840,10 +844,10 @@ pub fn markdown_render_request(base, data) {
 }
 
 pub fn markdown_render_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, ..) = response
   case status {
     200 -> Ok(Nil) |> Ok
-    _ -> "API doesn't describe default response" |> Error |> Ok
+    _ -> response |> Error |> Ok
   }
 }
 
@@ -867,10 +871,10 @@ pub fn dependabot_list_repo_secrets_request(
 }
 
 pub fn dependabot_list_repo_secrets_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, body:, ..) = response
   case status {
-    200 -> utils.decode_bits(body, zero.dynamic) |> result.map(Ok)
-    _ -> "API doesn't describe default response" |> Error |> Ok
+    200 -> json.parse_bits(body, decode.dynamic) |> result.map(Ok)
+    _ -> response |> Error |> Ok
   }
 }
 
@@ -899,10 +903,10 @@ pub fn reactions_delete_for_team_discussion_request(
 }
 
 pub fn reactions_delete_for_team_discussion_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, ..) = response
   case status {
     204 -> Ok(Nil) |> Ok
-    _ -> "API doesn't describe default response" |> Error |> Ok
+    _ -> response |> Error |> Ok
   }
 }
 
@@ -920,12 +924,13 @@ pub fn repos_list_teams_request(base, owner, repo, per_page per_page, page page)
 }
 
 pub fn repos_list_teams_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, body:, ..) = response
   case status {
     200 ->
-      utils.decode_bits(body, zero.list(schema.team_decoder()))
+      json.parse_bits(body, decode.list(schema.team_decoder()))
       |> result.map(Ok)
-    _ -> "API doesn't describe default response" |> Error |> Ok
+    _ ->
+      json.parse_bits(body, schema.basic_error_decoder()) |> result.map(Error)
   }
 }
 
@@ -946,10 +951,10 @@ pub fn actions_delete_actions_cache_by_id_request(base, owner, repo, cache_id) {
 }
 
 pub fn actions_delete_actions_cache_by_id_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, ..) = response
   case status {
     204 -> Ok(Nil) |> Ok
-    _ -> "API doesn't describe default response" |> Error |> Ok
+    _ -> response |> Error |> Ok
   }
 }
 
@@ -974,10 +979,10 @@ pub fn codespaces_remove_repository_for_secret_for_authenticated_user_request(
 pub fn codespaces_remove_repository_for_secret_for_authenticated_user_response(
   response,
 ) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, ..) = response
   case status {
     204 -> Ok(Nil) |> Ok
-    _ -> "API doesn't describe default response" |> Error |> Ok
+    _ -> response |> Error |> Ok
   }
 }
 
@@ -1002,10 +1007,10 @@ pub fn codespaces_add_repository_for_secret_for_authenticated_user_request(
 pub fn codespaces_add_repository_for_secret_for_authenticated_user_response(
   response,
 ) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, ..) = response
   case status {
     204 -> Ok(Nil) |> Ok
-    _ -> "API doesn't describe default response" |> Error |> Ok
+    _ -> response |> Error |> Ok
   }
 }
 
@@ -1038,12 +1043,12 @@ pub fn pulls_dismiss_review_request(
 }
 
 pub fn pulls_dismiss_review_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, body:, ..) = response
   case status {
     200 ->
-      utils.decode_bits(body, schema.pull_request_review_decoder())
+      json.parse_bits(body, schema.pull_request_review_decoder())
       |> result.map(Ok)
-    _ -> "API doesn't describe default response" |> Error |> Ok
+    _ -> response |> Error |> Ok
   }
 }
 
@@ -1061,10 +1066,10 @@ pub fn migrations_delete_archive_for_authenticated_user_request(
 }
 
 pub fn migrations_delete_archive_for_authenticated_user_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, ..) = response
   case status {
     204 -> Ok(Nil) |> Ok
-    _ -> "API doesn't describe default response" |> Error |> Ok
+    _ -> response |> Error |> Ok
   }
 }
 
@@ -1079,9 +1084,9 @@ pub fn migrations_get_archive_for_authenticated_user_request(base, migration_id)
 }
 
 pub fn migrations_get_archive_for_authenticated_user_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, ..) = response
   case status {
-    _ -> "API doesn't describe default response" |> Error |> Ok
+    _ -> response |> Error |> Ok
   }
 }
 
@@ -1096,10 +1101,10 @@ pub fn teams_remove_member_legacy_request(base, team_id, username) {
 }
 
 pub fn teams_remove_member_legacy_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, ..) = response
   case status {
     204 -> Ok(Nil) |> Ok
-    _ -> "API doesn't describe default response" |> Error |> Ok
+    _ -> Error(Nil) |> Ok
   }
 }
 
@@ -1114,10 +1119,10 @@ pub fn teams_add_member_legacy_request(base, team_id, username) {
 }
 
 pub fn teams_add_member_legacy_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, ..) = response
   case status {
     204 -> Ok(Nil) |> Ok
-    _ -> "API doesn't describe default response" |> Error |> Ok
+    _ -> response |> Error |> Ok
   }
 }
 
@@ -1132,10 +1137,10 @@ pub fn teams_get_member_legacy_request(base, team_id, username) {
 }
 
 pub fn teams_get_member_legacy_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, ..) = response
   case status {
     204 -> Ok(Nil) |> Ok
-    _ -> "API doesn't describe default response" |> Error |> Ok
+    _ -> Error(Nil) |> Ok
   }
 }
 
@@ -1165,12 +1170,12 @@ pub fn repos_create_deployment_protection_rule_request(
 }
 
 pub fn repos_create_deployment_protection_rule_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, body:, ..) = response
   case status {
     201 ->
-      utils.decode_bits(body, schema.deployment_protection_rule_decoder())
+      json.parse_bits(body, schema.deployment_protection_rule_decoder())
       |> result.map(Ok)
-    _ -> "API doesn't describe default response" |> Error |> Ok
+    _ -> response |> Error |> Ok
   }
 }
 
@@ -1197,10 +1202,10 @@ pub fn repos_get_all_deployment_protection_rules_request(
 }
 
 pub fn repos_get_all_deployment_protection_rules_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, body:, ..) = response
   case status {
-    200 -> utils.decode_bits(body, zero.dynamic) |> result.map(Ok)
-    _ -> "API doesn't describe default response" |> Error |> Ok
+    200 -> json.parse_bits(body, decode.dynamic) |> result.map(Ok)
+    _ -> response |> Error |> Ok
   }
 }
 
@@ -1227,15 +1232,15 @@ pub fn copilot_copilot_metrics_for_enterprise_request(
 }
 
 pub fn copilot_copilot_metrics_for_enterprise_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, body:, ..) = response
   case status {
     200 ->
-      utils.decode_bits(
+      json.parse_bits(
         body,
-        zero.list(schema.copilot_usage_metrics_day_decoder()),
+        decode.list(schema.copilot_usage_metrics_day_decoder()),
       )
       |> result.map(Ok)
-    _ -> "API doesn't describe default response" |> Error |> Ok
+    _ -> response |> Error |> Ok
   }
 }
 
@@ -1261,10 +1266,10 @@ pub fn packages_delete_package_version_for_authenticated_user_request(
 }
 
 pub fn packages_delete_package_version_for_authenticated_user_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, ..) = response
   case status {
     204 -> Ok(Nil) |> Ok
-    _ -> "API doesn't describe default response" |> Error |> Ok
+    _ -> response |> Error |> Ok
   }
 }
 
@@ -1290,12 +1295,12 @@ pub fn packages_get_package_version_for_authenticated_user_request(
 }
 
 pub fn packages_get_package_version_for_authenticated_user_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, body:, ..) = response
   case status {
     200 ->
-      utils.decode_bits(body, schema.package_version_decoder())
+      json.parse_bits(body, schema.package_version_decoder())
       |> result.map(Ok)
-    _ -> "API doesn't describe default response" |> Error |> Ok
+    _ -> response |> Error |> Ok
   }
 }
 
@@ -1325,12 +1330,12 @@ pub fn actions_re_run_job_for_workflow_run_request(
 }
 
 pub fn actions_re_run_job_for_workflow_run_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, body:, ..) = response
   case status {
     201 ->
-      utils.decode_bits(body, schema.empty_object_decoder())
-      |> result.map(Ok)
-    _ -> "API doesn't describe default response" |> Error |> Ok
+      json.parse_bits(body, schema.empty_object_decoder()) |> result.map(Ok)
+    _ ->
+      json.parse_bits(body, schema.basic_error_decoder()) |> result.map(Error)
   }
 }
 
@@ -1354,12 +1359,12 @@ pub fn activity_list_org_events_for_authenticated_user_request(
 }
 
 pub fn activity_list_org_events_for_authenticated_user_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, body:, ..) = response
   case status {
     200 ->
-      utils.decode_bits(body, zero.list(schema.event_decoder()))
+      json.parse_bits(body, decode.list(schema.event_decoder()))
       |> result.map(Ok)
-    _ -> "API doesn't describe default response" |> Error |> Ok
+    _ -> response |> Error |> Ok
   }
 }
 
@@ -1388,12 +1393,13 @@ pub fn orgs_list_invitation_teams_request(
 }
 
 pub fn orgs_list_invitation_teams_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, body:, ..) = response
   case status {
     200 ->
-      utils.decode_bits(body, zero.list(schema.team_decoder()))
+      json.parse_bits(body, decode.list(schema.team_decoder()))
       |> result.map(Ok)
-    _ -> "API doesn't describe default response" |> Error |> Ok
+    _ ->
+      json.parse_bits(body, schema.basic_error_decoder()) |> result.map(Error)
   }
 }
 
@@ -1410,10 +1416,10 @@ pub fn projects_move_card_request(base, card_id, data) {
 }
 
 pub fn projects_move_card_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, body:, ..) = response
   case status {
-    201 -> utils.decode_bits(body, zero.dynamic) |> result.map(Ok)
-    _ -> "API doesn't describe default response" |> Error |> Ok
+    201 -> json.parse_bits(body, decode.dynamic) |> result.map(Ok)
+    _ -> response |> Error |> Ok
   }
 }
 
@@ -1442,10 +1448,11 @@ pub fn issues_check_user_can_be_assigned_to_issue_request(
 }
 
 pub fn issues_check_user_can_be_assigned_to_issue_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, body:, ..) = response
   case status {
     204 -> Ok(Nil) |> Ok
-    _ -> "API doesn't describe default response" |> Error |> Ok
+    _ ->
+      json.parse_bits(body, schema.basic_error_decoder()) |> result.map(Error)
   }
 }
 
@@ -1470,12 +1477,13 @@ pub fn teams_list_members_legacy_request(
 }
 
 pub fn teams_list_members_legacy_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, body:, ..) = response
   case status {
     200 ->
-      utils.decode_bits(body, zero.list(schema.simple_user_decoder()))
+      json.parse_bits(body, decode.list(schema.simple_user_decoder()))
       |> result.map(Ok)
-    _ -> "API doesn't describe default response" |> Error |> Ok
+    _ ->
+      json.parse_bits(body, schema.basic_error_decoder()) |> result.map(Error)
   }
 }
 
@@ -1492,10 +1500,11 @@ pub fn migrations_update_import_request(base, owner, repo, data) {
 }
 
 pub fn migrations_update_import_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, body:, ..) = response
   case status {
-    200 -> utils.decode_bits(body, schema.import__decoder()) |> result.map(Ok)
-    _ -> "API doesn't describe default response" |> Error |> Ok
+    200 -> json.parse_bits(body, schema.import__decoder()) |> result.map(Ok)
+    _ ->
+      json.parse_bits(body, schema.basic_error_decoder()) |> result.map(Error)
   }
 }
 
@@ -1510,10 +1519,11 @@ pub fn migrations_cancel_import_request(base, owner, repo) {
 }
 
 pub fn migrations_cancel_import_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, body:, ..) = response
   case status {
     204 -> Ok(Nil) |> Ok
-    _ -> "API doesn't describe default response" |> Error |> Ok
+    _ ->
+      json.parse_bits(body, schema.basic_error_decoder()) |> result.map(Error)
   }
 }
 
@@ -1530,10 +1540,10 @@ pub fn migrations_start_import_request(base, owner, repo, data) {
 }
 
 pub fn migrations_start_import_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, body:, ..) = response
   case status {
-    201 -> utils.decode_bits(body, schema.import__decoder()) |> result.map(Ok)
-    _ -> "API doesn't describe default response" |> Error |> Ok
+    201 -> json.parse_bits(body, schema.import__decoder()) |> result.map(Ok)
+    _ -> response |> Error |> Ok
   }
 }
 
@@ -1548,10 +1558,10 @@ pub fn migrations_get_import_status_request(base, owner, repo) {
 }
 
 pub fn migrations_get_import_status_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, body:, ..) = response
   case status {
-    200 -> utils.decode_bits(body, schema.import__decoder()) |> result.map(Ok)
-    _ -> "API doesn't describe default response" |> Error |> Ok
+    200 -> json.parse_bits(body, schema.import__decoder()) |> result.map(Ok)
+    _ -> response |> Error |> Ok
   }
 }
 
@@ -1580,12 +1590,12 @@ pub fn teams_update_discussion_comment_legacy_request(
 }
 
 pub fn teams_update_discussion_comment_legacy_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, body:, ..) = response
   case status {
     200 ->
-      utils.decode_bits(body, schema.team_discussion_comment_decoder())
+      json.parse_bits(body, schema.team_discussion_comment_decoder())
       |> result.map(Ok)
-    _ -> "API doesn't describe default response" |> Error |> Ok
+    _ -> response |> Error |> Ok
   }
 }
 
@@ -1611,10 +1621,10 @@ pub fn teams_delete_discussion_comment_legacy_request(
 }
 
 pub fn teams_delete_discussion_comment_legacy_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, ..) = response
   case status {
     204 -> Ok(Nil) |> Ok
-    _ -> "API doesn't describe default response" |> Error |> Ok
+    _ -> response |> Error |> Ok
   }
 }
 
@@ -1640,12 +1650,12 @@ pub fn teams_get_discussion_comment_legacy_request(
 }
 
 pub fn teams_get_discussion_comment_legacy_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, body:, ..) = response
   case status {
     200 ->
-      utils.decode_bits(body, schema.team_discussion_comment_decoder())
+      json.parse_bits(body, schema.team_discussion_comment_decoder())
       |> result.map(Ok)
-    _ -> "API doesn't describe default response" |> Error |> Ok
+    _ -> response |> Error |> Ok
   }
 }
 
@@ -1672,12 +1682,12 @@ pub fn repos_list_branches_for_head_commit_request(
 }
 
 pub fn repos_list_branches_for_head_commit_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, body:, ..) = response
   case status {
     200 ->
-      utils.decode_bits(body, zero.list(schema.branch_short_decoder()))
+      json.parse_bits(body, decode.list(schema.branch_short_decoder()))
       |> result.map(Ok)
-    _ -> "API doesn't describe default response" |> Error |> Ok
+    _ -> response |> Error |> Ok
   }
 }
 
@@ -1707,12 +1717,13 @@ pub fn apps_list_accounts_for_plan_stubbed_request(
 }
 
 pub fn apps_list_accounts_for_plan_stubbed_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, body:, ..) = response
   case status {
     200 ->
-      utils.decode_bits(body, zero.list(schema.marketplace_purchase_decoder()))
+      json.parse_bits(body, decode.list(schema.marketplace_purchase_decoder()))
       |> result.map(Ok)
-    _ -> "API doesn't describe default response" |> Error |> Ok
+    _ ->
+      json.parse_bits(body, schema.basic_error_decoder()) |> result.map(Error)
   }
 }
 
@@ -1741,10 +1752,10 @@ pub fn reactions_delete_for_commit_comment_request(
 }
 
 pub fn reactions_delete_for_commit_comment_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, ..) = response
   case status {
     204 -> Ok(Nil) |> Ok
-    _ -> "API doesn't describe default response" |> Error |> Ok
+    _ -> response |> Error |> Ok
   }
 }
 
@@ -1765,11 +1776,10 @@ pub fn repos_get_pages_build_request(base, owner, repo, build_id) {
 }
 
 pub fn repos_get_pages_build_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, body:, ..) = response
   case status {
-    200 ->
-      utils.decode_bits(body, schema.page_build_decoder()) |> result.map(Ok)
-    _ -> "API doesn't describe default response" |> Error |> Ok
+    200 -> json.parse_bits(body, schema.page_build_decoder()) |> result.map(Ok)
+    _ -> response |> Error |> Ok
   }
 }
 
@@ -1799,7 +1809,10 @@ pub fn api_insights_get_route_stats_by_actor_request(
     #("page", option.map(page, int.to_string)),
     #("per_page", option.map(per_page, int.to_string)),
     #("direction", direction),
-    #("sort", panic as "sort"),
+    #(
+      "sort",
+      option.map(sort, fn(_) { panic as "query parameter is not supported" }),
+    ),
   ]
   base
   |> utils.set_method(method)
@@ -1808,12 +1821,12 @@ pub fn api_insights_get_route_stats_by_actor_request(
 }
 
 pub fn api_insights_get_route_stats_by_actor_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, body:, ..) = response
   case status {
     200 ->
-      utils.decode_bits(body, schema.api_insights_route_stats_decoder())
+      json.parse_bits(body, schema.api_insights_route_stats_decoder())
       |> result.map(Ok)
-    _ -> "API doesn't describe default response" |> Error |> Ok
+    _ -> response |> Error |> Ok
   }
 }
 
@@ -1840,12 +1853,12 @@ pub fn copilot_usage_metrics_for_enterprise_request(
 }
 
 pub fn copilot_usage_metrics_for_enterprise_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, body:, ..) = response
   case status {
     200 ->
-      utils.decode_bits(body, zero.list(schema.copilot_usage_metrics_decoder()))
+      json.parse_bits(body, decode.list(schema.copilot_usage_metrics_decoder()))
       |> result.map(Ok)
-    _ -> "API doesn't describe default response" |> Error |> Ok
+    _ -> response |> Error |> Ok
   }
 }
 
@@ -1864,10 +1877,10 @@ pub fn search_topics_request(base, q q, per_page per_page, page page) {
 }
 
 pub fn search_topics_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, body:, ..) = response
   case status {
-    200 -> utils.decode_bits(body, zero.dynamic) |> result.map(Ok)
-    _ -> "API doesn't describe default response" |> Error |> Ok
+    200 -> json.parse_bits(body, decode.dynamic) |> result.map(Ok)
+    _ -> response |> Error |> Ok
   }
 }
 
@@ -1899,10 +1912,10 @@ pub fn actions_update_environment_variable_request(
 }
 
 pub fn actions_update_environment_variable_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, ..) = response
   case status {
     204 -> Ok(Nil) |> Ok
-    _ -> "API doesn't describe default response" |> Error |> Ok
+    _ -> response |> Error |> Ok
   }
 }
 
@@ -1931,10 +1944,10 @@ pub fn actions_delete_environment_variable_request(
 }
 
 pub fn actions_delete_environment_variable_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, ..) = response
   case status {
     204 -> Ok(Nil) |> Ok
-    _ -> "API doesn't describe default response" |> Error |> Ok
+    _ -> response |> Error |> Ok
   }
 }
 
@@ -1963,12 +1976,12 @@ pub fn actions_get_environment_variable_request(
 }
 
 pub fn actions_get_environment_variable_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, body:, ..) = response
   case status {
     200 ->
-      utils.decode_bits(body, schema.actions_variable_decoder())
+      json.parse_bits(body, schema.actions_variable_decoder())
       |> result.map(Ok)
-    _ -> "API doesn't describe default response" |> Error |> Ok
+    _ -> response |> Error |> Ok
   }
 }
 
@@ -1990,12 +2003,12 @@ pub fn users_list_followed_by_authenticated_user_request(
 }
 
 pub fn users_list_followed_by_authenticated_user_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, body:, ..) = response
   case status {
     200 ->
-      utils.decode_bits(body, zero.list(schema.simple_user_decoder()))
+      json.parse_bits(body, decode.list(schema.simple_user_decoder()))
       |> result.map(Ok)
-    _ -> "API doesn't describe default response" |> Error |> Ok
+    _ -> response |> Error |> Ok
   }
 }
 
@@ -2013,12 +2026,12 @@ pub fn orgs_list_for_user_request(base, username, per_page per_page, page page) 
 }
 
 pub fn orgs_list_for_user_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, body:, ..) = response
   case status {
     200 ->
-      utils.decode_bits(body, zero.list(schema.organization_simple_decoder()))
+      json.parse_bits(body, decode.list(schema.organization_simple_decoder()))
       |> result.map(Ok)
-    _ -> "API doesn't describe default response" |> Error |> Ok
+    _ -> response |> Error |> Ok
   }
 }
 
@@ -2036,15 +2049,15 @@ pub fn apps_list_plans_request(base, per_page per_page, page page) {
 }
 
 pub fn apps_list_plans_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, body:, ..) = response
   case status {
     200 ->
-      utils.decode_bits(
+      json.parse_bits(
         body,
-        zero.list(schema.marketplace_listing_plan_decoder()),
+        decode.list(schema.marketplace_listing_plan_decoder()),
       )
       |> result.map(Ok)
-    _ -> "API doesn't describe default response" |> Error |> Ok
+    _ -> response |> Error |> Ok
   }
 }
 
@@ -2062,12 +2075,11 @@ pub fn pulls_update_request(base, owner, repo, pull_number, data) {
 }
 
 pub fn pulls_update_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, body:, ..) = response
   case status {
     200 ->
-      utils.decode_bits(body, schema.pull_request_decoder())
-      |> result.map(Ok)
-    _ -> "API doesn't describe default response" |> Error |> Ok
+      json.parse_bits(body, schema.pull_request_decoder()) |> result.map(Ok)
+    _ -> response |> Error |> Ok
   }
 }
 
@@ -2083,12 +2095,11 @@ pub fn pulls_get_request(base, owner, repo, pull_number) {
 }
 
 pub fn pulls_get_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, body:, ..) = response
   case status {
     200 ->
-      utils.decode_bits(body, schema.pull_request_decoder())
-      |> result.map(Ok)
-    _ -> "API doesn't describe default response" |> Error |> Ok
+      json.parse_bits(body, schema.pull_request_decoder()) |> result.map(Ok)
+    _ -> response |> Error |> Ok
   }
 }
 
@@ -2116,10 +2127,10 @@ pub fn actions_remove_custom_label_from_self_hosted_runner_for_org_request(
 pub fn actions_remove_custom_label_from_self_hosted_runner_for_org_response(
   response,
 ) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, body:, ..) = response
   case status {
-    200 -> utils.decode_bits(body, zero.dynamic) |> result.map(Ok)
-    _ -> "API doesn't describe default response" |> Error |> Ok
+    200 -> json.parse_bits(body, decode.dynamic) |> result.map(Ok)
+    _ -> response |> Error |> Ok
   }
 }
 
@@ -2148,10 +2159,10 @@ pub fn packages_restore_package_version_for_authenticated_user_request(
 pub fn packages_restore_package_version_for_authenticated_user_response(
   response,
 ) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, ..) = response
   case status {
     204 -> Ok(Nil) |> Ok
-    _ -> "API doesn't describe default response" |> Error |> Ok
+    _ -> response |> Error |> Ok
   }
 }
 
@@ -2168,10 +2179,10 @@ pub fn repos_replace_all_topics_request(base, owner, repo, data) {
 }
 
 pub fn repos_replace_all_topics_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, body:, ..) = response
   case status {
-    200 -> utils.decode_bits(body, schema.topic_decoder()) |> result.map(Ok)
-    _ -> "API doesn't describe default response" |> Error |> Ok
+    200 -> json.parse_bits(body, schema.topic_decoder()) |> result.map(Ok)
+    _ -> response |> Error |> Ok
   }
 }
 
@@ -2195,10 +2206,11 @@ pub fn repos_get_all_topics_request(
 }
 
 pub fn repos_get_all_topics_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, body:, ..) = response
   case status {
-    200 -> utils.decode_bits(body, schema.topic_decoder()) |> result.map(Ok)
-    _ -> "API doesn't describe default response" |> Error |> Ok
+    200 -> json.parse_bits(body, schema.topic_decoder()) |> result.map(Ok)
+    _ ->
+      json.parse_bits(body, schema.basic_error_decoder()) |> result.map(Error)
   }
 }
 
@@ -2220,12 +2232,14 @@ pub fn repos_remove_team_access_restrictions_request(base, owner, repo, branch) 
 }
 
 pub fn repos_remove_team_access_restrictions_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, body:, ..) = response
   case status {
     200 ->
-      utils.decode_bits(body, zero.list(schema.team_decoder()))
+      json.parse_bits(body, decode.list(schema.team_decoder()))
       |> result.map(Ok)
-    _ -> "API doesn't describe default response" |> Error |> Ok
+    _ ->
+      json.parse_bits(body, schema.validation_error_decoder())
+      |> result.map(Error)
   }
 }
 
@@ -2247,12 +2261,14 @@ pub fn repos_add_team_access_restrictions_request(base, owner, repo, branch) {
 }
 
 pub fn repos_add_team_access_restrictions_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, body:, ..) = response
   case status {
     200 ->
-      utils.decode_bits(body, zero.list(schema.team_decoder()))
+      json.parse_bits(body, decode.list(schema.team_decoder()))
       |> result.map(Ok)
-    _ -> "API doesn't describe default response" |> Error |> Ok
+    _ ->
+      json.parse_bits(body, schema.validation_error_decoder())
+      |> result.map(Error)
   }
 }
 
@@ -2274,12 +2290,14 @@ pub fn repos_set_team_access_restrictions_request(base, owner, repo, branch) {
 }
 
 pub fn repos_set_team_access_restrictions_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, body:, ..) = response
   case status {
     200 ->
-      utils.decode_bits(body, zero.list(schema.team_decoder()))
+      json.parse_bits(body, decode.list(schema.team_decoder()))
       |> result.map(Ok)
-    _ -> "API doesn't describe default response" |> Error |> Ok
+    _ ->
+      json.parse_bits(body, schema.validation_error_decoder())
+      |> result.map(Error)
   }
 }
 
@@ -2306,12 +2324,13 @@ pub fn repos_get_teams_with_access_to_protected_branch_request(
 }
 
 pub fn repos_get_teams_with_access_to_protected_branch_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, body:, ..) = response
   case status {
     200 ->
-      utils.decode_bits(body, zero.list(schema.team_decoder()))
+      json.parse_bits(body, decode.list(schema.team_decoder()))
       |> result.map(Ok)
-    _ -> "API doesn't describe default response" |> Error |> Ok
+    _ ->
+      json.parse_bits(body, schema.basic_error_decoder()) |> result.map(Error)
   }
 }
 
@@ -2326,10 +2345,10 @@ pub fn emojis_get_request(base) {
 }
 
 pub fn emojis_get_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, body:, ..) = response
   case status {
-    200 -> utils.decode_bits(body, zero.dynamic) |> result.map(Ok)
-    _ -> "API doesn't describe default response" |> Error |> Ok
+    200 -> json.parse_bits(body, decode.dynamic) |> result.map(Ok)
+    _ -> response |> Error |> Ok
   }
 }
 
@@ -2354,12 +2373,12 @@ pub fn api_insights_get_time_stats_request(
 }
 
 pub fn api_insights_get_time_stats_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, body:, ..) = response
   case status {
     200 ->
-      utils.decode_bits(body, schema.api_insights_time_stats_decoder())
+      json.parse_bits(body, schema.api_insights_time_stats_decoder())
       |> result.map(Ok)
-    _ -> "API doesn't describe default response" |> Error |> Ok
+    _ -> response |> Error |> Ok
   }
 }
 
@@ -2385,12 +2404,12 @@ pub fn apps_list_installations_request(
 }
 
 pub fn apps_list_installations_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, body:, ..) = response
   case status {
     200 ->
-      utils.decode_bits(body, zero.list(schema.installation_decoder()))
+      json.parse_bits(body, decode.list(schema.installation_decoder()))
       |> result.map(Ok)
-    _ -> "API doesn't describe default response" |> Error |> Ok
+    _ -> response |> Error |> Ok
   }
 }
 
@@ -2416,10 +2435,10 @@ pub fn actions_remove_selected_repo_from_org_secret_request(
 }
 
 pub fn actions_remove_selected_repo_from_org_secret_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, ..) = response
   case status {
     204 -> Ok(Nil) |> Ok
-    _ -> "API doesn't describe default response" |> Error |> Ok
+    _ -> Error(Nil) |> Ok
   }
 }
 
@@ -2445,10 +2464,10 @@ pub fn actions_add_selected_repo_to_org_secret_request(
 }
 
 pub fn actions_add_selected_repo_to_org_secret_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, ..) = response
   case status {
     204 -> Ok(Nil) |> Ok
-    _ -> "API doesn't describe default response" |> Error |> Ok
+    _ -> Error(Nil) |> Ok
   }
 }
 
@@ -2470,10 +2489,11 @@ pub fn repos_test_push_webhook_request(base, owner, repo, hook_id) {
 }
 
 pub fn repos_test_push_webhook_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, body:, ..) = response
   case status {
     204 -> Ok(Nil) |> Ok
-    _ -> "API doesn't describe default response" |> Error |> Ok
+    _ ->
+      json.parse_bits(body, schema.basic_error_decoder()) |> result.map(Error)
   }
 }
 
@@ -2521,12 +2541,12 @@ pub fn dependabot_list_alerts_for_repo_request(
 }
 
 pub fn dependabot_list_alerts_for_repo_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, body:, ..) = response
   case status {
     200 ->
-      utils.decode_bits(body, zero.list(schema.dependabot_alert_decoder()))
+      json.parse_bits(body, decode.list(schema.dependabot_alert_decoder()))
       |> result.map(Ok)
-    _ -> "API doesn't describe default response" |> Error |> Ok
+    _ -> response |> Error |> Ok
   }
 }
 
@@ -2555,10 +2575,10 @@ pub fn reactions_delete_for_pull_request_comment_request(
 }
 
 pub fn reactions_delete_for_pull_request_comment_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, ..) = response
   case status {
     204 -> Ok(Nil) |> Ok
-    _ -> "API doesn't describe default response" |> Error |> Ok
+    _ -> response |> Error |> Ok
   }
 }
 
@@ -2596,10 +2616,10 @@ pub fn checks_list_for_suite_request(
 }
 
 pub fn checks_list_for_suite_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, body:, ..) = response
   case status {
-    200 -> utils.decode_bits(body, zero.dynamic) |> result.map(Ok)
-    _ -> "API doesn't describe default response" |> Error |> Ok
+    200 -> json.parse_bits(body, decode.dynamic) |> result.map(Ok)
+    _ -> response |> Error |> Ok
   }
 }
 
@@ -2616,12 +2636,12 @@ pub fn projects_update_column_request(base, column_id, data) {
 }
 
 pub fn projects_update_column_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, body:, ..) = response
   case status {
     200 ->
-      utils.decode_bits(body, schema.project_column_decoder())
+      json.parse_bits(body, schema.project_column_decoder())
       |> result.map(Ok)
-    _ -> "API doesn't describe default response" |> Error |> Ok
+    _ -> response |> Error |> Ok
   }
 }
 
@@ -2636,10 +2656,10 @@ pub fn projects_delete_column_request(base, column_id) {
 }
 
 pub fn projects_delete_column_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, ..) = response
   case status {
     204 -> Ok(Nil) |> Ok
-    _ -> "API doesn't describe default response" |> Error |> Ok
+    _ -> response |> Error |> Ok
   }
 }
 
@@ -2654,12 +2674,12 @@ pub fn projects_get_column_request(base, column_id) {
 }
 
 pub fn projects_get_column_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, body:, ..) = response
   case status {
     200 ->
-      utils.decode_bits(body, schema.project_column_decoder())
+      json.parse_bits(body, schema.project_column_decoder())
       |> result.map(Ok)
-    _ -> "API doesn't describe default response" |> Error |> Ok
+    _ -> response |> Error |> Ok
   }
 }
 
@@ -2681,10 +2701,11 @@ pub fn repos_ping_webhook_request(base, owner, repo, hook_id) {
 }
 
 pub fn repos_ping_webhook_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, body:, ..) = response
   case status {
     204 -> Ok(Nil) |> Ok
-    _ -> "API doesn't describe default response" |> Error |> Ok
+    _ ->
+      json.parse_bits(body, schema.basic_error_decoder()) |> result.map(Error)
   }
 }
 
@@ -2698,7 +2719,7 @@ pub fn security_advisories_create_private_vulnerability_report_request(
   let path = "/repos/" <> owner <> "/" <> repo <> "/security-advisories/reports"
   let query = []
   let body =
-    utils.json_to_bits(schema.private_vulnerability_report_create_to_json(
+    utils.json_to_bits(schema.private_vulnerability_report_create_encode(
       private_vulnerability_report_create,
     ))
   base
@@ -2711,12 +2732,12 @@ pub fn security_advisories_create_private_vulnerability_report_request(
 pub fn security_advisories_create_private_vulnerability_report_response(
   response,
 ) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, body:, ..) = response
   case status {
     201 ->
-      utils.decode_bits(body, schema.repository_advisory_decoder())
+      json.parse_bits(body, schema.repository_advisory_decoder())
       |> result.map(Ok)
-    _ -> "API doesn't describe default response" |> Error |> Ok
+    _ -> response |> Error |> Ok
   }
 }
 
@@ -2738,12 +2759,12 @@ pub fn actions_force_cancel_workflow_run_request(base, owner, repo, run_id) {
 }
 
 pub fn actions_force_cancel_workflow_run_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, body:, ..) = response
   case status {
     202 ->
-      utils.decode_bits(body, schema.empty_object_decoder())
-      |> result.map(Ok)
-    _ -> "API doesn't describe default response" |> Error |> Ok
+      json.parse_bits(body, schema.empty_object_decoder()) |> result.map(Ok)
+    _ ->
+      json.parse_bits(body, schema.basic_error_decoder()) |> result.map(Error)
   }
 }
 
@@ -2764,12 +2785,12 @@ pub fn actions_delete_actions_cache_by_key_request(
 }
 
 pub fn actions_delete_actions_cache_by_key_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, body:, ..) = response
   case status {
     200 ->
-      utils.decode_bits(body, schema.actions_cache_list_decoder())
+      json.parse_bits(body, schema.actions_cache_list_decoder())
       |> result.map(Ok)
-    _ -> "API doesn't describe default response" |> Error |> Ok
+    _ -> response |> Error |> Ok
   }
 }
 
@@ -2801,12 +2822,12 @@ pub fn actions_get_actions_cache_list_request(
 }
 
 pub fn actions_get_actions_cache_list_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, body:, ..) = response
   case status {
     200 ->
-      utils.decode_bits(body, schema.actions_cache_list_decoder())
+      json.parse_bits(body, schema.actions_cache_list_decoder())
       |> result.map(Ok)
-    _ -> "API doesn't describe default response" |> Error |> Ok
+    _ -> response |> Error |> Ok
   }
 }
 
@@ -2822,12 +2843,12 @@ pub fn actions_create_registration_token_for_repo_request(base, owner, repo) {
 }
 
 pub fn actions_create_registration_token_for_repo_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, body:, ..) = response
   case status {
     201 ->
-      utils.decode_bits(body, schema.authentication_token_decoder())
+      json.parse_bits(body, schema.authentication_token_decoder())
       |> result.map(Ok)
-    _ -> "API doesn't describe default response" |> Error |> Ok
+    _ -> response |> Error |> Ok
   }
 }
 
@@ -2844,12 +2865,12 @@ pub fn orgs_update_webhook_config_for_org_request(base, org, hook_id, data) {
 }
 
 pub fn orgs_update_webhook_config_for_org_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, body:, ..) = response
   case status {
     200 ->
-      utils.decode_bits(body, schema.webhook_config_decoder())
+      json.parse_bits(body, schema.webhook_config_decoder())
       |> result.map(Ok)
-    _ -> "API doesn't describe default response" |> Error |> Ok
+    _ -> response |> Error |> Ok
   }
 }
 
@@ -2864,12 +2885,12 @@ pub fn orgs_get_webhook_config_for_org_request(base, org, hook_id) {
 }
 
 pub fn orgs_get_webhook_config_for_org_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, body:, ..) = response
   case status {
     200 ->
-      utils.decode_bits(body, schema.webhook_config_decoder())
+      json.parse_bits(body, schema.webhook_config_decoder())
       |> result.map(Ok)
-    _ -> "API doesn't describe default response" |> Error |> Ok
+    _ -> response |> Error |> Ok
   }
 }
 
@@ -2898,12 +2919,12 @@ pub fn orgs_list_org_role_teams_request(
 }
 
 pub fn orgs_list_org_role_teams_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, body:, ..) = response
   case status {
     200 ->
-      utils.decode_bits(body, zero.list(schema.team_role_assignment_decoder()))
+      json.parse_bits(body, decode.list(schema.team_role_assignment_decoder()))
       |> result.map(Ok)
-    _ -> "API doesn't describe default response" |> Error |> Ok
+    _ -> Error(Nil) |> Ok
   }
 }
 
@@ -2924,12 +2945,10 @@ pub fn issues_get_event_request(base, owner, repo, event_id) {
 }
 
 pub fn issues_get_event_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, body:, ..) = response
   case status {
-    200 ->
-      utils.decode_bits(body, schema.issue_event_decoder())
-      |> result.map(Ok)
-    _ -> "API doesn't describe default response" |> Error |> Ok
+    200 -> json.parse_bits(body, schema.issue_event_decoder()) |> result.map(Ok)
+    _ -> response |> Error |> Ok
   }
 }
 
@@ -2953,10 +2972,10 @@ pub fn codespaces_get_codespaces_for_user_in_org_request(
 }
 
 pub fn codespaces_get_codespaces_for_user_in_org_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, body:, ..) = response
   case status {
-    200 -> utils.decode_bits(body, zero.dynamic) |> result.map(Ok)
-    _ -> "API doesn't describe default response" |> Error |> Ok
+    200 -> json.parse_bits(body, decode.dynamic) |> result.map(Ok)
+    _ -> response |> Error |> Ok
   }
 }
 
@@ -2973,10 +2992,10 @@ pub fn repos_create_attestation_request(base, owner, repo, data) {
 }
 
 pub fn repos_create_attestation_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, body:, ..) = response
   case status {
-    201 -> utils.decode_bits(body, zero.dynamic) |> result.map(Ok)
-    _ -> "API doesn't describe default response" |> Error |> Ok
+    201 -> json.parse_bits(body, decode.dynamic) |> result.map(Ok)
+    _ -> response |> Error |> Ok
   }
 }
 
@@ -3005,10 +3024,10 @@ pub fn repos_disable_deployment_protection_rule_request(
 }
 
 pub fn repos_disable_deployment_protection_rule_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, ..) = response
   case status {
     204 -> Ok(Nil) |> Ok
-    _ -> "API doesn't describe default response" |> Error |> Ok
+    _ -> response |> Error |> Ok
   }
 }
 
@@ -3037,12 +3056,12 @@ pub fn repos_get_custom_deployment_protection_rule_request(
 }
 
 pub fn repos_get_custom_deployment_protection_rule_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, body:, ..) = response
   case status {
     200 ->
-      utils.decode_bits(body, schema.deployment_protection_rule_decoder())
+      json.parse_bits(body, schema.deployment_protection_rule_decoder())
       |> result.map(Ok)
-    _ -> "API doesn't describe default response" |> Error |> Ok
+    _ -> response |> Error |> Ok
   }
 }
 
@@ -3065,12 +3084,12 @@ pub fn api_insights_get_summary_stats_request(
 }
 
 pub fn api_insights_get_summary_stats_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, body:, ..) = response
   case status {
     200 ->
-      utils.decode_bits(body, schema.api_insights_summary_stats_decoder())
+      json.parse_bits(body, schema.api_insights_summary_stats_decoder())
       |> result.map(Ok)
-    _ -> "API doesn't describe default response" |> Error |> Ok
+    _ -> response |> Error |> Ok
   }
 }
 
@@ -3085,10 +3104,11 @@ pub fn classroom_get_a_classroom_request(base, classroom_id) {
 }
 
 pub fn classroom_get_a_classroom_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, body:, ..) = response
   case status {
-    200 -> utils.decode_bits(body, schema.classroom_decoder()) |> result.map(Ok)
-    _ -> "API doesn't describe default response" |> Error |> Ok
+    200 -> json.parse_bits(body, schema.classroom_decoder()) |> result.map(Ok)
+    _ ->
+      json.parse_bits(body, schema.basic_error_decoder()) |> result.map(Error)
   }
 }
 
@@ -3105,10 +3125,10 @@ pub fn issues_create_milestone_request(base, owner, repo, data) {
 }
 
 pub fn issues_create_milestone_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, body:, ..) = response
   case status {
-    201 -> utils.decode_bits(body, schema.milestone_decoder()) |> result.map(Ok)
-    _ -> "API doesn't describe default response" |> Error |> Ok
+    201 -> json.parse_bits(body, schema.milestone_decoder()) |> result.map(Ok)
+    _ -> response |> Error |> Ok
   }
 }
 
@@ -3138,12 +3158,13 @@ pub fn issues_list_milestones_request(
 }
 
 pub fn issues_list_milestones_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, body:, ..) = response
   case status {
     200 ->
-      utils.decode_bits(body, zero.list(schema.milestone_decoder()))
+      json.parse_bits(body, decode.list(schema.milestone_decoder()))
       |> result.map(Ok)
-    _ -> "API doesn't describe default response" |> Error |> Ok
+    _ ->
+      json.parse_bits(body, schema.basic_error_decoder()) |> result.map(Error)
   }
 }
 
@@ -3175,12 +3196,12 @@ pub fn checks_list_annotations_request(
 }
 
 pub fn checks_list_annotations_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, body:, ..) = response
   case status {
     200 ->
-      utils.decode_bits(body, zero.list(schema.check_annotation_decoder()))
+      json.parse_bits(body, decode.list(schema.check_annotation_decoder()))
       |> result.map(Ok)
-    _ -> "API doesn't describe default response" |> Error |> Ok
+    _ -> response |> Error |> Ok
   }
 }
 
@@ -3196,10 +3217,11 @@ pub fn repos_disable_private_vulnerability_reporting_request(base, owner, repo) 
 }
 
 pub fn repos_disable_private_vulnerability_reporting_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, body:, ..) = response
   case status {
     204 -> Ok(Nil) |> Ok
-    _ -> "API doesn't describe default response" |> Error |> Ok
+    _ ->
+      json.parse_bits(body, schema.basic_error_decoder()) |> result.map(Error)
   }
 }
 
@@ -3215,10 +3237,11 @@ pub fn repos_enable_private_vulnerability_reporting_request(base, owner, repo) {
 }
 
 pub fn repos_enable_private_vulnerability_reporting_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, body:, ..) = response
   case status {
     204 -> Ok(Nil) |> Ok
-    _ -> "API doesn't describe default response" |> Error |> Ok
+    _ ->
+      json.parse_bits(body, schema.basic_error_decoder()) |> result.map(Error)
   }
 }
 
@@ -3234,10 +3257,11 @@ pub fn repos_check_private_vulnerability_reporting_request(base, owner, repo) {
 }
 
 pub fn repos_check_private_vulnerability_reporting_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, body:, ..) = response
   case status {
-    200 -> utils.decode_bits(body, zero.dynamic) |> result.map(Ok)
-    _ -> "API doesn't describe default response" |> Error |> Ok
+    200 -> json.parse_bits(body, decode.dynamic) |> result.map(Ok)
+    _ ->
+      json.parse_bits(body, schema.basic_error_decoder()) |> result.map(Error)
   }
 }
 
@@ -3259,12 +3283,12 @@ pub fn users_list_blocked_by_authenticated_user_request(
 }
 
 pub fn users_list_blocked_by_authenticated_user_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, body:, ..) = response
   case status {
     200 ->
-      utils.decode_bits(body, zero.list(schema.simple_user_decoder()))
+      json.parse_bits(body, decode.list(schema.simple_user_decoder()))
       |> result.map(Ok)
-    _ -> "API doesn't describe default response" |> Error |> Ok
+    _ -> response |> Error |> Ok
   }
 }
 
@@ -3278,7 +3302,7 @@ pub fn code_scanning_update_default_setup_request(
   let path = "/repos/" <> owner <> "/" <> repo <> "/code-scanning/default-setup"
   let query = []
   let body =
-    utils.json_to_bits(schema.code_scanning_default_setup_update_to_json(
+    utils.json_to_bits(schema.code_scanning_default_setup_update_encode(
       code_scanning_default_setup_update,
     ))
   base
@@ -3289,12 +3313,11 @@ pub fn code_scanning_update_default_setup_request(
 }
 
 pub fn code_scanning_update_default_setup_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, body:, ..) = response
   case status {
     200 ->
-      utils.decode_bits(body, schema.empty_object_decoder())
-      |> result.map(Ok)
-    _ -> "API doesn't describe default response" |> Error |> Ok
+      json.parse_bits(body, schema.empty_object_decoder()) |> result.map(Ok)
+    _ -> response |> Error |> Ok
   }
 }
 
@@ -3309,12 +3332,12 @@ pub fn code_scanning_get_default_setup_request(base, owner, repo) {
 }
 
 pub fn code_scanning_get_default_setup_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, body:, ..) = response
   case status {
     200 ->
-      utils.decode_bits(body, schema.code_scanning_default_setup_decoder())
+      json.parse_bits(body, schema.code_scanning_default_setup_decoder())
       |> result.map(Ok)
-    _ -> "API doesn't describe default response" |> Error |> Ok
+    _ -> response |> Error |> Ok
   }
 }
 
@@ -3347,12 +3370,12 @@ pub fn api_insights_get_time_stats_by_actor_request(
 }
 
 pub fn api_insights_get_time_stats_by_actor_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, body:, ..) = response
   case status {
     200 ->
-      utils.decode_bits(body, schema.api_insights_time_stats_decoder())
+      json.parse_bits(body, schema.api_insights_time_stats_decoder())
       |> result.map(Ok)
-    _ -> "API doesn't describe default response" |> Error |> Ok
+    _ -> response |> Error |> Ok
   }
 }
 
@@ -3382,10 +3405,10 @@ pub fn repos_redeliver_webhook_delivery_request(
 }
 
 pub fn repos_redeliver_webhook_delivery_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, body:, ..) = response
   case status {
-    202 -> utils.decode_bits(body, zero.dynamic) |> result.map(Ok)
-    _ -> "API doesn't describe default response" |> Error |> Ok
+    202 -> json.parse_bits(body, decode.dynamic) |> result.map(Ok)
+    _ -> response |> Error |> Ok
   }
 }
 
@@ -3402,12 +3425,12 @@ pub fn orgs_update_membership_for_authenticated_user_request(base, org, data) {
 }
 
 pub fn orgs_update_membership_for_authenticated_user_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, body:, ..) = response
   case status {
     200 ->
-      utils.decode_bits(body, schema.org_membership_decoder())
+      json.parse_bits(body, schema.org_membership_decoder())
       |> result.map(Ok)
-    _ -> "API doesn't describe default response" |> Error |> Ok
+    _ -> response |> Error |> Ok
   }
 }
 
@@ -3422,12 +3445,12 @@ pub fn orgs_get_membership_for_authenticated_user_request(base, org) {
 }
 
 pub fn orgs_get_membership_for_authenticated_user_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, body:, ..) = response
   case status {
     200 ->
-      utils.decode_bits(body, schema.org_membership_decoder())
+      json.parse_bits(body, schema.org_membership_decoder())
       |> result.map(Ok)
-    _ -> "API doesn't describe default response" |> Error |> Ok
+    _ -> response |> Error |> Ok
   }
 }
 
@@ -3458,12 +3481,12 @@ pub fn api_insights_get_summary_stats_by_actor_request(
 }
 
 pub fn api_insights_get_summary_stats_by_actor_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, body:, ..) = response
   case status {
     200 ->
-      utils.decode_bits(body, schema.api_insights_summary_stats_decoder())
+      json.parse_bits(body, schema.api_insights_summary_stats_decoder())
       |> result.map(Ok)
-    _ -> "API doesn't describe default response" |> Error |> Ok
+    _ -> response |> Error |> Ok
   }
 }
 
@@ -3480,12 +3503,10 @@ pub fn repos_delete_file_request(base, owner, repo, path_, data) {
 }
 
 pub fn repos_delete_file_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, body:, ..) = response
   case status {
-    200 ->
-      utils.decode_bits(body, schema.file_commit_decoder())
-      |> result.map(Ok)
-    _ -> "API doesn't describe default response" |> Error |> Ok
+    200 -> json.parse_bits(body, schema.file_commit_decoder()) |> result.map(Ok)
+    _ -> response |> Error |> Ok
   }
 }
 
@@ -3508,12 +3529,10 @@ pub fn repos_create_or_update_file_contents_request(
 }
 
 pub fn repos_create_or_update_file_contents_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, body:, ..) = response
   case status {
-    200 ->
-      utils.decode_bits(body, schema.file_commit_decoder())
-      |> result.map(Ok)
-    _ -> "API doesn't describe default response" |> Error |> Ok
+    200 -> json.parse_bits(body, schema.file_commit_decoder()) |> result.map(Ok)
+    _ -> response |> Error |> Ok
   }
 }
 
@@ -3528,12 +3547,12 @@ pub fn repos_get_content_request(base, owner, repo, path_, ref ref) {
 }
 
 pub fn repos_get_content_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, body:, ..) = response
   case status {
     200 ->
-      utils.decode_bits(body, zero.failure(Nil, "Unsupported schema"))
+      json.parse_bits(body, decode.failure(Nil, "Unsupported schema"))
       |> result.map(Ok)
-    _ -> "API doesn't describe default response" |> Error |> Ok
+    _ -> response |> Error |> Ok
   }
 }
 
@@ -3555,12 +3574,12 @@ pub fn repos_list_invitations_for_authenticated_user_request(
 }
 
 pub fn repos_list_invitations_for_authenticated_user_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, body:, ..) = response
   case status {
     200 ->
-      utils.decode_bits(body, zero.list(schema.repository_invitation_decoder()))
+      json.parse_bits(body, decode.list(schema.repository_invitation_decoder()))
       |> result.map(Ok)
-    _ -> "API doesn't describe default response" |> Error |> Ok
+    _ -> response |> Error |> Ok
   }
 }
 
@@ -3587,12 +3606,12 @@ pub fn packages_list_packages_for_user_request(
 }
 
 pub fn packages_list_packages_for_user_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, body:, ..) = response
   case status {
     200 ->
-      utils.decode_bits(body, zero.list(schema.package_decoder()))
+      json.parse_bits(body, decode.list(schema.package_decoder()))
       |> result.map(Ok)
-    _ -> "API doesn't describe default response" |> Error |> Ok
+    _ -> response |> Error |> Ok
   }
 }
 
@@ -3608,11 +3627,10 @@ pub fn repos_get_org_rule_suite_request(base, org, rule_suite_id) {
 }
 
 pub fn repos_get_org_rule_suite_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, body:, ..) = response
   case status {
-    200 ->
-      utils.decode_bits(body, schema.rule_suite_decoder()) |> result.map(Ok)
-    _ -> "API doesn't describe default response" |> Error |> Ok
+    200 -> json.parse_bits(body, schema.rule_suite_decoder()) |> result.map(Ok)
+    _ -> response |> Error |> Ok
   }
 }
 
@@ -3637,10 +3655,10 @@ pub fn repos_get_commit_request(
 }
 
 pub fn repos_get_commit_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, body:, ..) = response
   case status {
-    200 -> utils.decode_bits(body, schema.commit_decoder()) |> result.map(Ok)
-    _ -> "API doesn't describe default response" |> Error |> Ok
+    200 -> json.parse_bits(body, schema.commit_decoder()) |> result.map(Ok)
+    _ -> response |> Error |> Ok
   }
 }
 
@@ -3662,15 +3680,16 @@ pub fn apps_list_installation_requests_for_authenticated_app_request(
 }
 
 pub fn apps_list_installation_requests_for_authenticated_app_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, body:, ..) = response
   case status {
     200 ->
-      utils.decode_bits(
+      json.parse_bits(
         body,
-        zero.list(schema.integration_installation_request_decoder()),
+        decode.list(schema.integration_installation_request_decoder()),
       )
       |> result.map(Ok)
-    _ -> "API doesn't describe default response" |> Error |> Ok
+    _ ->
+      json.parse_bits(body, schema.basic_error_decoder()) |> result.map(Error)
   }
 }
 
@@ -3687,10 +3706,10 @@ pub fn migrations_start_for_authenticated_user_request(base, data) {
 }
 
 pub fn migrations_start_for_authenticated_user_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, body:, ..) = response
   case status {
-    201 -> utils.decode_bits(body, schema.migration_decoder()) |> result.map(Ok)
-    _ -> "API doesn't describe default response" |> Error |> Ok
+    201 -> json.parse_bits(body, schema.migration_decoder()) |> result.map(Ok)
+    _ -> response |> Error |> Ok
   }
 }
 
@@ -3712,12 +3731,12 @@ pub fn migrations_list_for_authenticated_user_request(
 }
 
 pub fn migrations_list_for_authenticated_user_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, body:, ..) = response
   case status {
     200 ->
-      utils.decode_bits(body, zero.list(schema.migration_decoder()))
+      json.parse_bits(body, decode.list(schema.migration_decoder()))
       |> result.map(Ok)
-    _ -> "API doesn't describe default response" |> Error |> Ok
+    _ -> response |> Error |> Ok
   }
 }
 
@@ -3740,10 +3759,11 @@ pub fn repos_update_release_request(base, owner, repo, release_id, data) {
 }
 
 pub fn repos_update_release_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, body:, ..) = response
   case status {
-    200 -> utils.decode_bits(body, schema.release_decoder()) |> result.map(Ok)
-    _ -> "API doesn't describe default response" |> Error |> Ok
+    200 -> json.parse_bits(body, schema.release_decoder()) |> result.map(Ok)
+    _ ->
+      json.parse_bits(body, schema.basic_error_decoder()) |> result.map(Error)
   }
 }
 
@@ -3764,10 +3784,10 @@ pub fn repos_delete_release_request(base, owner, repo, release_id) {
 }
 
 pub fn repos_delete_release_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, ..) = response
   case status {
     204 -> Ok(Nil) |> Ok
-    _ -> "API doesn't describe default response" |> Error |> Ok
+    _ -> response |> Error |> Ok
   }
 }
 
@@ -3788,10 +3808,10 @@ pub fn repos_get_release_request(base, owner, repo, release_id) {
 }
 
 pub fn repos_get_release_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, body:, ..) = response
   case status {
-    200 -> utils.decode_bits(body, schema.release_decoder()) |> result.map(Ok)
-    _ -> "API doesn't describe default response" |> Error |> Ok
+    200 -> json.parse_bits(body, schema.release_decoder()) |> result.map(Ok)
+    _ -> Error(Nil) |> Ok
   }
 }
 
@@ -3814,12 +3834,12 @@ pub fn teams_list_child_legacy_request(
 }
 
 pub fn teams_list_child_legacy_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, body:, ..) = response
   case status {
     200 ->
-      utils.decode_bits(body, zero.list(schema.team_decoder()))
+      json.parse_bits(body, decode.list(schema.team_decoder()))
       |> result.map(Ok)
-    _ -> "API doesn't describe default response" |> Error |> Ok
+    _ -> response |> Error |> Ok
   }
 }
 
@@ -3836,12 +3856,12 @@ pub fn users_create_ssh_signing_key_for_authenticated_user_request(base, data) {
 }
 
 pub fn users_create_ssh_signing_key_for_authenticated_user_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, body:, ..) = response
   case status {
     201 ->
-      utils.decode_bits(body, schema.ssh_signing_key_decoder())
+      json.parse_bits(body, schema.ssh_signing_key_decoder())
       |> result.map(Ok)
-    _ -> "API doesn't describe default response" |> Error |> Ok
+    _ -> response |> Error |> Ok
   }
 }
 
@@ -3863,12 +3883,12 @@ pub fn users_list_ssh_signing_keys_for_authenticated_user_request(
 }
 
 pub fn users_list_ssh_signing_keys_for_authenticated_user_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, body:, ..) = response
   case status {
     200 ->
-      utils.decode_bits(body, zero.list(schema.ssh_signing_key_decoder()))
+      json.parse_bits(body, decode.list(schema.ssh_signing_key_decoder()))
       |> result.map(Ok)
-    _ -> "API doesn't describe default response" |> Error |> Ok
+    _ -> response |> Error |> Ok
   }
 }
 
@@ -3894,12 +3914,13 @@ pub fn repos_get_pages_deployment_request(
 }
 
 pub fn repos_get_pages_deployment_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, body:, ..) = response
   case status {
     200 ->
-      utils.decode_bits(body, schema.pages_deployment_status_decoder())
+      json.parse_bits(body, schema.pages_deployment_status_decoder())
       |> result.map(Ok)
-    _ -> "API doesn't describe default response" |> Error |> Ok
+    _ ->
+      json.parse_bits(body, schema.basic_error_decoder()) |> result.map(Error)
   }
 }
 
@@ -3922,10 +3943,10 @@ pub fn codespaces_list_org_secrets_request(
 }
 
 pub fn codespaces_list_org_secrets_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, body:, ..) = response
   case status {
-    200 -> utils.decode_bits(body, zero.dynamic) |> result.map(Ok)
-    _ -> "API doesn't describe default response" |> Error |> Ok
+    200 -> json.parse_bits(body, decode.dynamic) |> result.map(Ok)
+    _ -> response |> Error |> Ok
   }
 }
 
@@ -3966,15 +3987,15 @@ pub fn secret_scanning_list_alerts_for_enterprise_request(
 }
 
 pub fn secret_scanning_list_alerts_for_enterprise_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, body:, ..) = response
   case status {
     200 ->
-      utils.decode_bits(
+      json.parse_bits(
         body,
-        zero.list(schema.organization_secret_scanning_alert_decoder()),
+        decode.list(schema.organization_secret_scanning_alert_decoder()),
       )
       |> result.map(Ok)
-    _ -> "API doesn't describe default response" |> Error |> Ok
+    _ -> response |> Error |> Ok
   }
 }
 
@@ -3993,10 +4014,10 @@ pub fn teams_remove_project_legacy_request(base, team_id, project_id) {
 }
 
 pub fn teams_remove_project_legacy_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, ..) = response
   case status {
     204 -> Ok(Nil) |> Ok
-    _ -> "API doesn't describe default response" |> Error |> Ok
+    _ -> response |> Error |> Ok
   }
 }
 
@@ -4022,10 +4043,10 @@ pub fn teams_add_or_update_project_permissions_legacy_request(
 }
 
 pub fn teams_add_or_update_project_permissions_legacy_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, ..) = response
   case status {
     204 -> Ok(Nil) |> Ok
-    _ -> "API doesn't describe default response" |> Error |> Ok
+    _ -> response |> Error |> Ok
   }
 }
 
@@ -4048,12 +4069,11 @@ pub fn teams_check_permissions_for_project_legacy_request(
 }
 
 pub fn teams_check_permissions_for_project_legacy_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, body:, ..) = response
   case status {
     200 ->
-      utils.decode_bits(body, schema.team_project_decoder())
-      |> result.map(Ok)
-    _ -> "API doesn't describe default response" |> Error |> Ok
+      json.parse_bits(body, schema.team_project_decoder()) |> result.map(Ok)
+    _ -> Error(Nil) |> Ok
   }
 }
 
@@ -4068,10 +4088,10 @@ pub fn teams_remove_membership_for_user_legacy_request(base, team_id, username) 
 }
 
 pub fn teams_remove_membership_for_user_legacy_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, ..) = response
   case status {
     204 -> Ok(Nil) |> Ok
-    _ -> "API doesn't describe default response" |> Error |> Ok
+    _ -> Error(Nil) |> Ok
   }
 }
 
@@ -4093,12 +4113,12 @@ pub fn teams_add_or_update_membership_for_user_legacy_request(
 }
 
 pub fn teams_add_or_update_membership_for_user_legacy_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, body:, ..) = response
   case status {
     200 ->
-      utils.decode_bits(body, schema.team_membership_decoder())
+      json.parse_bits(body, schema.team_membership_decoder())
       |> result.map(Ok)
-    _ -> "API doesn't describe default response" |> Error |> Ok
+    _ -> response |> Error |> Ok
   }
 }
 
@@ -4113,12 +4133,13 @@ pub fn teams_get_membership_for_user_legacy_request(base, team_id, username) {
 }
 
 pub fn teams_get_membership_for_user_legacy_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, body:, ..) = response
   case status {
     200 ->
-      utils.decode_bits(body, schema.team_membership_decoder())
+      json.parse_bits(body, schema.team_membership_decoder())
       |> result.map(Ok)
-    _ -> "API doesn't describe default response" |> Error |> Ok
+    _ ->
+      json.parse_bits(body, schema.basic_error_decoder()) |> result.map(Error)
   }
 }
 
@@ -4147,12 +4168,12 @@ pub fn repos_get_webhook_delivery_request(
 }
 
 pub fn repos_get_webhook_delivery_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, body:, ..) = response
   case status {
     200 ->
-      utils.decode_bits(body, schema.hook_delivery_decoder())
+      json.parse_bits(body, schema.hook_delivery_decoder())
       |> result.map(Ok)
-    _ -> "API doesn't describe default response" |> Error |> Ok
+    _ -> response |> Error |> Ok
   }
 }
 
@@ -4176,12 +4197,12 @@ pub fn repos_create_commit_comment_request(base, owner, repo, commit_sha, data) 
 }
 
 pub fn repos_create_commit_comment_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, body:, ..) = response
   case status {
     201 ->
-      utils.decode_bits(body, schema.commit_comment_decoder())
+      json.parse_bits(body, schema.commit_comment_decoder())
       |> result.map(Ok)
-    _ -> "API doesn't describe default response" |> Error |> Ok
+    _ -> response |> Error |> Ok
   }
 }
 
@@ -4213,12 +4234,12 @@ pub fn repos_list_comments_for_commit_request(
 }
 
 pub fn repos_list_comments_for_commit_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, body:, ..) = response
   case status {
     200 ->
-      utils.decode_bits(body, zero.list(schema.commit_comment_decoder()))
+      json.parse_bits(body, decode.list(schema.commit_comment_decoder()))
       |> result.map(Ok)
-    _ -> "API doesn't describe default response" |> Error |> Ok
+    _ -> response |> Error |> Ok
   }
 }
 
@@ -4240,10 +4261,10 @@ pub fn actions_enable_workflow_request(base, owner, repo, workflow_id) {
 }
 
 pub fn actions_enable_workflow_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, ..) = response
   case status {
     204 -> Ok(Nil) |> Ok
-    _ -> "API doesn't describe default response" |> Error |> Ok
+    _ -> response |> Error |> Ok
   }
 }
 
@@ -4258,12 +4279,12 @@ pub fn actions_create_remove_token_for_org_request(base, org) {
 }
 
 pub fn actions_create_remove_token_for_org_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, body:, ..) = response
   case status {
     201 ->
-      utils.decode_bits(body, schema.authentication_token_decoder())
+      json.parse_bits(body, schema.authentication_token_decoder())
       |> result.map(Ok)
-    _ -> "API doesn't describe default response" |> Error |> Ok
+    _ -> response |> Error |> Ok
   }
 }
 
@@ -4280,12 +4301,11 @@ pub fn users_update_authenticated_request(base, data) {
 }
 
 pub fn users_update_authenticated_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, body:, ..) = response
   case status {
     200 ->
-      utils.decode_bits(body, schema.private_user_decoder())
-      |> result.map(Ok)
-    _ -> "API doesn't describe default response" |> Error |> Ok
+      json.parse_bits(body, schema.private_user_decoder()) |> result.map(Ok)
+    _ -> response |> Error |> Ok
   }
 }
 
@@ -4300,12 +4320,12 @@ pub fn users_get_authenticated_request(base) {
 }
 
 pub fn users_get_authenticated_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, body:, ..) = response
   case status {
     200 ->
-      utils.decode_bits(body, zero.failure(Nil, "Unsupported schema"))
+      json.parse_bits(body, decode.failure(Nil, "Unsupported schema"))
       |> result.map(Ok)
-    _ -> "API doesn't describe default response" |> Error |> Ok
+    _ -> response |> Error |> Ok
   }
 }
 
@@ -4327,12 +4347,12 @@ pub fn users_set_primary_email_visibility_for_authenticated_user_request(
 pub fn users_set_primary_email_visibility_for_authenticated_user_response(
   response,
 ) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, body:, ..) = response
   case status {
     200 ->
-      utils.decode_bits(body, zero.list(schema.email_decoder()))
+      json.parse_bits(body, decode.list(schema.email_decoder()))
       |> result.map(Ok)
-    _ -> "API doesn't describe default response" |> Error |> Ok
+    _ -> response |> Error |> Ok
   }
 }
 
@@ -4354,10 +4374,10 @@ pub fn actions_set_github_actions_permissions_repository_request(
 }
 
 pub fn actions_set_github_actions_permissions_repository_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, ..) = response
   case status {
     204 -> Ok(Nil) |> Ok
-    _ -> "API doesn't describe default response" |> Error |> Ok
+    _ -> response |> Error |> Ok
   }
 }
 
@@ -4376,12 +4396,12 @@ pub fn actions_get_github_actions_permissions_repository_request(
 }
 
 pub fn actions_get_github_actions_permissions_repository_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, body:, ..) = response
   case status {
     200 ->
-      utils.decode_bits(body, schema.actions_repository_permissions_decoder())
+      json.parse_bits(body, schema.actions_repository_permissions_decoder())
       |> result.map(Ok)
-    _ -> "API doesn't describe default response" |> Error |> Ok
+    _ -> response |> Error |> Ok
   }
 }
 
@@ -4405,12 +4425,11 @@ pub fn actions_re_run_workflow_request(base, owner, repo, run_id, data) {
 }
 
 pub fn actions_re_run_workflow_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, body:, ..) = response
   case status {
     201 ->
-      utils.decode_bits(body, schema.empty_object_decoder())
-      |> result.map(Ok)
-    _ -> "API doesn't describe default response" |> Error |> Ok
+      json.parse_bits(body, schema.empty_object_decoder()) |> result.map(Ok)
+    _ -> response |> Error |> Ok
   }
 }
 
@@ -4425,10 +4444,10 @@ pub fn orgs_remove_custom_property_request(base, org, custom_property_name) {
 }
 
 pub fn orgs_remove_custom_property_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, ..) = response
   case status {
     204 -> Ok(Nil) |> Ok
-    _ -> "API doesn't describe default response" |> Error |> Ok
+    _ -> response |> Error |> Ok
   }
 }
 
@@ -4450,12 +4469,12 @@ pub fn orgs_create_or_update_custom_property_request(
 }
 
 pub fn orgs_create_or_update_custom_property_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, body:, ..) = response
   case status {
     200 ->
-      utils.decode_bits(body, schema.custom_property_decoder())
+      json.parse_bits(body, schema.custom_property_decoder())
       |> result.map(Ok)
-    _ -> "API doesn't describe default response" |> Error |> Ok
+    _ -> response |> Error |> Ok
   }
 }
 
@@ -4470,12 +4489,12 @@ pub fn orgs_get_custom_property_request(base, org, custom_property_name) {
 }
 
 pub fn orgs_get_custom_property_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, body:, ..) = response
   case status {
     200 ->
-      utils.decode_bits(body, schema.custom_property_decoder())
+      json.parse_bits(body, schema.custom_property_decoder())
       |> result.map(Ok)
-    _ -> "API doesn't describe default response" |> Error |> Ok
+    _ -> response |> Error |> Ok
   }
 }
 
@@ -4492,12 +4511,12 @@ pub fn repos_create_fork_request(base, owner, repo, data) {
 }
 
 pub fn repos_create_fork_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, body:, ..) = response
   case status {
     202 ->
-      utils.decode_bits(body, schema.full_repository_decoder())
+      json.parse_bits(body, schema.full_repository_decoder())
       |> result.map(Ok)
-    _ -> "API doesn't describe default response" |> Error |> Ok
+    _ -> response |> Error |> Ok
   }
 }
 
@@ -4523,12 +4542,13 @@ pub fn repos_list_forks_request(
 }
 
 pub fn repos_list_forks_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, body:, ..) = response
   case status {
     200 ->
-      utils.decode_bits(body, zero.list(schema.minimal_repository_decoder()))
+      json.parse_bits(body, decode.list(schema.minimal_repository_decoder()))
       |> result.map(Ok)
-    _ -> "API doesn't describe default response" |> Error |> Ok
+    _ ->
+      json.parse_bits(body, schema.basic_error_decoder()) |> result.map(Error)
   }
 }
 
@@ -4545,12 +4565,12 @@ pub fn repos_create_org_ruleset_request(base, org, data) {
 }
 
 pub fn repos_create_org_ruleset_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, body:, ..) = response
   case status {
     201 ->
-      utils.decode_bits(body, schema.repository_ruleset_decoder())
+      json.parse_bits(body, schema.repository_ruleset_decoder())
       |> result.map(Ok)
-    _ -> "API doesn't describe default response" |> Error |> Ok
+    _ -> response |> Error |> Ok
   }
 }
 
@@ -4575,12 +4595,12 @@ pub fn repos_get_org_rulesets_request(
 }
 
 pub fn repos_get_org_rulesets_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, body:, ..) = response
   case status {
     200 ->
-      utils.decode_bits(body, zero.list(schema.repository_ruleset_decoder()))
+      json.parse_bits(body, decode.list(schema.repository_ruleset_decoder()))
       |> result.map(Ok)
-    _ -> "API doesn't describe default response" |> Error |> Ok
+    _ -> response |> Error |> Ok
   }
 }
 
@@ -4598,12 +4618,12 @@ pub fn users_list_request(base, since since, per_page per_page) {
 }
 
 pub fn users_list_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, body:, ..) = response
   case status {
     200 ->
-      utils.decode_bits(body, zero.list(schema.simple_user_decoder()))
+      json.parse_bits(body, decode.list(schema.simple_user_decoder()))
       |> result.map(Ok)
-    _ -> "API doesn't describe default response" |> Error |> Ok
+    _ -> response |> Error |> Ok
   }
 }
 
@@ -4636,12 +4656,12 @@ pub fn pulls_submit_review_request(
 }
 
 pub fn pulls_submit_review_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, body:, ..) = response
   case status {
     200 ->
-      utils.decode_bits(body, schema.pull_request_review_decoder())
+      json.parse_bits(body, schema.pull_request_review_decoder())
       |> result.map(Ok)
-    _ -> "API doesn't describe default response" |> Error |> Ok
+    _ -> response |> Error |> Ok
   }
 }
 
@@ -4668,12 +4688,12 @@ pub fn packages_list_packages_for_organization_request(
 }
 
 pub fn packages_list_packages_for_organization_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, body:, ..) = response
   case status {
     200 ->
-      utils.decode_bits(body, zero.list(schema.package_decoder()))
+      json.parse_bits(body, decode.list(schema.package_decoder()))
       |> result.map(Ok)
-    _ -> "API doesn't describe default response" |> Error |> Ok
+    _ -> response |> Error |> Ok
   }
 }
 
@@ -4697,10 +4717,10 @@ pub fn actions_list_repo_secrets_request(
 }
 
 pub fn actions_list_repo_secrets_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, body:, ..) = response
   case status {
-    200 -> utils.decode_bits(body, zero.dynamic) |> result.map(Ok)
-    _ -> "API doesn't describe default response" |> Error |> Ok
+    200 -> json.parse_bits(body, decode.dynamic) |> result.map(Ok)
+    _ -> response |> Error |> Ok
   }
 }
 
@@ -4717,12 +4737,11 @@ pub fn actions_create_org_variable_request(base, org, data) {
 }
 
 pub fn actions_create_org_variable_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, body:, ..) = response
   case status {
     201 ->
-      utils.decode_bits(body, schema.empty_object_decoder())
-      |> result.map(Ok)
-    _ -> "API doesn't describe default response" |> Error |> Ok
+      json.parse_bits(body, schema.empty_object_decoder()) |> result.map(Ok)
+    _ -> response |> Error |> Ok
   }
 }
 
@@ -4745,10 +4764,10 @@ pub fn actions_list_org_variables_request(
 }
 
 pub fn actions_list_org_variables_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, body:, ..) = response
   case status {
-    200 -> utils.decode_bits(body, zero.dynamic) |> result.map(Ok)
-    _ -> "API doesn't describe default response" |> Error |> Ok
+    200 -> json.parse_bits(body, decode.dynamic) |> result.map(Ok)
+    _ -> response |> Error |> Ok
   }
 }
 
@@ -4770,12 +4789,12 @@ pub fn actions_cancel_workflow_run_request(base, owner, repo, run_id) {
 }
 
 pub fn actions_cancel_workflow_run_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, body:, ..) = response
   case status {
     202 ->
-      utils.decode_bits(body, schema.empty_object_decoder())
-      |> result.map(Ok)
-    _ -> "API doesn't describe default response" |> Error |> Ok
+      json.parse_bits(body, schema.empty_object_decoder()) |> result.map(Ok)
+    _ ->
+      json.parse_bits(body, schema.basic_error_decoder()) |> result.map(Error)
   }
 }
 
@@ -4801,10 +4820,10 @@ pub fn actions_list_self_hosted_runners_for_repo_request(
 }
 
 pub fn actions_list_self_hosted_runners_for_repo_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, body:, ..) = response
   case status {
-    200 -> utils.decode_bits(body, zero.dynamic) |> result.map(Ok)
-    _ -> "API doesn't describe default response" |> Error |> Ok
+    200 -> json.parse_bits(body, decode.dynamic) |> result.map(Ok)
+    _ -> response |> Error |> Ok
   }
 }
 
@@ -4819,12 +4838,13 @@ pub fn repos_get_participation_stats_request(base, owner, repo) {
 }
 
 pub fn repos_get_participation_stats_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, body:, ..) = response
   case status {
     200 ->
-      utils.decode_bits(body, schema.participation_stats_decoder())
+      json.parse_bits(body, schema.participation_stats_decoder())
       |> result.map(Ok)
-    _ -> "API doesn't describe default response" |> Error |> Ok
+    _ ->
+      json.parse_bits(body, schema.basic_error_decoder()) |> result.map(Error)
   }
 }
 
@@ -4841,10 +4861,10 @@ pub fn actions_update_repo_variable_request(base, owner, repo, name, data) {
 }
 
 pub fn actions_update_repo_variable_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, ..) = response
   case status {
     204 -> Ok(Nil) |> Ok
-    _ -> "API doesn't describe default response" |> Error |> Ok
+    _ -> response |> Error |> Ok
   }
 }
 
@@ -4859,10 +4879,10 @@ pub fn actions_delete_repo_variable_request(base, owner, repo, name) {
 }
 
 pub fn actions_delete_repo_variable_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, ..) = response
   case status {
     204 -> Ok(Nil) |> Ok
-    _ -> "API doesn't describe default response" |> Error |> Ok
+    _ -> response |> Error |> Ok
   }
 }
 
@@ -4877,12 +4897,12 @@ pub fn actions_get_repo_variable_request(base, owner, repo, name) {
 }
 
 pub fn actions_get_repo_variable_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, body:, ..) = response
   case status {
     200 ->
-      utils.decode_bits(body, schema.actions_variable_decoder())
+      json.parse_bits(body, schema.actions_variable_decoder())
       |> result.map(Ok)
-    _ -> "API doesn't describe default response" |> Error |> Ok
+    _ -> response |> Error |> Ok
   }
 }
 
@@ -4904,12 +4924,12 @@ pub fn code_scanning_create_variant_analysis_request(base, owner, repo, data) {
 }
 
 pub fn code_scanning_create_variant_analysis_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, body:, ..) = response
   case status {
     201 ->
-      utils.decode_bits(body, schema.code_scanning_variant_analysis_decoder())
+      json.parse_bits(body, schema.code_scanning_variant_analysis_decoder())
       |> result.map(Ok)
-    _ -> "API doesn't describe default response" |> Error |> Ok
+    _ -> response |> Error |> Ok
   }
 }
 
@@ -4926,10 +4946,10 @@ pub fn activity_mark_notifications_as_read_request(base, data) {
 }
 
 pub fn activity_mark_notifications_as_read_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, body:, ..) = response
   case status {
-    202 -> utils.decode_bits(body, zero.dynamic) |> result.map(Ok)
-    _ -> "API doesn't describe default response" |> Error |> Ok
+    202 -> json.parse_bits(body, decode.dynamic) |> result.map(Ok)
+    _ -> response |> Error |> Ok
   }
 }
 
@@ -4959,12 +4979,12 @@ pub fn activity_list_notifications_for_authenticated_user_request(
 }
 
 pub fn activity_list_notifications_for_authenticated_user_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, body:, ..) = response
   case status {
     200 ->
-      utils.decode_bits(body, zero.list(schema.thread_decoder()))
+      json.parse_bits(body, decode.list(schema.thread_decoder()))
       |> result.map(Ok)
-    _ -> "API doesn't describe default response" |> Error |> Ok
+    _ -> response |> Error |> Ok
   }
 }
 
@@ -4978,7 +4998,7 @@ pub fn actions_set_workflow_access_to_repository_request(
   let path = "/repos/" <> owner <> "/" <> repo <> "/actions/permissions/access"
   let query = []
   let body =
-    utils.json_to_bits(schema.actions_workflow_access_to_repository_to_json(
+    utils.json_to_bits(schema.actions_workflow_access_to_repository_encode(
       actions_workflow_access_to_repository,
     ))
   base
@@ -4989,10 +5009,10 @@ pub fn actions_set_workflow_access_to_repository_request(
 }
 
 pub fn actions_set_workflow_access_to_repository_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, ..) = response
   case status {
     204 -> Ok(Nil) |> Ok
-    _ -> "API doesn't describe default response" |> Error |> Ok
+    _ -> response |> Error |> Ok
   }
 }
 
@@ -5007,15 +5027,15 @@ pub fn actions_get_workflow_access_to_repository_request(base, owner, repo) {
 }
 
 pub fn actions_get_workflow_access_to_repository_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, body:, ..) = response
   case status {
     200 ->
-      utils.decode_bits(
+      json.parse_bits(
         body,
         schema.actions_workflow_access_to_repository_decoder(),
       )
       |> result.map(Ok)
-    _ -> "API doesn't describe default response" |> Error |> Ok
+    _ -> response |> Error |> Ok
   }
 }
 
@@ -5032,10 +5052,12 @@ pub fn apps_delete_authorization_request(base, client_id, data) {
 }
 
 pub fn apps_delete_authorization_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, body:, ..) = response
   case status {
     204 -> Ok(Nil) |> Ok
-    _ -> "API doesn't describe default response" |> Error |> Ok
+    _ ->
+      json.parse_bits(body, schema.validation_error_decoder())
+      |> result.map(Error)
   }
 }
 
@@ -5064,12 +5086,12 @@ pub fn packages_get_all_package_versions_for_package_owned_by_authenticated_user
 pub fn packages_get_all_package_versions_for_package_owned_by_authenticated_user_response(
   response,
 ) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, body:, ..) = response
   case status {
     200 ->
-      utils.decode_bits(body, zero.list(schema.package_version_decoder()))
+      json.parse_bits(body, decode.list(schema.package_version_decoder()))
       |> result.map(Ok)
-    _ -> "API doesn't describe default response" |> Error |> Ok
+    _ -> response |> Error |> Ok
   }
 }
 
@@ -5092,12 +5114,12 @@ pub fn repos_update_release_asset_request(base, owner, repo, asset_id, data) {
 }
 
 pub fn repos_update_release_asset_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, body:, ..) = response
   case status {
     200 ->
-      utils.decode_bits(body, schema.release_asset_decoder())
+      json.parse_bits(body, schema.release_asset_decoder())
       |> result.map(Ok)
-    _ -> "API doesn't describe default response" |> Error |> Ok
+    _ -> response |> Error |> Ok
   }
 }
 
@@ -5118,10 +5140,10 @@ pub fn repos_delete_release_asset_request(base, owner, repo, asset_id) {
 }
 
 pub fn repos_delete_release_asset_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, ..) = response
   case status {
     204 -> Ok(Nil) |> Ok
-    _ -> "API doesn't describe default response" |> Error |> Ok
+    _ -> response |> Error |> Ok
   }
 }
 
@@ -5142,12 +5164,13 @@ pub fn repos_get_release_asset_request(base, owner, repo, asset_id) {
 }
 
 pub fn repos_get_release_asset_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, body:, ..) = response
   case status {
     200 ->
-      utils.decode_bits(body, schema.release_asset_decoder())
+      json.parse_bits(body, schema.release_asset_decoder())
       |> result.map(Ok)
-    _ -> "API doesn't describe default response" |> Error |> Ok
+    _ ->
+      json.parse_bits(body, schema.basic_error_decoder()) |> result.map(Error)
   }
 }
 
@@ -5179,12 +5202,13 @@ pub fn issues_list_events_request(
 }
 
 pub fn issues_list_events_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, body:, ..) = response
   case status {
     200 ->
-      utils.decode_bits(body, zero.list(schema.issue_event_for_issue_decoder()))
+      json.parse_bits(body, decode.list(schema.issue_event_for_issue_decoder()))
       |> result.map(Ok)
-    _ -> "API doesn't describe default response" |> Error |> Ok
+    _ ->
+      json.parse_bits(body, schema.basic_error_decoder()) |> result.map(Error)
   }
 }
 
@@ -5208,10 +5232,10 @@ pub fn repos_get_all_environments_request(
 }
 
 pub fn repos_get_all_environments_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, body:, ..) = response
   case status {
-    200 -> utils.decode_bits(body, zero.dynamic) |> result.map(Ok)
-    _ -> "API doesn't describe default response" |> Error |> Ok
+    200 -> json.parse_bits(body, decode.dynamic) |> result.map(Ok)
+    _ -> response |> Error |> Ok
   }
 }
 
@@ -5226,15 +5250,16 @@ pub fn classroom_get_assignment_grades_request(base, assignment_id) {
 }
 
 pub fn classroom_get_assignment_grades_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, body:, ..) = response
   case status {
     200 ->
-      utils.decode_bits(
+      json.parse_bits(
         body,
-        zero.list(schema.classroom_assignment_grade_decoder()),
+        decode.list(schema.classroom_assignment_grade_decoder()),
       )
       |> result.map(Ok)
-    _ -> "API doesn't describe default response" |> Error |> Ok
+    _ ->
+      json.parse_bits(body, schema.basic_error_decoder()) |> result.map(Error)
   }
 }
 
@@ -5257,12 +5282,11 @@ pub fn actions_set_custom_oidc_sub_claim_for_repo_request(
 }
 
 pub fn actions_set_custom_oidc_sub_claim_for_repo_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, body:, ..) = response
   case status {
     201 ->
-      utils.decode_bits(body, schema.empty_object_decoder())
-      |> result.map(Ok)
-    _ -> "API doesn't describe default response" |> Error |> Ok
+      json.parse_bits(body, schema.empty_object_decoder()) |> result.map(Ok)
+    _ -> response |> Error |> Ok
   }
 }
 
@@ -5278,12 +5302,12 @@ pub fn actions_get_custom_oidc_sub_claim_for_repo_request(base, owner, repo) {
 }
 
 pub fn actions_get_custom_oidc_sub_claim_for_repo_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, body:, ..) = response
   case status {
     200 ->
-      utils.decode_bits(body, schema.oidc_custom_sub_repo_decoder())
+      json.parse_bits(body, schema.oidc_custom_sub_repo_decoder())
       |> result.map(Ok)
-    _ -> "API doesn't describe default response" |> Error |> Ok
+    _ -> response |> Error |> Ok
   }
 }
 
@@ -5300,10 +5324,10 @@ pub fn repos_create_webhook_request(base, owner, repo, data) {
 }
 
 pub fn repos_create_webhook_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, body:, ..) = response
   case status {
-    201 -> utils.decode_bits(body, schema.hook_decoder()) |> result.map(Ok)
-    _ -> "API doesn't describe default response" |> Error |> Ok
+    201 -> json.parse_bits(body, schema.hook_decoder()) |> result.map(Ok)
+    _ -> response |> Error |> Ok
   }
 }
 
@@ -5327,12 +5351,13 @@ pub fn repos_list_webhooks_request(
 }
 
 pub fn repos_list_webhooks_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, body:, ..) = response
   case status {
     200 ->
-      utils.decode_bits(body, zero.list(schema.hook_decoder()))
+      json.parse_bits(body, decode.list(schema.hook_decoder()))
       |> result.map(Ok)
-    _ -> "API doesn't describe default response" |> Error |> Ok
+    _ ->
+      json.parse_bits(body, schema.basic_error_decoder()) |> result.map(Error)
   }
 }
 
@@ -5347,12 +5372,12 @@ pub fn dependabot_get_org_public_key_request(base, org) {
 }
 
 pub fn dependabot_get_org_public_key_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, body:, ..) = response
   case status {
     200 ->
-      utils.decode_bits(body, schema.dependabot_public_key_decoder())
+      json.parse_bits(body, schema.dependabot_public_key_decoder())
       |> result.map(Ok)
-    _ -> "API doesn't describe default response" |> Error |> Ok
+    _ -> response |> Error |> Ok
   }
 }
 
@@ -5375,12 +5400,12 @@ pub fn code_scanning_update_alert_request(base, owner, repo, alert_number, data)
 }
 
 pub fn code_scanning_update_alert_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, body:, ..) = response
   case status {
     200 ->
-      utils.decode_bits(body, schema.code_scanning_alert_decoder())
+      json.parse_bits(body, schema.code_scanning_alert_decoder())
       |> result.map(Ok)
-    _ -> "API doesn't describe default response" |> Error |> Ok
+    _ -> response |> Error |> Ok
   }
 }
 
@@ -5401,12 +5426,12 @@ pub fn code_scanning_get_alert_request(base, owner, repo, alert_number) {
 }
 
 pub fn code_scanning_get_alert_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, body:, ..) = response
   case status {
     200 ->
-      utils.decode_bits(body, schema.code_scanning_alert_decoder())
+      json.parse_bits(body, schema.code_scanning_alert_decoder())
       |> result.map(Ok)
-    _ -> "API doesn't describe default response" |> Error |> Ok
+    _ -> response |> Error |> Ok
   }
 }
 
@@ -5421,10 +5446,10 @@ pub fn meta_get_octocat_request(base, s s) {
 }
 
 pub fn meta_get_octocat_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, ..) = response
   case status {
     200 -> Ok(Nil) |> Ok
-    _ -> "API doesn't describe default response" |> Error |> Ok
+    _ -> response |> Error |> Ok
   }
 }
 
@@ -5440,10 +5465,10 @@ pub fn actions_get_workflow_request(base, owner, repo, workflow_id) {
 }
 
 pub fn actions_get_workflow_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, body:, ..) = response
   case status {
-    200 -> utils.decode_bits(body, schema.workflow_decoder()) |> result.map(Ok)
-    _ -> "API doesn't describe default response" |> Error |> Ok
+    200 -> json.parse_bits(body, schema.workflow_decoder()) |> result.map(Ok)
+    _ -> response |> Error |> Ok
   }
 }
 
@@ -5469,12 +5494,12 @@ pub fn teams_update_discussion_legacy_request(
 }
 
 pub fn teams_update_discussion_legacy_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, body:, ..) = response
   case status {
     200 ->
-      utils.decode_bits(body, schema.team_discussion_decoder())
+      json.parse_bits(body, schema.team_discussion_decoder())
       |> result.map(Ok)
-    _ -> "API doesn't describe default response" |> Error |> Ok
+    _ -> response |> Error |> Ok
   }
 }
 
@@ -5493,10 +5518,10 @@ pub fn teams_delete_discussion_legacy_request(base, team_id, discussion_number) 
 }
 
 pub fn teams_delete_discussion_legacy_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, ..) = response
   case status {
     204 -> Ok(Nil) |> Ok
-    _ -> "API doesn't describe default response" |> Error |> Ok
+    _ -> response |> Error |> Ok
   }
 }
 
@@ -5515,12 +5540,12 @@ pub fn teams_get_discussion_legacy_request(base, team_id, discussion_number) {
 }
 
 pub fn teams_get_discussion_legacy_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, body:, ..) = response
   case status {
     200 ->
-      utils.decode_bits(body, schema.team_discussion_decoder())
+      json.parse_bits(body, schema.team_discussion_decoder())
       |> result.map(Ok)
-    _ -> "API doesn't describe default response" |> Error |> Ok
+    _ -> response |> Error |> Ok
   }
 }
 
@@ -5551,12 +5576,12 @@ pub fn security_advisories_list_org_repository_advisories_request(
 }
 
 pub fn security_advisories_list_org_repository_advisories_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, body:, ..) = response
   case status {
     200 ->
-      utils.decode_bits(body, zero.list(schema.repository_advisory_decoder()))
+      json.parse_bits(body, decode.list(schema.repository_advisory_decoder()))
       |> result.map(Ok)
-    _ -> "API doesn't describe default response" |> Error |> Ok
+    _ -> response |> Error |> Ok
   }
 }
 
@@ -5578,12 +5603,12 @@ pub fn users_list_public_emails_for_authenticated_user_request(
 }
 
 pub fn users_list_public_emails_for_authenticated_user_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, body:, ..) = response
   case status {
     200 ->
-      utils.decode_bits(body, zero.list(schema.email_decoder()))
+      json.parse_bits(body, decode.list(schema.email_decoder()))
       |> result.map(Ok)
-    _ -> "API doesn't describe default response" |> Error |> Ok
+    _ -> response |> Error |> Ok
   }
 }
 
@@ -5607,12 +5632,12 @@ pub fn teams_list_repos_in_org_request(
 }
 
 pub fn teams_list_repos_in_org_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, body:, ..) = response
   case status {
     200 ->
-      utils.decode_bits(body, zero.list(schema.minimal_repository_decoder()))
+      json.parse_bits(body, decode.list(schema.minimal_repository_decoder()))
       |> result.map(Ok)
-    _ -> "API doesn't describe default response" |> Error |> Ok
+    _ -> response |> Error |> Ok
   }
 }
 
@@ -5633,10 +5658,10 @@ pub fn orgs_revoke_org_role_user_request(base, org, username, role_id) {
 }
 
 pub fn orgs_revoke_org_role_user_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, ..) = response
   case status {
     204 -> Ok(Nil) |> Ok
-    _ -> "API doesn't describe default response" |> Error |> Ok
+    _ -> response |> Error |> Ok
   }
 }
 
@@ -5657,10 +5682,10 @@ pub fn orgs_assign_user_to_org_role_request(base, org, username, role_id) {
 }
 
 pub fn orgs_assign_user_to_org_role_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, ..) = response
   case status {
     204 -> Ok(Nil) |> Ok
-    _ -> "API doesn't describe default response" |> Error |> Ok
+    _ -> Error(Nil) |> Ok
   }
 }
 
@@ -5687,15 +5712,13 @@ pub fn repos_get_collaborator_permission_level_request(
 }
 
 pub fn repos_get_collaborator_permission_level_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, body:, ..) = response
   case status {
     200 ->
-      utils.decode_bits(
-        body,
-        schema.repository_collaborator_permission_decoder(),
-      )
+      json.parse_bits(body, schema.repository_collaborator_permission_decoder())
       |> result.map(Ok)
-    _ -> "API doesn't describe default response" |> Error |> Ok
+    _ ->
+      json.parse_bits(body, schema.basic_error_decoder()) |> result.map(Error)
   }
 }
 
@@ -5713,10 +5736,10 @@ pub fn orgs_update_pat_access_request(base, org, pat_id, data) {
 }
 
 pub fn orgs_update_pat_access_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, ..) = response
   case status {
     204 -> Ok(Nil) |> Ok
-    _ -> "API doesn't describe default response" |> Error |> Ok
+    _ -> response |> Error |> Ok
   }
 }
 
@@ -5746,12 +5769,12 @@ pub fn teams_create_discussion_comment_in_org_request(
 }
 
 pub fn teams_create_discussion_comment_in_org_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, body:, ..) = response
   case status {
     201 ->
-      utils.decode_bits(body, schema.team_discussion_comment_decoder())
+      json.parse_bits(body, schema.team_discussion_comment_decoder())
       |> result.map(Ok)
-    _ -> "API doesn't describe default response" |> Error |> Ok
+    _ -> response |> Error |> Ok
   }
 }
 
@@ -5785,15 +5808,15 @@ pub fn teams_list_discussion_comments_in_org_request(
 }
 
 pub fn teams_list_discussion_comments_in_org_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, body:, ..) = response
   case status {
     200 ->
-      utils.decode_bits(
+      json.parse_bits(
         body,
-        zero.list(schema.team_discussion_comment_decoder()),
+        decode.list(schema.team_discussion_comment_decoder()),
       )
       |> result.map(Ok)
-    _ -> "API doesn't describe default response" |> Error |> Ok
+    _ -> response |> Error |> Ok
   }
 }
 
@@ -5822,10 +5845,10 @@ pub fn reactions_delete_for_issue_comment_request(
 }
 
 pub fn reactions_delete_for_issue_comment_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, ..) = response
   case status {
     204 -> Ok(Nil) |> Ok
-    _ -> "API doesn't describe default response" |> Error |> Ok
+    _ -> response |> Error |> Ok
   }
 }
 
@@ -5842,12 +5865,12 @@ pub fn code_security_create_configuration_request(base, org, data) {
 }
 
 pub fn code_security_create_configuration_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, body:, ..) = response
   case status {
     201 ->
-      utils.decode_bits(body, schema.code_security_configuration_decoder())
+      json.parse_bits(body, schema.code_security_configuration_decoder())
       |> result.map(Ok)
-    _ -> "API doesn't describe default response" |> Error |> Ok
+    _ -> response |> Error |> Ok
   }
 }
 
@@ -5874,15 +5897,15 @@ pub fn code_security_get_configurations_for_org_request(
 }
 
 pub fn code_security_get_configurations_for_org_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, body:, ..) = response
   case status {
     200 ->
-      utils.decode_bits(
+      json.parse_bits(
         body,
-        zero.list(schema.code_security_configuration_decoder()),
+        decode.list(schema.code_security_configuration_decoder()),
       )
       |> result.map(Ok)
-    _ -> "API doesn't describe default response" |> Error |> Ok
+    _ -> response |> Error |> Ok
   }
 }
 
@@ -5908,10 +5931,10 @@ pub fn actions_delete_self_hosted_runner_from_repo_request(
 }
 
 pub fn actions_delete_self_hosted_runner_from_repo_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, ..) = response
   case status {
     204 -> Ok(Nil) |> Ok
-    _ -> "API doesn't describe default response" |> Error |> Ok
+    _ -> response |> Error |> Ok
   }
 }
 
@@ -5937,10 +5960,10 @@ pub fn actions_get_self_hosted_runner_for_repo_request(
 }
 
 pub fn actions_get_self_hosted_runner_for_repo_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, body:, ..) = response
   case status {
-    200 -> utils.decode_bits(body, schema.runner_decoder()) |> result.map(Ok)
-    _ -> "API doesn't describe default response" |> Error |> Ok
+    200 -> json.parse_bits(body, schema.runner_decoder()) |> result.map(Ok)
+    _ -> response |> Error |> Ok
   }
 }
 
@@ -5961,10 +5984,10 @@ pub fn actions_delete_artifact_request(base, owner, repo, artifact_id) {
 }
 
 pub fn actions_delete_artifact_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, ..) = response
   case status {
     204 -> Ok(Nil) |> Ok
-    _ -> "API doesn't describe default response" |> Error |> Ok
+    _ -> response |> Error |> Ok
   }
 }
 
@@ -5985,10 +6008,10 @@ pub fn actions_get_artifact_request(base, owner, repo, artifact_id) {
 }
 
 pub fn actions_get_artifact_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, body:, ..) = response
   case status {
-    200 -> utils.decode_bits(body, schema.artifact_decoder()) |> result.map(Ok)
-    _ -> "API doesn't describe default response" |> Error |> Ok
+    200 -> json.parse_bits(body, schema.artifact_decoder()) |> result.map(Ok)
+    _ -> response |> Error |> Ok
   }
 }
 
@@ -6009,10 +6032,10 @@ pub fn repos_delete_repo_ruleset_request(base, owner, repo, ruleset_id) {
 }
 
 pub fn repos_delete_repo_ruleset_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, ..) = response
   case status {
     204 -> Ok(Nil) |> Ok
-    _ -> "API doesn't describe default response" |> Error |> Ok
+    _ -> response |> Error |> Ok
   }
 }
 
@@ -6035,12 +6058,12 @@ pub fn repos_update_repo_ruleset_request(base, owner, repo, ruleset_id, data) {
 }
 
 pub fn repos_update_repo_ruleset_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, body:, ..) = response
   case status {
     200 ->
-      utils.decode_bits(body, schema.repository_ruleset_decoder())
+      json.parse_bits(body, schema.repository_ruleset_decoder())
       |> result.map(Ok)
-    _ -> "API doesn't describe default response" |> Error |> Ok
+    _ -> response |> Error |> Ok
   }
 }
 
@@ -6069,12 +6092,12 @@ pub fn repos_get_repo_ruleset_request(
 }
 
 pub fn repos_get_repo_ruleset_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, body:, ..) = response
   case status {
     200 ->
-      utils.decode_bits(body, schema.repository_ruleset_decoder())
+      json.parse_bits(body, schema.repository_ruleset_decoder())
       |> result.map(Ok)
-    _ -> "API doesn't describe default response" |> Error |> Ok
+    _ -> response |> Error |> Ok
   }
 }
 
@@ -6103,12 +6126,12 @@ pub fn repos_upload_release_asset_request(
 }
 
 pub fn repos_upload_release_asset_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, body:, ..) = response
   case status {
     201 ->
-      utils.decode_bits(body, schema.release_asset_decoder())
+      json.parse_bits(body, schema.release_asset_decoder())
       |> result.map(Ok)
-    _ -> "API doesn't describe default response" |> Error |> Ok
+    _ -> Error(Nil) |> Ok
   }
 }
 
@@ -6140,12 +6163,12 @@ pub fn repos_list_release_assets_request(
 }
 
 pub fn repos_list_release_assets_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, body:, ..) = response
   case status {
     200 ->
-      utils.decode_bits(body, zero.list(schema.release_asset_decoder()))
+      json.parse_bits(body, decode.list(schema.release_asset_decoder()))
       |> result.map(Ok)
-    _ -> "API doesn't describe default response" |> Error |> Ok
+    _ -> response |> Error |> Ok
   }
 }
 
@@ -6175,10 +6198,10 @@ pub fn reactions_create_for_team_discussion_comment_legacy_request(
 }
 
 pub fn reactions_create_for_team_discussion_comment_legacy_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, body:, ..) = response
   case status {
-    201 -> utils.decode_bits(body, schema.reaction_decoder()) |> result.map(Ok)
-    _ -> "API doesn't describe default response" |> Error |> Ok
+    201 -> json.parse_bits(body, schema.reaction_decoder()) |> result.map(Ok)
+    _ -> response |> Error |> Ok
   }
 }
 
@@ -6212,12 +6235,12 @@ pub fn reactions_list_for_team_discussion_comment_legacy_request(
 }
 
 pub fn reactions_list_for_team_discussion_comment_legacy_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, body:, ..) = response
   case status {
     200 ->
-      utils.decode_bits(body, zero.list(schema.reaction_decoder()))
+      json.parse_bits(body, decode.list(schema.reaction_decoder()))
       |> result.map(Ok)
-    _ -> "API doesn't describe default response" |> Error |> Ok
+    _ -> response |> Error |> Ok
   }
 }
 
@@ -6234,12 +6257,10 @@ pub fn checks_create_suite_request(base, owner, repo, data) {
 }
 
 pub fn checks_create_suite_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, body:, ..) = response
   case status {
-    200 ->
-      utils.decode_bits(body, schema.check_suite_decoder())
-      |> result.map(Ok)
-    _ -> "API doesn't describe default response" |> Error |> Ok
+    200 -> json.parse_bits(body, schema.check_suite_decoder()) |> result.map(Ok)
+    _ -> response |> Error |> Ok
   }
 }
 
@@ -6254,12 +6275,12 @@ pub fn dependency_graph_export_sbom_request(base, owner, repo) {
 }
 
 pub fn dependency_graph_export_sbom_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, body:, ..) = response
   case status {
     200 ->
-      utils.decode_bits(body, schema.dependency_graph_spdx_sbom_decoder())
+      json.parse_bits(body, schema.dependency_graph_spdx_sbom_decoder())
       |> result.map(Ok)
-    _ -> "API doesn't describe default response" |> Error |> Ok
+    _ -> response |> Error |> Ok
   }
 }
 
@@ -6276,12 +6297,12 @@ pub fn repos_update_request(base, owner, repo, data) {
 }
 
 pub fn repos_update_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, body:, ..) = response
   case status {
     200 ->
-      utils.decode_bits(body, schema.full_repository_decoder())
+      json.parse_bits(body, schema.full_repository_decoder())
       |> result.map(Ok)
-    _ -> "API doesn't describe default response" |> Error |> Ok
+    _ -> response |> Error |> Ok
   }
 }
 
@@ -6296,10 +6317,10 @@ pub fn repos_delete_request(base, owner, repo) {
 }
 
 pub fn repos_delete_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, ..) = response
   case status {
     204 -> Ok(Nil) |> Ok
-    _ -> "API doesn't describe default response" |> Error |> Ok
+    _ -> response |> Error |> Ok
   }
 }
 
@@ -6314,12 +6335,12 @@ pub fn repos_get_request(base, owner, repo) {
 }
 
 pub fn repos_get_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, body:, ..) = response
   case status {
     200 ->
-      utils.decode_bits(body, schema.full_repository_decoder())
+      json.parse_bits(body, schema.full_repository_decoder())
       |> result.map(Ok)
-    _ -> "API doesn't describe default response" |> Error |> Ok
+    _ -> response |> Error |> Ok
   }
 }
 
@@ -6334,12 +6355,14 @@ pub fn repos_list_public_request(base, since since) {
 }
 
 pub fn repos_list_public_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, body:, ..) = response
   case status {
     200 ->
-      utils.decode_bits(body, zero.list(schema.minimal_repository_decoder()))
+      json.parse_bits(body, decode.list(schema.minimal_repository_decoder()))
       |> result.map(Ok)
-    _ -> "API doesn't describe default response" |> Error |> Ok
+    _ ->
+      json.parse_bits(body, schema.validation_error_decoder())
+      |> result.map(Error)
   }
 }
 
@@ -6369,10 +6392,10 @@ pub fn search_labels_request(
 }
 
 pub fn search_labels_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, body:, ..) = response
   case status {
-    200 -> utils.decode_bits(body, zero.dynamic) |> result.map(Ok)
-    _ -> "API doesn't describe default response" |> Error |> Ok
+    200 -> json.parse_bits(body, decode.dynamic) |> result.map(Ok)
+    _ -> response |> Error |> Ok
   }
 }
 
@@ -6398,10 +6421,10 @@ pub fn actions_list_artifacts_for_repo_request(
 }
 
 pub fn actions_list_artifacts_for_repo_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, body:, ..) = response
   case status {
-    200 -> utils.decode_bits(body, zero.dynamic) |> result.map(Ok)
-    _ -> "API doesn't describe default response" |> Error |> Ok
+    200 -> json.parse_bits(body, decode.dynamic) |> result.map(Ok)
+    _ -> response |> Error |> Ok
   }
 }
 
@@ -6433,12 +6456,12 @@ pub fn repos_list_webhook_deliveries_request(
 }
 
 pub fn repos_list_webhook_deliveries_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, body:, ..) = response
   case status {
     200 ->
-      utils.decode_bits(body, zero.list(schema.hook_delivery_item_decoder()))
+      json.parse_bits(body, decode.list(schema.hook_delivery_item_decoder()))
       |> result.map(Ok)
-    _ -> "API doesn't describe default response" |> Error |> Ok
+    _ -> response |> Error |> Ok
   }
 }
 
@@ -6455,10 +6478,10 @@ pub fn issues_create_label_request(base, owner, repo, data) {
 }
 
 pub fn issues_create_label_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, body:, ..) = response
   case status {
-    201 -> utils.decode_bits(body, schema.label_decoder()) |> result.map(Ok)
-    _ -> "API doesn't describe default response" |> Error |> Ok
+    201 -> json.parse_bits(body, schema.label_decoder()) |> result.map(Ok)
+    _ -> response |> Error |> Ok
   }
 }
 
@@ -6482,12 +6505,13 @@ pub fn issues_list_labels_for_repo_request(
 }
 
 pub fn issues_list_labels_for_repo_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, body:, ..) = response
   case status {
     200 ->
-      utils.decode_bits(body, zero.list(schema.label_decoder()))
+      json.parse_bits(body, decode.list(schema.label_decoder()))
       |> result.map(Ok)
-    _ -> "API doesn't describe default response" |> Error |> Ok
+    _ ->
+      json.parse_bits(body, schema.basic_error_decoder()) |> result.map(Error)
   }
 }
 
@@ -6511,12 +6535,12 @@ pub fn gists_list_public_request(
 }
 
 pub fn gists_list_public_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, body:, ..) = response
   case status {
     200 ->
-      utils.decode_bits(body, zero.list(schema.base_gist_decoder()))
+      json.parse_bits(body, decode.list(schema.base_gist_decoder()))
       |> result.map(Ok)
-    _ -> "API doesn't describe default response" |> Error |> Ok
+    _ -> response |> Error |> Ok
   }
 }
 
@@ -6531,10 +6555,10 @@ pub fn markdown_render_raw_request(base) {
 }
 
 pub fn markdown_render_raw_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, ..) = response
   case status {
     200 -> Ok(Nil) |> Ok
-    _ -> "API doesn't describe default response" |> Error |> Ok
+    _ -> response |> Error |> Ok
   }
 }
 
@@ -6555,10 +6579,10 @@ pub fn orgs_revoke_org_role_team_request(base, org, team_slug, role_id) {
 }
 
 pub fn orgs_revoke_org_role_team_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, ..) = response
   case status {
     204 -> Ok(Nil) |> Ok
-    _ -> "API doesn't describe default response" |> Error |> Ok
+    _ -> response |> Error |> Ok
   }
 }
 
@@ -6579,10 +6603,10 @@ pub fn orgs_assign_team_to_org_role_request(base, org, team_slug, role_id) {
 }
 
 pub fn orgs_assign_team_to_org_role_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, ..) = response
   case status {
     204 -> Ok(Nil) |> Ok
-    _ -> "API doesn't describe default response" |> Error |> Ok
+    _ -> Error(Nil) |> Ok
   }
 }
 
@@ -6599,12 +6623,12 @@ pub fn repos_create_tag_protection_request(base, owner, repo, data) {
 }
 
 pub fn repos_create_tag_protection_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, body:, ..) = response
   case status {
     201 ->
-      utils.decode_bits(body, schema.tag_protection_decoder())
+      json.parse_bits(body, schema.tag_protection_decoder())
       |> result.map(Ok)
-    _ -> "API doesn't describe default response" |> Error |> Ok
+    _ -> response |> Error |> Ok
   }
 }
 
@@ -6619,12 +6643,12 @@ pub fn repos_list_tag_protection_request(base, owner, repo) {
 }
 
 pub fn repos_list_tag_protection_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, body:, ..) = response
   case status {
     200 ->
-      utils.decode_bits(body, zero.list(schema.tag_protection_decoder()))
+      json.parse_bits(body, decode.list(schema.tag_protection_decoder()))
       |> result.map(Ok)
-    _ -> "API doesn't describe default response" |> Error |> Ok
+    _ -> response |> Error |> Ok
   }
 }
 
@@ -6641,10 +6665,10 @@ pub fn orgs_update_webhook_request(base, org, hook_id, data) {
 }
 
 pub fn orgs_update_webhook_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, body:, ..) = response
   case status {
-    200 -> utils.decode_bits(body, schema.org_hook_decoder()) |> result.map(Ok)
-    _ -> "API doesn't describe default response" |> Error |> Ok
+    200 -> json.parse_bits(body, schema.org_hook_decoder()) |> result.map(Ok)
+    _ -> response |> Error |> Ok
   }
 }
 
@@ -6659,10 +6683,11 @@ pub fn orgs_delete_webhook_request(base, org, hook_id) {
 }
 
 pub fn orgs_delete_webhook_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, body:, ..) = response
   case status {
     204 -> Ok(Nil) |> Ok
-    _ -> "API doesn't describe default response" |> Error |> Ok
+    _ ->
+      json.parse_bits(body, schema.basic_error_decoder()) |> result.map(Error)
   }
 }
 
@@ -6677,10 +6702,11 @@ pub fn orgs_get_webhook_request(base, org, hook_id) {
 }
 
 pub fn orgs_get_webhook_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, body:, ..) = response
   case status {
-    200 -> utils.decode_bits(body, schema.org_hook_decoder()) |> result.map(Ok)
-    _ -> "API doesn't describe default response" |> Error |> Ok
+    200 -> json.parse_bits(body, schema.org_hook_decoder()) |> result.map(Ok)
+    _ ->
+      json.parse_bits(body, schema.basic_error_decoder()) |> result.map(Error)
   }
 }
 
@@ -6696,10 +6722,10 @@ pub fn projects_remove_collaborator_request(base, project_id, username) {
 }
 
 pub fn projects_remove_collaborator_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, ..) = response
   case status {
     204 -> Ok(Nil) |> Ok
-    _ -> "API doesn't describe default response" |> Error |> Ok
+    _ -> response |> Error |> Ok
   }
 }
 
@@ -6717,10 +6743,10 @@ pub fn projects_add_collaborator_request(base, project_id, username, data) {
 }
 
 pub fn projects_add_collaborator_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, ..) = response
   case status {
     204 -> Ok(Nil) |> Ok
-    _ -> "API doesn't describe default response" |> Error |> Ok
+    _ -> response |> Error |> Ok
   }
 }
 
@@ -6758,15 +6784,15 @@ pub fn code_scanning_list_recent_analyses_request(
 }
 
 pub fn code_scanning_list_recent_analyses_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, body:, ..) = response
   case status {
     200 ->
-      utils.decode_bits(
+      json.parse_bits(
         body,
-        zero.list(schema.code_scanning_analysis_decoder()),
+        decode.list(schema.code_scanning_analysis_decoder()),
       )
       |> result.map(Ok)
-    _ -> "API doesn't describe default response" |> Error |> Ok
+    _ -> response |> Error |> Ok
   }
 }
 
@@ -6789,10 +6815,10 @@ pub fn dependabot_set_selected_repos_for_org_secret_request(
 }
 
 pub fn dependabot_set_selected_repos_for_org_secret_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, ..) = response
   case status {
     204 -> Ok(Nil) |> Ok
-    _ -> "API doesn't describe default response" |> Error |> Ok
+    _ -> response |> Error |> Ok
   }
 }
 
@@ -6817,10 +6843,10 @@ pub fn dependabot_list_selected_repos_for_org_secret_request(
 }
 
 pub fn dependabot_list_selected_repos_for_org_secret_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, body:, ..) = response
   case status {
-    200 -> utils.decode_bits(body, zero.dynamic) |> result.map(Ok)
-    _ -> "API doesn't describe default response" |> Error |> Ok
+    200 -> json.parse_bits(body, decode.dynamic) |> result.map(Ok)
+    _ -> response |> Error |> Ok
   }
 }
 
@@ -6853,12 +6879,10 @@ pub fn repos_get_org_rule_suites_request(
 }
 
 pub fn repos_get_org_rule_suites_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, body:, ..) = response
   case status {
-    200 ->
-      utils.decode_bits(body, schema.rule_suites_decoder())
-      |> result.map(Ok)
-    _ -> "API doesn't describe default response" |> Error |> Ok
+    200 -> json.parse_bits(body, schema.rule_suites_decoder()) |> result.map(Ok)
+    _ -> response |> Error |> Ok
   }
 }
 
@@ -6875,12 +6899,11 @@ pub fn pulls_create_request(base, owner, repo, data) {
 }
 
 pub fn pulls_create_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, body:, ..) = response
   case status {
     201 ->
-      utils.decode_bits(body, schema.pull_request_decoder())
-      |> result.map(Ok)
-    _ -> "API doesn't describe default response" |> Error |> Ok
+      json.parse_bits(body, schema.pull_request_decoder()) |> result.map(Ok)
+    _ -> response |> Error |> Ok
   }
 }
 
@@ -6914,12 +6937,14 @@ pub fn pulls_list_request(
 }
 
 pub fn pulls_list_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, body:, ..) = response
   case status {
     200 ->
-      utils.decode_bits(body, zero.list(schema.pull_request_simple_decoder()))
+      json.parse_bits(body, decode.list(schema.pull_request_simple_decoder()))
       |> result.map(Ok)
-    _ -> "API doesn't describe default response" |> Error |> Ok
+    _ ->
+      json.parse_bits(body, schema.validation_error_decoder())
+      |> result.map(Error)
   }
 }
 
@@ -6943,12 +6968,12 @@ pub fn orgs_list_memberships_for_authenticated_user_request(
 }
 
 pub fn orgs_list_memberships_for_authenticated_user_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, body:, ..) = response
   case status {
     200 ->
-      utils.decode_bits(body, zero.list(schema.org_membership_decoder()))
+      json.parse_bits(body, decode.list(schema.org_membership_decoder()))
       |> result.map(Ok)
-    _ -> "API doesn't describe default response" |> Error |> Ok
+    _ -> response |> Error |> Ok
   }
 }
 
@@ -6972,12 +6997,14 @@ pub fn issues_list_events_for_repo_request(
 }
 
 pub fn issues_list_events_for_repo_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, body:, ..) = response
   case status {
     200 ->
-      utils.decode_bits(body, zero.list(schema.issue_event_decoder()))
+      json.parse_bits(body, decode.list(schema.issue_event_decoder()))
       |> result.map(Ok)
-    _ -> "API doesn't describe default response" |> Error |> Ok
+    _ ->
+      json.parse_bits(body, schema.validation_error_decoder())
+      |> result.map(Error)
   }
 }
 
@@ -6994,12 +7021,14 @@ pub fn apps_reset_token_request(base, client_id, data) {
 }
 
 pub fn apps_reset_token_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, body:, ..) = response
   case status {
     200 ->
-      utils.decode_bits(body, schema.authorization_decoder())
+      json.parse_bits(body, schema.authorization_decoder())
       |> result.map(Ok)
-    _ -> "API doesn't describe default response" |> Error |> Ok
+    _ ->
+      json.parse_bits(body, schema.validation_error_decoder())
+      |> result.map(Error)
   }
 }
 
@@ -7016,10 +7045,12 @@ pub fn apps_delete_token_request(base, client_id, data) {
 }
 
 pub fn apps_delete_token_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, body:, ..) = response
   case status {
     204 -> Ok(Nil) |> Ok
-    _ -> "API doesn't describe default response" |> Error |> Ok
+    _ ->
+      json.parse_bits(body, schema.validation_error_decoder())
+      |> result.map(Error)
   }
 }
 
@@ -7036,12 +7067,12 @@ pub fn apps_check_token_request(base, client_id, data) {
 }
 
 pub fn apps_check_token_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, body:, ..) = response
   case status {
     200 ->
-      utils.decode_bits(body, schema.authorization_decoder())
+      json.parse_bits(body, schema.authorization_decoder())
       |> result.map(Ok)
-    _ -> "API doesn't describe default response" |> Error |> Ok
+    _ -> response |> Error |> Ok
   }
 }
 
@@ -7073,10 +7104,10 @@ pub fn actions_list_environment_secrets_request(
 }
 
 pub fn actions_list_environment_secrets_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, body:, ..) = response
   case status {
-    200 -> utils.decode_bits(body, zero.dynamic) |> result.map(Ok)
-    _ -> "API doesn't describe default response" |> Error |> Ok
+    200 -> json.parse_bits(body, decode.dynamic) |> result.map(Ok)
+    _ -> response |> Error |> Ok
   }
 }
 
@@ -7091,15 +7122,12 @@ pub fn actions_get_actions_cache_usage_for_org_request(base, org) {
 }
 
 pub fn actions_get_actions_cache_usage_for_org_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, body:, ..) = response
   case status {
     200 ->
-      utils.decode_bits(
-        body,
-        schema.actions_cache_usage_org_enterprise_decoder(),
-      )
+      json.parse_bits(body, schema.actions_cache_usage_org_enterprise_decoder())
       |> result.map(Ok)
-    _ -> "API doesn't describe default response" |> Error |> Ok
+    _ -> response |> Error |> Ok
   }
 }
 
@@ -7114,12 +7142,12 @@ pub fn migrations_get_commit_authors_request(base, owner, repo, since since) {
 }
 
 pub fn migrations_get_commit_authors_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, body:, ..) = response
   case status {
     200 ->
-      utils.decode_bits(body, zero.list(schema.porter_author_decoder()))
+      json.parse_bits(body, decode.list(schema.porter_author_decoder()))
       |> result.map(Ok)
-    _ -> "API doesn't describe default response" |> Error |> Ok
+    _ -> response |> Error |> Ok
   }
 }
 
@@ -7148,10 +7176,11 @@ pub fn actions_remove_all_custom_labels_from_self_hosted_runner_for_repo_request
 pub fn actions_remove_all_custom_labels_from_self_hosted_runner_for_repo_response(
   response,
 ) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, body:, ..) = response
   case status {
-    200 -> utils.decode_bits(body, zero.dynamic) |> result.map(Ok)
-    _ -> "API doesn't describe default response" |> Error |> Ok
+    200 -> json.parse_bits(body, decode.dynamic) |> result.map(Ok)
+    _ ->
+      json.parse_bits(body, schema.basic_error_decoder()) |> result.map(Error)
   }
 }
 
@@ -7183,10 +7212,10 @@ pub fn actions_add_custom_labels_to_self_hosted_runner_for_repo_request(
 pub fn actions_add_custom_labels_to_self_hosted_runner_for_repo_response(
   response,
 ) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, body:, ..) = response
   case status {
-    200 -> utils.decode_bits(body, zero.dynamic) |> result.map(Ok)
-    _ -> "API doesn't describe default response" |> Error |> Ok
+    200 -> json.parse_bits(body, decode.dynamic) |> result.map(Ok)
+    _ -> response |> Error |> Ok
   }
 }
 
@@ -7218,10 +7247,10 @@ pub fn actions_set_custom_labels_for_self_hosted_runner_for_repo_request(
 pub fn actions_set_custom_labels_for_self_hosted_runner_for_repo_response(
   response,
 ) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, body:, ..) = response
   case status {
-    200 -> utils.decode_bits(body, zero.dynamic) |> result.map(Ok)
-    _ -> "API doesn't describe default response" |> Error |> Ok
+    200 -> json.parse_bits(body, decode.dynamic) |> result.map(Ok)
+    _ -> response |> Error |> Ok
   }
 }
 
@@ -7248,10 +7277,11 @@ pub fn actions_list_labels_for_self_hosted_runner_for_repo_request(
 }
 
 pub fn actions_list_labels_for_self_hosted_runner_for_repo_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, body:, ..) = response
   case status {
-    200 -> utils.decode_bits(body, zero.dynamic) |> result.map(Ok)
-    _ -> "API doesn't describe default response" |> Error |> Ok
+    200 -> json.parse_bits(body, decode.dynamic) |> result.map(Ok)
+    _ ->
+      json.parse_bits(body, schema.basic_error_decoder()) |> result.map(Error)
   }
 }
 
@@ -7274,12 +7304,13 @@ pub fn teams_list_projects_legacy_request(
 }
 
 pub fn teams_list_projects_legacy_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, body:, ..) = response
   case status {
     200 ->
-      utils.decode_bits(body, zero.list(schema.team_project_decoder()))
+      json.parse_bits(body, decode.list(schema.team_project_decoder()))
       |> result.map(Ok)
-    _ -> "API doesn't describe default response" |> Error |> Ok
+    _ ->
+      json.parse_bits(body, schema.basic_error_decoder()) |> result.map(Error)
   }
 }
 
@@ -7294,10 +7325,10 @@ pub fn orgs_cancel_invitation_request(base, org, invitation_id) {
 }
 
 pub fn orgs_cancel_invitation_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, ..) = response
   case status {
     204 -> Ok(Nil) |> Ok
-    _ -> "API doesn't describe default response" |> Error |> Ok
+    _ -> response |> Error |> Ok
   }
 }
 
@@ -7325,15 +7356,15 @@ pub fn copilot_copilot_metrics_for_team_request(
 }
 
 pub fn copilot_copilot_metrics_for_team_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, body:, ..) = response
   case status {
     200 ->
-      utils.decode_bits(
+      json.parse_bits(
         body,
-        zero.list(schema.copilot_usage_metrics_day_decoder()),
+        decode.list(schema.copilot_usage_metrics_day_decoder()),
       )
       |> result.map(Ok)
-    _ -> "API doesn't describe default response" |> Error |> Ok
+    _ -> response |> Error |> Ok
   }
 }
 
@@ -7350,11 +7381,10 @@ pub fn repos_create_deployment_request(base, owner, repo, data) {
 }
 
 pub fn repos_create_deployment_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, body:, ..) = response
   case status {
-    201 ->
-      utils.decode_bits(body, schema.deployment_decoder()) |> result.map(Ok)
-    _ -> "API doesn't describe default response" |> Error |> Ok
+    201 -> json.parse_bits(body, schema.deployment_decoder()) |> result.map(Ok)
+    _ -> response |> Error |> Ok
   }
 }
 
@@ -7386,12 +7416,12 @@ pub fn repos_list_deployments_request(
 }
 
 pub fn repos_list_deployments_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, body:, ..) = response
   case status {
     200 ->
-      utils.decode_bits(body, zero.list(schema.deployment_decoder()))
+      json.parse_bits(body, decode.list(schema.deployment_decoder()))
       |> result.map(Ok)
-    _ -> "API doesn't describe default response" |> Error |> Ok
+    _ -> response |> Error |> Ok
   }
 }
 
@@ -7406,10 +7436,11 @@ pub fn issues_check_user_can_be_assigned_request(base, owner, repo, assignee) {
 }
 
 pub fn issues_check_user_can_be_assigned_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, body:, ..) = response
   case status {
     204 -> Ok(Nil) |> Ok
-    _ -> "API doesn't describe default response" |> Error |> Ok
+    _ ->
+      json.parse_bits(body, schema.basic_error_decoder()) |> result.map(Error)
   }
 }
 
@@ -7438,12 +7469,12 @@ pub fn secret_scanning_update_alert_request(
 }
 
 pub fn secret_scanning_update_alert_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, body:, ..) = response
   case status {
     200 ->
-      utils.decode_bits(body, schema.secret_scanning_alert_decoder())
+      json.parse_bits(body, schema.secret_scanning_alert_decoder())
       |> result.map(Ok)
-    _ -> "API doesn't describe default response" |> Error |> Ok
+    _ -> response |> Error |> Ok
   }
 }
 
@@ -7464,12 +7495,12 @@ pub fn secret_scanning_get_alert_request(base, owner, repo, alert_number) {
 }
 
 pub fn secret_scanning_get_alert_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, body:, ..) = response
   case status {
     200 ->
-      utils.decode_bits(body, schema.secret_scanning_alert_decoder())
+      json.parse_bits(body, schema.secret_scanning_alert_decoder())
       |> result.map(Ok)
-    _ -> "API doesn't describe default response" |> Error |> Ok
+    _ -> response |> Error |> Ok
   }
 }
 
@@ -7503,10 +7534,10 @@ pub fn actions_list_jobs_for_workflow_run_request(
 }
 
 pub fn actions_list_jobs_for_workflow_run_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, body:, ..) = response
   case status {
-    200 -> utils.decode_bits(body, zero.dynamic) |> result.map(Ok)
-    _ -> "API doesn't describe default response" |> Error |> Ok
+    200 -> json.parse_bits(body, decode.dynamic) |> result.map(Ok)
+    _ -> response |> Error |> Ok
   }
 }
 
@@ -7532,12 +7563,12 @@ pub fn repos_list_commit_statuses_for_ref_request(
 }
 
 pub fn repos_list_commit_statuses_for_ref_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, body:, ..) = response
   case status {
     200 ->
-      utils.decode_bits(body, zero.list(schema.status_decoder()))
+      json.parse_bits(body, decode.list(schema.status_decoder()))
       |> result.map(Ok)
-    _ -> "API doesn't describe default response" |> Error |> Ok
+    _ -> response |> Error |> Ok
   }
 }
 
@@ -7552,12 +7583,12 @@ pub fn repos_codeowners_errors_request(base, owner, repo, ref ref) {
 }
 
 pub fn repos_codeowners_errors_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, body:, ..) = response
   case status {
     200 ->
-      utils.decode_bits(body, schema.codeowners_errors_decoder())
+      json.parse_bits(body, schema.codeowners_errors_decoder())
       |> result.map(Ok)
-    _ -> "API doesn't describe default response" |> Error |> Ok
+    _ -> Error(Nil) |> Ok
   }
 }
 
@@ -7583,10 +7614,12 @@ pub fn code_security_update_configuration_request(
 }
 
 pub fn code_security_update_configuration_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, body:, ..) = response
   case status {
-    204 -> Ok(Nil) |> Ok
-    _ -> "API doesn't describe default response" |> Error |> Ok
+    200 ->
+      json.parse_bits(body, schema.code_security_configuration_decoder())
+      |> result.map(Ok)
+    _ -> response |> Error |> Ok
   }
 }
 
@@ -7605,10 +7638,10 @@ pub fn code_security_delete_configuration_request(base, org, configuration_id) {
 }
 
 pub fn code_security_delete_configuration_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, ..) = response
   case status {
     204 -> Ok(Nil) |> Ok
-    _ -> "API doesn't describe default response" |> Error |> Ok
+    _ -> response |> Error |> Ok
   }
 }
 
@@ -7627,12 +7660,12 @@ pub fn code_security_get_configuration_request(base, org, configuration_id) {
 }
 
 pub fn code_security_get_configuration_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, body:, ..) = response
   case status {
     200 ->
-      utils.decode_bits(body, schema.code_security_configuration_decoder())
+      json.parse_bits(body, schema.code_security_configuration_decoder())
       |> result.map(Ok)
-    _ -> "API doesn't describe default response" |> Error |> Ok
+    _ -> response |> Error |> Ok
   }
 }
 
@@ -7648,10 +7681,10 @@ pub fn codespaces_delete_repo_secret_request(base, owner, repo, secret_name) {
 }
 
 pub fn codespaces_delete_repo_secret_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, ..) = response
   case status {
     204 -> Ok(Nil) |> Ok
-    _ -> "API doesn't describe default response" |> Error |> Ok
+    _ -> response |> Error |> Ok
   }
 }
 
@@ -7675,10 +7708,11 @@ pub fn codespaces_create_or_update_repo_secret_request(
 }
 
 pub fn codespaces_create_or_update_repo_secret_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, body:, ..) = response
   case status {
-    204 -> Ok(Nil) |> Ok
-    _ -> "API doesn't describe default response" |> Error |> Ok
+    201 ->
+      json.parse_bits(body, schema.empty_object_decoder()) |> result.map(Ok)
+    _ -> response |> Error |> Ok
   }
 }
 
@@ -7694,12 +7728,12 @@ pub fn codespaces_get_repo_secret_request(base, owner, repo, secret_name) {
 }
 
 pub fn codespaces_get_repo_secret_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, body:, ..) = response
   case status {
     200 ->
-      utils.decode_bits(body, schema.repo_codespaces_secret_decoder())
+      json.parse_bits(body, schema.repo_codespaces_secret_decoder())
       |> result.map(Ok)
-    _ -> "API doesn't describe default response" |> Error |> Ok
+    _ -> response |> Error |> Ok
   }
 }
 
@@ -7721,10 +7755,10 @@ pub fn repos_delete_access_restrictions_request(base, owner, repo, branch) {
 }
 
 pub fn repos_delete_access_restrictions_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, ..) = response
   case status {
     204 -> Ok(Nil) |> Ok
-    _ -> "API doesn't describe default response" |> Error |> Ok
+    _ -> response |> Error |> Ok
   }
 }
 
@@ -7746,12 +7780,13 @@ pub fn repos_get_access_restrictions_request(base, owner, repo, branch) {
 }
 
 pub fn repos_get_access_restrictions_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, body:, ..) = response
   case status {
     200 ->
-      utils.decode_bits(body, schema.branch_restriction_policy_decoder())
+      json.parse_bits(body, schema.branch_restriction_policy_decoder())
       |> result.map(Ok)
-    _ -> "API doesn't describe default response" |> Error |> Ok
+    _ ->
+      json.parse_bits(body, schema.basic_error_decoder()) |> result.map(Error)
   }
 }
 
@@ -7768,10 +7803,10 @@ pub fn repos_create_commit_status_request(base, owner, repo, sha, data) {
 }
 
 pub fn repos_create_commit_status_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, body:, ..) = response
   case status {
-    201 -> utils.decode_bits(body, schema.status_decoder()) |> result.map(Ok)
-    _ -> "API doesn't describe default response" |> Error |> Ok
+    201 -> json.parse_bits(body, schema.status_decoder()) |> result.map(Ok)
+    _ -> response |> Error |> Ok
   }
 }
 
@@ -7795,10 +7830,12 @@ pub fn reactions_create_for_release_request(base, owner, repo, release_id, data)
 }
 
 pub fn reactions_create_for_release_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, body:, ..) = response
   case status {
-    200 -> utils.decode_bits(body, schema.reaction_decoder()) |> result.map(Ok)
-    _ -> "API doesn't describe default response" |> Error |> Ok
+    200 -> json.parse_bits(body, schema.reaction_decoder()) |> result.map(Ok)
+    _ ->
+      json.parse_bits(body, schema.validation_error_decoder())
+      |> result.map(Error)
   }
 }
 
@@ -7832,12 +7869,13 @@ pub fn reactions_list_for_release_request(
 }
 
 pub fn reactions_list_for_release_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, body:, ..) = response
   case status {
     200 ->
-      utils.decode_bits(body, zero.list(schema.reaction_decoder()))
+      json.parse_bits(body, decode.list(schema.reaction_decoder()))
       |> result.map(Ok)
-    _ -> "API doesn't describe default response" |> Error |> Ok
+    _ ->
+      json.parse_bits(body, schema.basic_error_decoder()) |> result.map(Error)
   }
 }
 
@@ -7852,10 +7890,10 @@ pub fn gists_fork_request(base, gist_id) {
 }
 
 pub fn gists_fork_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, body:, ..) = response
   case status {
-    201 -> utils.decode_bits(body, schema.base_gist_decoder()) |> result.map(Ok)
-    _ -> "API doesn't describe default response" |> Error |> Ok
+    201 -> json.parse_bits(body, schema.base_gist_decoder()) |> result.map(Ok)
+    _ -> response |> Error |> Ok
   }
 }
 
@@ -7873,12 +7911,12 @@ pub fn gists_list_forks_request(base, gist_id, per_page per_page, page page) {
 }
 
 pub fn gists_list_forks_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, body:, ..) = response
   case status {
     200 ->
-      utils.decode_bits(body, zero.list(schema.gist_simple_decoder()))
+      json.parse_bits(body, decode.list(schema.gist_simple_decoder()))
       |> result.map(Ok)
-    _ -> "API doesn't describe default response" |> Error |> Ok
+    _ -> response |> Error |> Ok
   }
 }
 
@@ -7895,10 +7933,10 @@ pub fn copilot_cancel_copilot_seat_assignment_for_teams_request(base, org, data)
 }
 
 pub fn copilot_cancel_copilot_seat_assignment_for_teams_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, body:, ..) = response
   case status {
-    200 -> utils.decode_bits(body, zero.dynamic) |> result.map(Ok)
-    _ -> "API doesn't describe default response" |> Error |> Ok
+    200 -> json.parse_bits(body, decode.dynamic) |> result.map(Ok)
+    _ -> response |> Error |> Ok
   }
 }
 
@@ -7915,10 +7953,10 @@ pub fn copilot_add_copilot_seats_for_teams_request(base, org, data) {
 }
 
 pub fn copilot_add_copilot_seats_for_teams_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, body:, ..) = response
   case status {
-    201 -> utils.decode_bits(body, zero.dynamic) |> result.map(Ok)
-    _ -> "API doesn't describe default response" |> Error |> Ok
+    201 -> json.parse_bits(body, decode.dynamic) |> result.map(Ok)
+    _ -> response |> Error |> Ok
   }
 }
 
@@ -7935,12 +7973,12 @@ pub fn projects_create_column_request(base, project_id, data) {
 }
 
 pub fn projects_create_column_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, body:, ..) = response
   case status {
     201 ->
-      utils.decode_bits(body, schema.project_column_decoder())
+      json.parse_bits(body, schema.project_column_decoder())
       |> result.map(Ok)
-    _ -> "API doesn't describe default response" |> Error |> Ok
+    _ -> response |> Error |> Ok
   }
 }
 
@@ -7963,12 +8001,12 @@ pub fn projects_list_columns_request(
 }
 
 pub fn projects_list_columns_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, body:, ..) = response
   case status {
     200 ->
-      utils.decode_bits(body, zero.list(schema.project_column_decoder()))
+      json.parse_bits(body, decode.list(schema.project_column_decoder()))
       |> result.map(Ok)
-    _ -> "API doesn't describe default response" |> Error |> Ok
+    _ -> response |> Error |> Ok
   }
 }
 
@@ -7991,10 +8029,10 @@ pub fn copilot_list_copilot_seats_for_enterprise_request(
 }
 
 pub fn copilot_list_copilot_seats_for_enterprise_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, body:, ..) = response
   case status {
-    200 -> utils.decode_bits(body, zero.dynamic) |> result.map(Ok)
-    _ -> "API doesn't describe default response" |> Error |> Ok
+    200 -> json.parse_bits(body, decode.dynamic) |> result.map(Ok)
+    _ -> response |> Error |> Ok
   }
 }
 
@@ -8011,10 +8049,10 @@ pub fn git_create_ref_request(base, owner, repo, data) {
 }
 
 pub fn git_create_ref_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, body:, ..) = response
   case status {
-    201 -> utils.decode_bits(body, schema.git_ref_decoder()) |> result.map(Ok)
-    _ -> "API doesn't describe default response" |> Error |> Ok
+    201 -> json.parse_bits(body, schema.git_ref_decoder()) |> result.map(Ok)
+    _ -> response |> Error |> Ok
   }
 }
 
@@ -8044,10 +8082,10 @@ pub fn checks_list_suites_for_ref_request(
 }
 
 pub fn checks_list_suites_for_ref_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, body:, ..) = response
   case status {
-    200 -> utils.decode_bits(body, zero.dynamic) |> result.map(Ok)
-    _ -> "API doesn't describe default response" |> Error |> Ok
+    200 -> json.parse_bits(body, decode.dynamic) |> result.map(Ok)
+    _ -> response |> Error |> Ok
   }
 }
 
@@ -8075,12 +8113,13 @@ pub fn repos_list_collaborators_request(
 }
 
 pub fn repos_list_collaborators_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, body:, ..) = response
   case status {
     200 ->
-      utils.decode_bits(body, zero.list(schema.collaborator_decoder()))
+      json.parse_bits(body, decode.list(schema.collaborator_decoder()))
       |> result.map(Ok)
-    _ -> "API doesn't describe default response" |> Error |> Ok
+    _ ->
+      json.parse_bits(body, schema.basic_error_decoder()) |> result.map(Error)
   }
 }
 
@@ -8097,12 +8136,12 @@ pub fn repos_create_in_org_request(base, org, data) {
 }
 
 pub fn repos_create_in_org_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, body:, ..) = response
   case status {
     201 ->
-      utils.decode_bits(body, schema.full_repository_decoder())
+      json.parse_bits(body, schema.full_repository_decoder())
       |> result.map(Ok)
-    _ -> "API doesn't describe default response" |> Error |> Ok
+    _ -> response |> Error |> Ok
   }
 }
 
@@ -8131,12 +8170,12 @@ pub fn repos_list_for_org_request(
 }
 
 pub fn repos_list_for_org_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, body:, ..) = response
   case status {
     200 ->
-      utils.decode_bits(body, zero.list(schema.minimal_repository_decoder()))
+      json.parse_bits(body, decode.list(schema.minimal_repository_decoder()))
       |> result.map(Ok)
-    _ -> "API doesn't describe default response" |> Error |> Ok
+    _ -> response |> Error |> Ok
   }
 }
 
@@ -8165,10 +8204,10 @@ pub fn packages_delete_package_version_for_user_request(
 }
 
 pub fn packages_delete_package_version_for_user_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, ..) = response
   case status {
     204 -> Ok(Nil) |> Ok
-    _ -> "API doesn't describe default response" |> Error |> Ok
+    _ -> response |> Error |> Ok
   }
 }
 
@@ -8197,12 +8236,12 @@ pub fn packages_get_package_version_for_user_request(
 }
 
 pub fn packages_get_package_version_for_user_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, body:, ..) = response
   case status {
     200 ->
-      utils.decode_bits(body, schema.package_version_decoder())
+      json.parse_bits(body, schema.package_version_decoder())
       |> result.map(Ok)
-    _ -> "API doesn't describe default response" |> Error |> Ok
+    _ -> response |> Error |> Ok
   }
 }
 
@@ -8217,12 +8256,12 @@ pub fn actions_list_runner_applications_for_repo_request(base, owner, repo) {
 }
 
 pub fn actions_list_runner_applications_for_repo_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, body:, ..) = response
   case status {
     200 ->
-      utils.decode_bits(body, zero.list(schema.runner_application_decoder()))
+      json.parse_bits(body, decode.list(schema.runner_application_decoder()))
       |> result.map(Ok)
-    _ -> "API doesn't describe default response" |> Error |> Ok
+    _ -> response |> Error |> Ok
   }
 }
 
@@ -8237,10 +8276,10 @@ pub fn activity_delete_repo_subscription_request(base, owner, repo) {
 }
 
 pub fn activity_delete_repo_subscription_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, ..) = response
   case status {
     204 -> Ok(Nil) |> Ok
-    _ -> "API doesn't describe default response" |> Error |> Ok
+    _ -> response |> Error |> Ok
   }
 }
 
@@ -8257,12 +8296,12 @@ pub fn activity_set_repo_subscription_request(base, owner, repo, data) {
 }
 
 pub fn activity_set_repo_subscription_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, body:, ..) = response
   case status {
     200 ->
-      utils.decode_bits(body, schema.repository_subscription_decoder())
+      json.parse_bits(body, schema.repository_subscription_decoder())
       |> result.map(Ok)
-    _ -> "API doesn't describe default response" |> Error |> Ok
+    _ -> response |> Error |> Ok
   }
 }
 
@@ -8277,12 +8316,12 @@ pub fn activity_get_repo_subscription_request(base, owner, repo) {
 }
 
 pub fn activity_get_repo_subscription_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, body:, ..) = response
   case status {
     200 ->
-      utils.decode_bits(body, schema.repository_subscription_decoder())
+      json.parse_bits(body, schema.repository_subscription_decoder())
       |> result.map(Ok)
-    _ -> "API doesn't describe default response" |> Error |> Ok
+    _ -> response |> Error |> Ok
   }
 }
 
@@ -8305,10 +8344,10 @@ pub fn actions_generate_runner_jitconfig_for_repo_request(
 }
 
 pub fn actions_generate_runner_jitconfig_for_repo_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, body:, ..) = response
   case status {
-    201 -> utils.decode_bits(body, zero.dynamic) |> result.map(Ok)
-    _ -> "API doesn't describe default response" |> Error |> Ok
+    201 -> json.parse_bits(body, decode.dynamic) |> result.map(Ok)
+    _ -> response |> Error |> Ok
   }
 }
 
@@ -8335,15 +8374,15 @@ pub fn copilot_copilot_metrics_for_organization_request(
 }
 
 pub fn copilot_copilot_metrics_for_organization_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, body:, ..) = response
   case status {
     200 ->
-      utils.decode_bits(
+      json.parse_bits(
         body,
-        zero.list(schema.copilot_usage_metrics_day_decoder()),
+        decode.list(schema.copilot_usage_metrics_day_decoder()),
       )
       |> result.map(Ok)
-    _ -> "API doesn't describe default response" |> Error |> Ok
+    _ -> response |> Error |> Ok
   }
 }
 
@@ -8378,12 +8417,13 @@ pub fn pulls_list_comments_for_review_request(
 }
 
 pub fn pulls_list_comments_for_review_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, body:, ..) = response
   case status {
     200 ->
-      utils.decode_bits(body, zero.list(schema.review_comment_decoder()))
+      json.parse_bits(body, decode.list(schema.review_comment_decoder()))
       |> result.map(Ok)
-    _ -> "API doesn't describe default response" |> Error |> Ok
+    _ ->
+      json.parse_bits(body, schema.basic_error_decoder()) |> result.map(Error)
   }
 }
 
@@ -8412,12 +8452,12 @@ pub fn repos_list_for_user_request(
 }
 
 pub fn repos_list_for_user_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, body:, ..) = response
   case status {
     200 ->
-      utils.decode_bits(body, zero.list(schema.minimal_repository_decoder()))
+      json.parse_bits(body, decode.list(schema.minimal_repository_decoder()))
       |> result.map(Ok)
-    _ -> "API doesn't describe default response" |> Error |> Ok
+    _ -> response |> Error |> Ok
   }
 }
 
@@ -8432,12 +8472,12 @@ pub fn orgs_get_org_role_request(base, org, role_id) {
 }
 
 pub fn orgs_get_org_role_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, body:, ..) = response
   case status {
     200 ->
-      utils.decode_bits(body, schema.organization_role_decoder())
+      json.parse_bits(body, schema.organization_role_decoder())
       |> result.map(Ok)
-    _ -> "API doesn't describe default response" |> Error |> Ok
+    _ -> response |> Error |> Ok
   }
 }
 
@@ -8464,12 +8504,12 @@ pub fn actions_get_environment_public_key_request(
 }
 
 pub fn actions_get_environment_public_key_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, body:, ..) = response
   case status {
     200 ->
-      utils.decode_bits(body, schema.actions_public_key_decoder())
+      json.parse_bits(body, schema.actions_public_key_decoder())
       |> result.map(Ok)
-    _ -> "API doesn't describe default response" |> Error |> Ok
+    _ -> response |> Error |> Ok
   }
 }
 
@@ -8498,10 +8538,10 @@ pub fn packages_delete_package_version_for_org_request(
 }
 
 pub fn packages_delete_package_version_for_org_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, ..) = response
   case status {
     204 -> Ok(Nil) |> Ok
-    _ -> "API doesn't describe default response" |> Error |> Ok
+    _ -> response |> Error |> Ok
   }
 }
 
@@ -8530,12 +8570,12 @@ pub fn packages_get_package_version_for_organization_request(
 }
 
 pub fn packages_get_package_version_for_organization_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, body:, ..) = response
   case status {
     200 ->
-      utils.decode_bits(body, schema.package_version_decoder())
+      json.parse_bits(body, schema.package_version_decoder())
       |> result.map(Ok)
-    _ -> "API doesn't describe default response" |> Error |> Ok
+    _ -> response |> Error |> Ok
   }
 }
 
@@ -8565,10 +8605,10 @@ pub fn packages_restore_package_version_for_user_request(
 }
 
 pub fn packages_restore_package_version_for_user_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, ..) = response
   case status {
     204 -> Ok(Nil) |> Ok
-    _ -> "API doesn't describe default response" |> Error |> Ok
+    _ -> response |> Error |> Ok
   }
 }
 
@@ -8583,12 +8623,11 @@ pub fn meta_get_request(base) {
 }
 
 pub fn meta_get_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, body:, ..) = response
   case status {
     200 ->
-      utils.decode_bits(body, schema.api_overview_decoder())
-      |> result.map(Ok)
-    _ -> "API doesn't describe default response" |> Error |> Ok
+      json.parse_bits(body, schema.api_overview_decoder()) |> result.map(Ok)
+    _ -> response |> Error |> Ok
   }
 }
 
@@ -8600,7 +8639,12 @@ pub fn migrations_get_status_for_org_request(
 ) {
   let method = http.Get
   let path = "/orgs/" <> org <> "/migrations/" <> int.to_string(migration_id)
-  let query = [#("exclude", panic as "exclude")]
+  let query = [
+    #(
+      "exclude",
+      option.map(exclude, fn(_) { panic as "query parameter is not supported" }),
+    ),
+  ]
   base
   |> utils.set_method(method)
   |> utils.append_path(path)
@@ -8608,10 +8652,11 @@ pub fn migrations_get_status_for_org_request(
 }
 
 pub fn migrations_get_status_for_org_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, body:, ..) = response
   case status {
-    200 -> utils.decode_bits(body, schema.migration_decoder()) |> result.map(Ok)
-    _ -> "API doesn't describe default response" |> Error |> Ok
+    200 -> json.parse_bits(body, schema.migration_decoder()) |> result.map(Ok)
+    _ ->
+      json.parse_bits(body, schema.basic_error_decoder()) |> result.map(Error)
   }
 }
 
@@ -8626,10 +8671,10 @@ pub fn git_get_ref_request(base, owner, repo, ref) {
 }
 
 pub fn git_get_ref_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, body:, ..) = response
   case status {
-    200 -> utils.decode_bits(body, schema.git_ref_decoder()) |> result.map(Ok)
-    _ -> "API doesn't describe default response" |> Error |> Ok
+    200 -> json.parse_bits(body, schema.git_ref_decoder()) |> result.map(Ok)
+    _ -> response |> Error |> Ok
   }
 }
 
@@ -8652,7 +8697,10 @@ pub fn api_insights_get_user_stats_request(
     #("page", option.map(page, int.to_string)),
     #("per_page", option.map(per_page, int.to_string)),
     #("direction", direction),
-    #("sort", panic as "sort"),
+    #(
+      "sort",
+      option.map(sort, fn(_) { panic as "query parameter is not supported" }),
+    ),
   ]
   base
   |> utils.set_method(method)
@@ -8661,12 +8709,12 @@ pub fn api_insights_get_user_stats_request(
 }
 
 pub fn api_insights_get_user_stats_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, body:, ..) = response
   case status {
     200 ->
-      utils.decode_bits(body, schema.api_insights_user_stats_decoder())
+      json.parse_bits(body, schema.api_insights_user_stats_decoder())
       |> result.map(Ok)
-    _ -> "API doesn't describe default response" |> Error |> Ok
+    _ -> response |> Error |> Ok
   }
 }
 
@@ -8687,10 +8735,10 @@ pub fn actions_get_job_for_workflow_run_request(base, owner, repo, job_id) {
 }
 
 pub fn actions_get_job_for_workflow_run_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, body:, ..) = response
   case status {
-    200 -> utils.decode_bits(body, schema.job_decoder()) |> result.map(Ok)
-    _ -> "API doesn't describe default response" |> Error |> Ok
+    200 -> json.parse_bits(body, schema.job_decoder()) |> result.map(Ok)
+    _ -> response |> Error |> Ok
   }
 }
 
@@ -8705,7 +8753,7 @@ pub fn actions_set_github_actions_default_workflow_permissions_repository_reques
     "/repos/" <> owner <> "/" <> repo <> "/actions/permissions/workflow"
   let query = []
   let body =
-    utils.json_to_bits(schema.actions_set_default_workflow_permissions_to_json(
+    utils.json_to_bits(schema.actions_set_default_workflow_permissions_encode(
       actions_set_default_workflow_permissions,
     ))
   base
@@ -8718,10 +8766,10 @@ pub fn actions_set_github_actions_default_workflow_permissions_repository_reques
 pub fn actions_set_github_actions_default_workflow_permissions_repository_response(
   response,
 ) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, ..) = response
   case status {
     204 -> Ok(Nil) |> Ok
-    _ -> "API doesn't describe default response" |> Error |> Ok
+    _ -> Error(Nil) |> Ok
   }
 }
 
@@ -8743,15 +8791,15 @@ pub fn actions_get_github_actions_default_workflow_permissions_repository_reques
 pub fn actions_get_github_actions_default_workflow_permissions_repository_response(
   response,
 ) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, body:, ..) = response
   case status {
     200 ->
-      utils.decode_bits(
+      json.parse_bits(
         body,
         schema.actions_get_default_workflow_permissions_decoder(),
       )
       |> result.map(Ok)
-    _ -> "API doesn't describe default response" |> Error |> Ok
+    _ -> response |> Error |> Ok
   }
 }
 
@@ -8779,12 +8827,12 @@ pub fn copilot_usage_metrics_for_team_request(
 }
 
 pub fn copilot_usage_metrics_for_team_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, body:, ..) = response
   case status {
     200 ->
-      utils.decode_bits(body, zero.list(schema.copilot_usage_metrics_decoder()))
+      json.parse_bits(body, decode.list(schema.copilot_usage_metrics_decoder()))
       |> result.map(Ok)
-    _ -> "API doesn't describe default response" |> Error |> Ok
+    _ -> response |> Error |> Ok
   }
 }
 
@@ -8799,10 +8847,10 @@ pub fn orgs_remove_outside_collaborator_request(base, org, username) {
 }
 
 pub fn orgs_remove_outside_collaborator_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, body:, ..) = response
   case status {
     204 -> Ok(Nil) |> Ok
-    _ -> "API doesn't describe default response" |> Error |> Ok
+    _ -> json.parse_bits(body, decode.dynamic) |> result.map(Error)
   }
 }
 
@@ -8824,10 +8872,10 @@ pub fn orgs_convert_member_to_outside_collaborator_request(
 }
 
 pub fn orgs_convert_member_to_outside_collaborator_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, body:, ..) = response
   case status {
-    204 -> Ok(Nil) |> Ok
-    _ -> "API doesn't describe default response" |> Error |> Ok
+    202 -> json.parse_bits(body, decode.dynamic) |> result.map(Ok)
+    _ -> response |> Error |> Ok
   }
 }
 
@@ -8840,7 +8888,7 @@ pub fn actions_set_allowed_actions_organization_request(
   let path = "/orgs/" <> org <> "/actions/permissions/selected-actions"
   let query = []
   let body =
-    utils.json_to_bits(schema.selected_actions_to_json(selected_actions))
+    utils.json_to_bits(schema.selected_actions_encode(selected_actions))
   base
   |> utils.set_method(method)
   |> utils.append_path(path)
@@ -8849,10 +8897,10 @@ pub fn actions_set_allowed_actions_organization_request(
 }
 
 pub fn actions_set_allowed_actions_organization_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, ..) = response
   case status {
     204 -> Ok(Nil) |> Ok
-    _ -> "API doesn't describe default response" |> Error |> Ok
+    _ -> response |> Error |> Ok
   }
 }
 
@@ -8867,12 +8915,12 @@ pub fn actions_get_allowed_actions_organization_request(base, org) {
 }
 
 pub fn actions_get_allowed_actions_organization_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, body:, ..) = response
   case status {
     200 ->
-      utils.decode_bits(body, schema.selected_actions_decoder())
+      json.parse_bits(body, schema.selected_actions_decoder())
       |> result.map(Ok)
-    _ -> "API doesn't describe default response" |> Error |> Ok
+    _ -> response |> Error |> Ok
   }
 }
 
@@ -8887,10 +8935,10 @@ pub fn actions_delete_org_secret_request(base, org, secret_name) {
 }
 
 pub fn actions_delete_org_secret_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, ..) = response
   case status {
     204 -> Ok(Nil) |> Ok
-    _ -> "API doesn't describe default response" |> Error |> Ok
+    _ -> response |> Error |> Ok
   }
 }
 
@@ -8907,10 +8955,11 @@ pub fn actions_create_or_update_org_secret_request(base, org, secret_name, data)
 }
 
 pub fn actions_create_or_update_org_secret_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, body:, ..) = response
   case status {
-    204 -> Ok(Nil) |> Ok
-    _ -> "API doesn't describe default response" |> Error |> Ok
+    201 ->
+      json.parse_bits(body, schema.empty_object_decoder()) |> result.map(Ok)
+    _ -> response |> Error |> Ok
   }
 }
 
@@ -8925,12 +8974,12 @@ pub fn actions_get_org_secret_request(base, org, secret_name) {
 }
 
 pub fn actions_get_org_secret_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, body:, ..) = response
   case status {
     200 ->
-      utils.decode_bits(body, schema.organization_actions_secret_decoder())
+      json.parse_bits(body, schema.organization_actions_secret_decoder())
       |> result.map(Ok)
-    _ -> "API doesn't describe default response" |> Error |> Ok
+    _ -> response |> Error |> Ok
   }
 }
 
@@ -8947,12 +8996,13 @@ pub fn repos_generate_release_notes_request(base, owner, repo, data) {
 }
 
 pub fn repos_generate_release_notes_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, body:, ..) = response
   case status {
     200 ->
-      utils.decode_bits(body, schema.release_notes_content_decoder())
+      json.parse_bits(body, schema.release_notes_content_decoder())
       |> result.map(Ok)
-    _ -> "API doesn't describe default response" |> Error |> Ok
+    _ ->
+      json.parse_bits(body, schema.basic_error_decoder()) |> result.map(Error)
   }
 }
 
@@ -8987,10 +9037,11 @@ pub fn actions_list_jobs_for_workflow_run_attempt_request(
 }
 
 pub fn actions_list_jobs_for_workflow_run_attempt_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, body:, ..) = response
   case status {
-    200 -> utils.decode_bits(body, zero.dynamic) |> result.map(Ok)
-    _ -> "API doesn't describe default response" |> Error |> Ok
+    200 -> json.parse_bits(body, decode.dynamic) |> result.map(Ok)
+    _ ->
+      json.parse_bits(body, schema.basic_error_decoder()) |> result.map(Error)
   }
 }
 
@@ -9005,12 +9056,13 @@ pub fn repos_get_top_referrers_request(base, owner, repo) {
 }
 
 pub fn repos_get_top_referrers_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, body:, ..) = response
   case status {
     200 ->
-      utils.decode_bits(body, zero.list(schema.referrer_traffic_decoder()))
+      json.parse_bits(body, decode.list(schema.referrer_traffic_decoder()))
       |> result.map(Ok)
-    _ -> "API doesn't describe default response" |> Error |> Ok
+    _ ->
+      json.parse_bits(body, schema.basic_error_decoder()) |> result.map(Error)
   }
 }
 
@@ -9025,10 +9077,10 @@ pub fn users_check_following_for_user_request(base, username, target_user) {
 }
 
 pub fn users_check_following_for_user_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, ..) = response
   case status {
     204 -> Ok(Nil) |> Ok
-    _ -> "API doesn't describe default response" |> Error |> Ok
+    _ -> Error(Nil) |> Ok
   }
 }
 
@@ -9044,12 +9096,12 @@ pub fn apps_get_subscription_plan_for_account_stubbed_request(base, account_id) 
 }
 
 pub fn apps_get_subscription_plan_for_account_stubbed_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, body:, ..) = response
   case status {
     200 ->
-      utils.decode_bits(body, schema.marketplace_purchase_decoder())
+      json.parse_bits(body, schema.marketplace_purchase_decoder())
       |> result.map(Ok)
-    _ -> "API doesn't describe default response" |> Error |> Ok
+    _ -> response |> Error |> Ok
   }
 }
 
@@ -9064,12 +9116,12 @@ pub fn meta_get_zen_request(base) {
 }
 
 pub fn meta_get_zen_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, body:, ..) = response
   case status {
     200 ->
-      utils.decode_bits(body, zero.failure(Nil, "Unsupported schema"))
+      json.parse_bits(body, decode.failure(Nil, "Unsupported schema"))
       |> result.map(Ok)
-    _ -> "API doesn't describe default response" |> Error |> Ok
+    _ -> response |> Error |> Ok
   }
 }
 
@@ -9086,12 +9138,10 @@ pub fn gists_update_request(base, gist_id, data) {
 }
 
 pub fn gists_update_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, body:, ..) = response
   case status {
-    200 ->
-      utils.decode_bits(body, schema.gist_simple_decoder())
-      |> result.map(Ok)
-    _ -> "API doesn't describe default response" |> Error |> Ok
+    200 -> json.parse_bits(body, schema.gist_simple_decoder()) |> result.map(Ok)
+    _ -> response |> Error |> Ok
   }
 }
 
@@ -9106,10 +9156,10 @@ pub fn gists_delete_request(base, gist_id) {
 }
 
 pub fn gists_delete_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, ..) = response
   case status {
     204 -> Ok(Nil) |> Ok
-    _ -> "API doesn't describe default response" |> Error |> Ok
+    _ -> response |> Error |> Ok
   }
 }
 
@@ -9124,12 +9174,10 @@ pub fn gists_get_request(base, gist_id) {
 }
 
 pub fn gists_get_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, body:, ..) = response
   case status {
-    200 ->
-      utils.decode_bits(body, schema.gist_simple_decoder())
-      |> result.map(Ok)
-    _ -> "API doesn't describe default response" |> Error |> Ok
+    200 -> json.parse_bits(body, schema.gist_simple_decoder()) |> result.map(Ok)
+    _ -> response |> Error |> Ok
   }
 }
 
@@ -9159,10 +9207,10 @@ pub fn packages_restore_package_version_for_org_request(
 }
 
 pub fn packages_restore_package_version_for_org_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, ..) = response
   case status {
     204 -> Ok(Nil) |> Ok
-    _ -> "API doesn't describe default response" |> Error |> Ok
+    _ -> response |> Error |> Ok
   }
 }
 
@@ -9179,12 +9227,12 @@ pub fn actions_create_self_hosted_runner_group_for_org_request(base, org, data) 
 }
 
 pub fn actions_create_self_hosted_runner_group_for_org_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, body:, ..) = response
   case status {
     201 ->
-      utils.decode_bits(body, schema.runner_groups_org_decoder())
+      json.parse_bits(body, schema.runner_groups_org_decoder())
       |> result.map(Ok)
-    _ -> "API doesn't describe default response" |> Error |> Ok
+    _ -> response |> Error |> Ok
   }
 }
 
@@ -9209,10 +9257,10 @@ pub fn actions_list_self_hosted_runner_groups_for_org_request(
 }
 
 pub fn actions_list_self_hosted_runner_groups_for_org_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, body:, ..) = response
   case status {
-    200 -> utils.decode_bits(body, zero.dynamic) |> result.map(Ok)
-    _ -> "API doesn't describe default response" |> Error |> Ok
+    200 -> json.parse_bits(body, decode.dynamic) |> result.map(Ok)
+    _ -> response |> Error |> Ok
   }
 }
 
@@ -9236,12 +9284,12 @@ pub fn activity_list_watchers_for_repo_request(
 }
 
 pub fn activity_list_watchers_for_repo_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, body:, ..) = response
   case status {
     200 ->
-      utils.decode_bits(body, zero.list(schema.simple_user_decoder()))
+      json.parse_bits(body, decode.list(schema.simple_user_decoder()))
       |> result.map(Ok)
-    _ -> "API doesn't describe default response" |> Error |> Ok
+    _ -> response |> Error |> Ok
   }
 }
 
@@ -9266,10 +9314,10 @@ pub fn actions_list_repo_organization_secrets_request(
 }
 
 pub fn actions_list_repo_organization_secrets_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, body:, ..) = response
   case status {
-    200 -> utils.decode_bits(body, zero.dynamic) |> result.map(Ok)
-    _ -> "API doesn't describe default response" |> Error |> Ok
+    200 -> json.parse_bits(body, decode.dynamic) |> result.map(Ok)
+    _ -> response |> Error |> Ok
   }
 }
 
@@ -9286,10 +9334,10 @@ pub fn teams_update_legacy_request(base, team_id, data) {
 }
 
 pub fn teams_update_legacy_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, body:, ..) = response
   case status {
-    200 -> utils.decode_bits(body, schema.team_full_decoder()) |> result.map(Ok)
-    _ -> "API doesn't describe default response" |> Error |> Ok
+    200 -> json.parse_bits(body, schema.team_full_decoder()) |> result.map(Ok)
+    _ -> response |> Error |> Ok
   }
 }
 
@@ -9304,10 +9352,10 @@ pub fn teams_delete_legacy_request(base, team_id) {
 }
 
 pub fn teams_delete_legacy_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, ..) = response
   case status {
     204 -> Ok(Nil) |> Ok
-    _ -> "API doesn't describe default response" |> Error |> Ok
+    _ -> response |> Error |> Ok
   }
 }
 
@@ -9322,10 +9370,11 @@ pub fn teams_get_legacy_request(base, team_id) {
 }
 
 pub fn teams_get_legacy_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, body:, ..) = response
   case status {
-    200 -> utils.decode_bits(body, schema.team_full_decoder()) |> result.map(Ok)
-    _ -> "API doesn't describe default response" |> Error |> Ok
+    200 -> json.parse_bits(body, schema.team_full_decoder()) |> result.map(Ok)
+    _ ->
+      json.parse_bits(body, schema.basic_error_decoder()) |> result.map(Error)
   }
 }
 
@@ -9349,12 +9398,12 @@ pub fn activity_list_public_events_for_repo_network_request(
 }
 
 pub fn activity_list_public_events_for_repo_network_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, body:, ..) = response
   case status {
     200 ->
-      utils.decode_bits(body, zero.list(schema.event_decoder()))
+      json.parse_bits(body, decode.list(schema.event_decoder()))
       |> result.map(Ok)
-    _ -> "API doesn't describe default response" |> Error |> Ok
+    _ -> response |> Error |> Ok
   }
 }
 
@@ -9376,12 +9425,11 @@ pub fn checks_rerequest_run_request(base, owner, repo, check_run_id) {
 }
 
 pub fn checks_rerequest_run_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, body:, ..) = response
   case status {
     201 ->
-      utils.decode_bits(body, schema.empty_object_decoder())
-      |> result.map(Ok)
-    _ -> "API doesn't describe default response" |> Error |> Ok
+      json.parse_bits(body, schema.empty_object_decoder()) |> result.map(Ok)
+    _ -> response |> Error |> Ok
   }
 }
 
@@ -9396,12 +9444,13 @@ pub fn classroom_get_an_assignment_request(base, assignment_id) {
 }
 
 pub fn classroom_get_an_assignment_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, body:, ..) = response
   case status {
     200 ->
-      utils.decode_bits(body, schema.classroom_assignment_decoder())
+      json.parse_bits(body, schema.classroom_assignment_decoder())
       |> result.map(Ok)
-    _ -> "API doesn't describe default response" |> Error |> Ok
+    _ ->
+      json.parse_bits(body, schema.basic_error_decoder()) |> result.map(Error)
   }
 }
 
@@ -9425,12 +9474,12 @@ pub fn issues_create_comment_request(base, owner, repo, issue_number, data) {
 }
 
 pub fn issues_create_comment_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, body:, ..) = response
   case status {
     201 ->
-      utils.decode_bits(body, schema.issue_comment_decoder())
+      json.parse_bits(body, schema.issue_comment_decoder())
       |> result.map(Ok)
-    _ -> "API doesn't describe default response" |> Error |> Ok
+    _ -> response |> Error |> Ok
   }
 }
 
@@ -9464,12 +9513,12 @@ pub fn issues_list_comments_request(
 }
 
 pub fn issues_list_comments_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, body:, ..) = response
   case status {
     200 ->
-      utils.decode_bits(body, zero.list(schema.issue_comment_decoder()))
+      json.parse_bits(body, decode.list(schema.issue_comment_decoder()))
       |> result.map(Ok)
-    _ -> "API doesn't describe default response" |> Error |> Ok
+    _ -> response |> Error |> Ok
   }
 }
 
@@ -9493,10 +9542,10 @@ pub fn pulls_update_branch_request(base, owner, repo, pull_number, data) {
 }
 
 pub fn pulls_update_branch_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, body:, ..) = response
   case status {
-    202 -> utils.decode_bits(body, zero.dynamic) |> result.map(Ok)
-    _ -> "API doesn't describe default response" |> Error |> Ok
+    202 -> json.parse_bits(body, decode.dynamic) |> result.map(Ok)
+    _ -> response |> Error |> Ok
   }
 }
 
@@ -9521,12 +9570,12 @@ pub fn repos_compare_commits_request(
 }
 
 pub fn repos_compare_commits_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, body:, ..) = response
   case status {
     200 ->
-      utils.decode_bits(body, schema.commit_comparison_decoder())
+      json.parse_bits(body, schema.commit_comparison_decoder())
       |> result.map(Ok)
-    _ -> "API doesn't describe default response" |> Error |> Ok
+    _ -> response |> Error |> Ok
   }
 }
 
@@ -9553,10 +9602,10 @@ pub fn reactions_create_for_team_discussion_legacy_request(
 }
 
 pub fn reactions_create_for_team_discussion_legacy_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, body:, ..) = response
   case status {
-    201 -> utils.decode_bits(body, schema.reaction_decoder()) |> result.map(Ok)
-    _ -> "API doesn't describe default response" |> Error |> Ok
+    201 -> json.parse_bits(body, schema.reaction_decoder()) |> result.map(Ok)
+    _ -> response |> Error |> Ok
   }
 }
 
@@ -9587,12 +9636,12 @@ pub fn reactions_list_for_team_discussion_legacy_request(
 }
 
 pub fn reactions_list_for_team_discussion_legacy_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, body:, ..) = response
   case status {
     200 ->
-      utils.decode_bits(body, zero.list(schema.reaction_decoder()))
+      json.parse_bits(body, decode.list(schema.reaction_decoder()))
       |> result.map(Ok)
-    _ -> "API doesn't describe default response" |> Error |> Ok
+    _ -> response |> Error |> Ok
   }
 }
 
@@ -9609,10 +9658,10 @@ pub fn repos_merge_request(base, owner, repo, data) {
 }
 
 pub fn repos_merge_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, body:, ..) = response
   case status {
-    204 -> Ok(Nil) |> Ok
-    _ -> "API doesn't describe default response" |> Error |> Ok
+    201 -> json.parse_bits(body, schema.commit_decoder()) |> result.map(Ok)
+    _ -> response |> Error |> Ok
   }
 }
 
@@ -9627,10 +9676,10 @@ pub fn apps_revoke_installation_access_token_request(base) {
 }
 
 pub fn apps_revoke_installation_access_token_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, ..) = response
   case status {
     204 -> Ok(Nil) |> Ok
-    _ -> "API doesn't describe default response" |> Error |> Ok
+    _ -> response |> Error |> Ok
   }
 }
 
@@ -9645,10 +9694,10 @@ pub fn orgs_revoke_all_org_roles_user_request(base, org, username) {
 }
 
 pub fn orgs_revoke_all_org_roles_user_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, ..) = response
   case status {
     204 -> Ok(Nil) |> Ok
-    _ -> "API doesn't describe default response" |> Error |> Ok
+    _ -> response |> Error |> Ok
   }
 }
 
@@ -9663,10 +9712,11 @@ pub fn repos_get_release_by_tag_request(base, owner, repo, tag) {
 }
 
 pub fn repos_get_release_by_tag_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, body:, ..) = response
   case status {
-    200 -> utils.decode_bits(body, schema.release_decoder()) |> result.map(Ok)
-    _ -> "API doesn't describe default response" |> Error |> Ok
+    200 -> json.parse_bits(body, schema.release_decoder()) |> result.map(Ok)
+    _ ->
+      json.parse_bits(body, schema.basic_error_decoder()) |> result.map(Error)
   }
 }
 
@@ -9689,10 +9739,10 @@ pub fn dependabot_list_org_secrets_request(
 }
 
 pub fn dependabot_list_org_secrets_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, body:, ..) = response
   case status {
-    200 -> utils.decode_bits(body, zero.dynamic) |> result.map(Ok)
-    _ -> "API doesn't describe default response" |> Error |> Ok
+    200 -> json.parse_bits(body, decode.dynamic) |> result.map(Ok)
+    _ -> response |> Error |> Ok
   }
 }
 
@@ -9709,10 +9759,10 @@ pub fn issues_create_request(base, owner, repo, data) {
 }
 
 pub fn issues_create_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, body:, ..) = response
   case status {
-    201 -> utils.decode_bits(body, schema.issue_decoder()) |> result.map(Ok)
-    _ -> "API doesn't describe default response" |> Error |> Ok
+    201 -> json.parse_bits(body, schema.issue_decoder()) |> result.map(Ok)
+    _ -> response |> Error |> Ok
   }
 }
 
@@ -9754,12 +9804,12 @@ pub fn issues_list_for_repo_request(
 }
 
 pub fn issues_list_for_repo_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, body:, ..) = response
   case status {
     200 ->
-      utils.decode_bits(body, zero.list(schema.issue_decoder()))
+      json.parse_bits(body, decode.list(schema.issue_decoder()))
       |> result.map(Ok)
-    _ -> "API doesn't describe default response" |> Error |> Ok
+    _ -> response |> Error |> Ok
   }
 }
 
@@ -9776,10 +9826,10 @@ pub fn projects_create_for_repo_request(base, owner, repo, data) {
 }
 
 pub fn projects_create_for_repo_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, body:, ..) = response
   case status {
-    201 -> utils.decode_bits(body, schema.project_decoder()) |> result.map(Ok)
-    _ -> "API doesn't describe default response" |> Error |> Ok
+    201 -> json.parse_bits(body, schema.project_decoder()) |> result.map(Ok)
+    _ -> response |> Error |> Ok
   }
 }
 
@@ -9805,12 +9855,12 @@ pub fn projects_list_for_repo_request(
 }
 
 pub fn projects_list_for_repo_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, body:, ..) = response
   case status {
     200 ->
-      utils.decode_bits(body, zero.list(schema.project_decoder()))
+      json.parse_bits(body, decode.list(schema.project_decoder()))
       |> result.map(Ok)
-    _ -> "API doesn't describe default response" |> Error |> Ok
+    _ -> response |> Error |> Ok
   }
 }
 
@@ -9825,12 +9875,10 @@ pub fn apps_get_authenticated_request(base) {
 }
 
 pub fn apps_get_authenticated_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, body:, ..) = response
   case status {
-    200 ->
-      utils.decode_bits(body, schema.integration_decoder())
-      |> result.map(Ok)
-    _ -> "API doesn't describe default response" |> Error |> Ok
+    200 -> json.parse_bits(body, schema.integration_decoder()) |> result.map(Ok)
+    _ -> response |> Error |> Ok
   }
 }
 
@@ -9845,10 +9893,10 @@ pub fn repos_get_latest_release_request(base, owner, repo) {
 }
 
 pub fn repos_get_latest_release_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, body:, ..) = response
   case status {
-    200 -> utils.decode_bits(body, schema.release_decoder()) |> result.map(Ok)
-    _ -> "API doesn't describe default response" |> Error |> Ok
+    200 -> json.parse_bits(body, schema.release_decoder()) |> result.map(Ok)
+    _ -> response |> Error |> Ok
   }
 }
 
@@ -9871,12 +9919,12 @@ pub fn users_list_ssh_signing_keys_for_user_request(
 }
 
 pub fn users_list_ssh_signing_keys_for_user_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, body:, ..) = response
   case status {
     200 ->
-      utils.decode_bits(body, zero.list(schema.ssh_signing_key_decoder()))
+      json.parse_bits(body, decode.list(schema.ssh_signing_key_decoder()))
       |> result.map(Ok)
-    _ -> "API doesn't describe default response" |> Error |> Ok
+    _ -> response |> Error |> Ok
   }
 }
 
@@ -9893,10 +9941,12 @@ pub fn repos_create_autolink_request(base, owner, repo, data) {
 }
 
 pub fn repos_create_autolink_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, body:, ..) = response
   case status {
-    201 -> utils.decode_bits(body, schema.autolink_decoder()) |> result.map(Ok)
-    _ -> "API doesn't describe default response" |> Error |> Ok
+    201 -> json.parse_bits(body, schema.autolink_decoder()) |> result.map(Ok)
+    _ ->
+      json.parse_bits(body, schema.validation_error_decoder())
+      |> result.map(Error)
   }
 }
 
@@ -9911,12 +9961,12 @@ pub fn repos_list_autolinks_request(base, owner, repo) {
 }
 
 pub fn repos_list_autolinks_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, body:, ..) = response
   case status {
     200 ->
-      utils.decode_bits(body, zero.list(schema.autolink_decoder()))
+      json.parse_bits(body, decode.list(schema.autolink_decoder()))
       |> result.map(Ok)
-    _ -> "API doesn't describe default response" |> Error |> Ok
+    _ -> response |> Error |> Ok
   }
 }
 
@@ -9941,10 +9991,10 @@ pub fn orgs_enable_or_disable_security_product_on_all_org_repos_request(
 pub fn orgs_enable_or_disable_security_product_on_all_org_repos_response(
   response,
 ) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, ..) = response
   case status {
     204 -> Ok(Nil) |> Ok
-    _ -> "API doesn't describe default response" |> Error |> Ok
+    _ -> Error(Nil) |> Ok
   }
 }
 
@@ -9962,10 +10012,10 @@ pub fn codespaces_delete_secret_for_authenticated_user_request(
 }
 
 pub fn codespaces_delete_secret_for_authenticated_user_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, ..) = response
   case status {
     204 -> Ok(Nil) |> Ok
-    _ -> "API doesn't describe default response" |> Error |> Ok
+    _ -> response |> Error |> Ok
   }
 }
 
@@ -9988,10 +10038,11 @@ pub fn codespaces_create_or_update_secret_for_authenticated_user_request(
 pub fn codespaces_create_or_update_secret_for_authenticated_user_response(
   response,
 ) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, body:, ..) = response
   case status {
-    204 -> Ok(Nil) |> Ok
-    _ -> "API doesn't describe default response" |> Error |> Ok
+    201 ->
+      json.parse_bits(body, schema.empty_object_decoder()) |> result.map(Ok)
+    _ -> response |> Error |> Ok
   }
 }
 
@@ -10006,12 +10057,12 @@ pub fn codespaces_get_secret_for_authenticated_user_request(base, secret_name) {
 }
 
 pub fn codespaces_get_secret_for_authenticated_user_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, body:, ..) = response
   case status {
     200 ->
-      utils.decode_bits(body, schema.codespaces_secret_decoder())
+      json.parse_bits(body, schema.codespaces_secret_decoder())
       |> result.map(Ok)
-    _ -> "API doesn't describe default response" |> Error |> Ok
+    _ -> response |> Error |> Ok
   }
 }
 
@@ -10029,12 +10080,12 @@ pub fn orgs_list_blocked_users_request(base, org, per_page per_page, page page) 
 }
 
 pub fn orgs_list_blocked_users_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, body:, ..) = response
   case status {
     200 ->
-      utils.decode_bits(body, zero.list(schema.simple_user_decoder()))
+      json.parse_bits(body, decode.list(schema.simple_user_decoder()))
       |> result.map(Ok)
-    _ -> "API doesn't describe default response" |> Error |> Ok
+    _ -> response |> Error |> Ok
   }
 }
 
@@ -10077,15 +10128,15 @@ pub fn dependabot_list_alerts_for_enterprise_request(
 }
 
 pub fn dependabot_list_alerts_for_enterprise_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, body:, ..) = response
   case status {
     200 ->
-      utils.decode_bits(
+      json.parse_bits(
         body,
-        zero.list(schema.dependabot_alert_with_repository_decoder()),
+        decode.list(schema.dependabot_alert_with_repository_decoder()),
       )
       |> result.map(Ok)
-    _ -> "API doesn't describe default response" |> Error |> Ok
+    _ -> response |> Error |> Ok
   }
 }
 
@@ -10108,12 +10159,12 @@ pub fn activity_list_public_events_for_user_request(
 }
 
 pub fn activity_list_public_events_for_user_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, body:, ..) = response
   case status {
     200 ->
-      utils.decode_bits(body, zero.list(schema.event_decoder()))
+      json.parse_bits(body, decode.list(schema.event_decoder()))
       |> result.map(Ok)
-    _ -> "API doesn't describe default response" |> Error |> Ok
+    _ -> response |> Error |> Ok
   }
 }
 
@@ -10135,10 +10186,10 @@ pub fn codespaces_create_with_repo_for_authenticated_user_request(
 }
 
 pub fn codespaces_create_with_repo_for_authenticated_user_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, body:, ..) = response
   case status {
-    201 -> utils.decode_bits(body, schema.codespace_decoder()) |> result.map(Ok)
-    _ -> "API doesn't describe default response" |> Error |> Ok
+    201 -> json.parse_bits(body, schema.codespace_decoder()) |> result.map(Ok)
+    _ -> response |> Error |> Ok
   }
 }
 
@@ -10162,10 +10213,10 @@ pub fn codespaces_list_in_repository_for_authenticated_user_request(
 }
 
 pub fn codespaces_list_in_repository_for_authenticated_user_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, body:, ..) = response
   case status {
-    200 -> utils.decode_bits(body, zero.dynamic) |> result.map(Ok)
-    _ -> "API doesn't describe default response" |> Error |> Ok
+    200 -> json.parse_bits(body, decode.dynamic) |> result.map(Ok)
+    _ -> response |> Error |> Ok
   }
 }
 
@@ -10188,15 +10239,15 @@ pub fn classroom_list_assignments_for_a_classroom_request(
 }
 
 pub fn classroom_list_assignments_for_a_classroom_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, body:, ..) = response
   case status {
     200 ->
-      utils.decode_bits(
+      json.parse_bits(
         body,
-        zero.list(schema.simple_classroom_assignment_decoder()),
+        decode.list(schema.simple_classroom_assignment_decoder()),
       )
       |> result.map(Ok)
-    _ -> "API doesn't describe default response" |> Error |> Ok
+    _ -> response |> Error |> Ok
   }
 }
 
@@ -10211,12 +10262,12 @@ pub fn apps_get_repo_installation_request(base, owner, repo) {
 }
 
 pub fn apps_get_repo_installation_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, body:, ..) = response
   case status {
     200 ->
-      utils.decode_bits(body, schema.installation_decoder())
-      |> result.map(Ok)
-    _ -> "API doesn't describe default response" |> Error |> Ok
+      json.parse_bits(body, schema.installation_decoder()) |> result.map(Ok)
+    _ ->
+      json.parse_bits(body, schema.basic_error_decoder()) |> result.map(Error)
   }
 }
 
@@ -10231,10 +10282,10 @@ pub fn orgs_revoke_all_org_roles_team_request(base, org, team_slug) {
 }
 
 pub fn orgs_revoke_all_org_roles_team_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, ..) = response
   case status {
     204 -> Ok(Nil) |> Ok
-    _ -> "API doesn't describe default response" |> Error |> Ok
+    _ -> response |> Error |> Ok
   }
 }
 
@@ -10262,10 +10313,10 @@ pub fn search_issues_and_pull_requests_request(
 }
 
 pub fn search_issues_and_pull_requests_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, body:, ..) = response
   case status {
-    200 -> utils.decode_bits(body, zero.dynamic) |> result.map(Ok)
-    _ -> "API doesn't describe default response" |> Error |> Ok
+    200 -> json.parse_bits(body, decode.dynamic) |> result.map(Ok)
+    _ -> response |> Error |> Ok
   }
 }
 
@@ -10292,12 +10343,12 @@ pub fn copilot_usage_metrics_for_org_request(
 }
 
 pub fn copilot_usage_metrics_for_org_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, body:, ..) = response
   case status {
     200 ->
-      utils.decode_bits(body, zero.list(schema.copilot_usage_metrics_decoder()))
+      json.parse_bits(body, decode.list(schema.copilot_usage_metrics_decoder()))
       |> result.map(Ok)
-    _ -> "API doesn't describe default response" |> Error |> Ok
+    _ -> response |> Error |> Ok
   }
 }
 
@@ -10323,12 +10374,12 @@ pub fn actions_update_self_hosted_runner_group_for_org_request(
 }
 
 pub fn actions_update_self_hosted_runner_group_for_org_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, body:, ..) = response
   case status {
     200 ->
-      utils.decode_bits(body, schema.runner_groups_org_decoder())
+      json.parse_bits(body, schema.runner_groups_org_decoder())
       |> result.map(Ok)
-    _ -> "API doesn't describe default response" |> Error |> Ok
+    _ -> response |> Error |> Ok
   }
 }
 
@@ -10351,10 +10402,10 @@ pub fn actions_delete_self_hosted_runner_group_from_org_request(
 }
 
 pub fn actions_delete_self_hosted_runner_group_from_org_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, ..) = response
   case status {
     204 -> Ok(Nil) |> Ok
-    _ -> "API doesn't describe default response" |> Error |> Ok
+    _ -> response |> Error |> Ok
   }
 }
 
@@ -10377,12 +10428,12 @@ pub fn actions_get_self_hosted_runner_group_for_org_request(
 }
 
 pub fn actions_get_self_hosted_runner_group_for_org_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, body:, ..) = response
   case status {
     200 ->
-      utils.decode_bits(body, schema.runner_groups_org_decoder())
+      json.parse_bits(body, schema.runner_groups_org_decoder())
       |> result.map(Ok)
-    _ -> "API doesn't describe default response" |> Error |> Ok
+    _ -> response |> Error |> Ok
   }
 }
 
@@ -10405,10 +10456,10 @@ pub fn orgs_create_or_update_custom_properties_values_for_repos_request(
 pub fn orgs_create_or_update_custom_properties_values_for_repos_response(
   response,
 ) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, ..) = response
   case status {
     204 -> Ok(Nil) |> Ok
-    _ -> "API doesn't describe default response" |> Error |> Ok
+    _ -> response |> Error |> Ok
   }
 }
 
@@ -10433,15 +10484,15 @@ pub fn orgs_list_custom_properties_values_for_repos_request(
 }
 
 pub fn orgs_list_custom_properties_values_for_repos_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, body:, ..) = response
   case status {
     200 ->
-      utils.decode_bits(
+      json.parse_bits(
         body,
-        zero.list(schema.org_repo_custom_property_values_decoder()),
+        decode.list(schema.org_repo_custom_property_values_decoder()),
       )
       |> result.map(Ok)
-    _ -> "API doesn't describe default response" |> Error |> Ok
+    _ -> response |> Error |> Ok
   }
 }
 
@@ -10468,12 +10519,12 @@ pub fn activity_list_repos_starred_by_user_request(
 }
 
 pub fn activity_list_repos_starred_by_user_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, body:, ..) = response
   case status {
     200 ->
-      utils.decode_bits(body, zero.failure(Nil, "Unsupported schema"))
+      json.parse_bits(body, decode.failure(Nil, "Unsupported schema"))
       |> result.map(Ok)
-    _ -> "API doesn't describe default response" |> Error |> Ok
+    _ -> response |> Error |> Ok
   }
 }
 
@@ -10516,10 +10567,10 @@ pub fn actions_list_workflow_runs_for_repo_request(
 }
 
 pub fn actions_list_workflow_runs_for_repo_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, body:, ..) = response
   case status {
-    200 -> utils.decode_bits(body, zero.dynamic) |> result.map(Ok)
-    _ -> "API doesn't describe default response" |> Error |> Ok
+    200 -> json.parse_bits(body, decode.dynamic) |> result.map(Ok)
+    _ -> response |> Error |> Ok
   }
 }
 
@@ -10540,10 +10591,10 @@ pub fn code_scanning_delete_codeql_database_request(base, owner, repo, language)
 }
 
 pub fn code_scanning_delete_codeql_database_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, ..) = response
   case status {
     204 -> Ok(Nil) |> Ok
-    _ -> "API doesn't describe default response" |> Error |> Ok
+    _ -> response |> Error |> Ok
   }
 }
 
@@ -10564,12 +10615,12 @@ pub fn code_scanning_get_codeql_database_request(base, owner, repo, language) {
 }
 
 pub fn code_scanning_get_codeql_database_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, body:, ..) = response
   case status {
     200 ->
-      utils.decode_bits(body, schema.code_scanning_codeql_database_decoder())
+      json.parse_bits(body, schema.code_scanning_codeql_database_decoder())
       |> result.map(Ok)
-    _ -> "API doesn't describe default response" |> Error |> Ok
+    _ -> response |> Error |> Ok
   }
 }
 
@@ -10584,10 +10635,12 @@ pub fn repos_get_code_frequency_stats_request(base, owner, repo) {
 }
 
 pub fn repos_get_code_frequency_stats_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, body:, ..) = response
   case status {
-    204 -> Ok(Nil) |> Ok
-    _ -> "API doesn't describe default response" |> Error |> Ok
+    200 ->
+      json.parse_bits(body, decode.list(schema.code_frequency_stat_decoder()))
+      |> result.map(Ok)
+    _ -> Error(Nil) |> Ok
   }
 }
 
@@ -10617,12 +10670,11 @@ pub fn actions_re_run_workflow_failed_jobs_request(
 }
 
 pub fn actions_re_run_workflow_failed_jobs_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, body:, ..) = response
   case status {
     201 ->
-      utils.decode_bits(body, schema.empty_object_decoder())
-      |> result.map(Ok)
-    _ -> "API doesn't describe default response" |> Error |> Ok
+      json.parse_bits(body, schema.empty_object_decoder()) |> result.map(Ok)
+    _ -> response |> Error |> Ok
   }
 }
 
@@ -10645,10 +10697,10 @@ pub fn actions_set_selected_repositories_enabled_github_actions_organization_req
 pub fn actions_set_selected_repositories_enabled_github_actions_organization_response(
   response,
 ) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, ..) = response
   case status {
     204 -> Ok(Nil) |> Ok
-    _ -> "API doesn't describe default response" |> Error |> Ok
+    _ -> response |> Error |> Ok
   }
 }
 
@@ -10673,10 +10725,10 @@ pub fn actions_list_selected_repositories_enabled_github_actions_organization_re
 pub fn actions_list_selected_repositories_enabled_github_actions_organization_response(
   response,
 ) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, body:, ..) = response
   case status {
-    200 -> utils.decode_bits(body, zero.dynamic) |> result.map(Ok)
-    _ -> "API doesn't describe default response" |> Error |> Ok
+    200 -> json.parse_bits(body, decode.dynamic) |> result.map(Ok)
+    _ -> response |> Error |> Ok
   }
 }
 
@@ -10706,12 +10758,12 @@ pub fn issues_list_comments_for_repo_request(
 }
 
 pub fn issues_list_comments_for_repo_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, body:, ..) = response
   case status {
     200 ->
-      utils.decode_bits(body, zero.list(schema.issue_comment_decoder()))
+      json.parse_bits(body, decode.list(schema.issue_comment_decoder()))
       |> result.map(Ok)
-    _ -> "API doesn't describe default response" |> Error |> Ok
+    _ -> response |> Error |> Ok
   }
 }
 
@@ -10729,12 +10781,12 @@ pub fn repos_list_tags_request(base, owner, repo, per_page per_page, page page) 
 }
 
 pub fn repos_list_tags_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, body:, ..) = response
   case status {
     200 ->
-      utils.decode_bits(body, zero.list(schema.tag_decoder()))
+      json.parse_bits(body, decode.list(schema.tag_decoder()))
       |> result.map(Ok)
-    _ -> "API doesn't describe default response" |> Error |> Ok
+    _ -> response |> Error |> Ok
   }
 }
 
@@ -10750,10 +10802,10 @@ pub fn apps_redeliver_webhook_delivery_request(base, delivery_id) {
 }
 
 pub fn apps_redeliver_webhook_delivery_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, body:, ..) = response
   case status {
-    202 -> utils.decode_bits(body, zero.dynamic) |> result.map(Ok)
-    _ -> "API doesn't describe default response" |> Error |> Ok
+    202 -> json.parse_bits(body, decode.dynamic) |> result.map(Ok)
+    _ -> response |> Error |> Ok
   }
 }
 
@@ -10774,12 +10826,12 @@ pub fn codespaces_publish_for_authenticated_user_request(
 }
 
 pub fn codespaces_publish_for_authenticated_user_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, body:, ..) = response
   case status {
     201 ->
-      utils.decode_bits(body, schema.codespace_with_full_repository_decoder())
+      json.parse_bits(body, schema.codespace_with_full_repository_decoder())
       |> result.map(Ok)
-    _ -> "API doesn't describe default response" |> Error |> Ok
+    _ -> response |> Error |> Ok
   }
 }
 
@@ -10794,10 +10846,15 @@ pub fn code_security_get_configuration_for_repository_request(base, owner, repo)
 }
 
 pub fn code_security_get_configuration_for_repository_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, body:, ..) = response
   case status {
-    204 -> Ok(Nil) |> Ok
-    _ -> "API doesn't describe default response" |> Error |> Ok
+    200 ->
+      json.parse_bits(
+        body,
+        schema.code_security_configuration_for_repository_decoder(),
+      )
+      |> result.map(Ok)
+    _ -> response |> Error |> Ok
   }
 }
 
@@ -10832,12 +10889,11 @@ pub fn actions_get_workflow_run_attempt_request(
 }
 
 pub fn actions_get_workflow_run_attempt_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, body:, ..) = response
   case status {
     200 ->
-      utils.decode_bits(body, schema.workflow_run_decoder())
-      |> result.map(Ok)
-    _ -> "API doesn't describe default response" |> Error |> Ok
+      json.parse_bits(body, schema.workflow_run_decoder()) |> result.map(Ok)
+    _ -> response |> Error |> Ok
   }
 }
 
@@ -10854,12 +10910,12 @@ pub fn apps_update_webhook_config_for_app_request(base, data) {
 }
 
 pub fn apps_update_webhook_config_for_app_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, body:, ..) = response
   case status {
     200 ->
-      utils.decode_bits(body, schema.webhook_config_decoder())
+      json.parse_bits(body, schema.webhook_config_decoder())
       |> result.map(Ok)
-    _ -> "API doesn't describe default response" |> Error |> Ok
+    _ -> response |> Error |> Ok
   }
 }
 
@@ -10874,12 +10930,12 @@ pub fn apps_get_webhook_config_for_app_request(base) {
 }
 
 pub fn apps_get_webhook_config_for_app_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, body:, ..) = response
   case status {
     200 ->
-      utils.decode_bits(body, schema.webhook_config_decoder())
+      json.parse_bits(body, schema.webhook_config_decoder())
       |> result.map(Ok)
-    _ -> "API doesn't describe default response" |> Error |> Ok
+    _ -> response |> Error |> Ok
   }
 }
 
@@ -10901,12 +10957,12 @@ pub fn actions_get_reviews_for_run_request(base, owner, repo, run_id) {
 }
 
 pub fn actions_get_reviews_for_run_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, body:, ..) = response
   case status {
     200 ->
-      utils.decode_bits(body, zero.list(schema.environment_approvals_decoder()))
+      json.parse_bits(body, decode.list(schema.environment_approvals_decoder()))
       |> result.map(Ok)
-    _ -> "API doesn't describe default response" |> Error |> Ok
+    _ -> response |> Error |> Ok
   }
 }
 
@@ -10928,10 +10984,10 @@ pub fn actions_disable_workflow_request(base, owner, repo, workflow_id) {
 }
 
 pub fn actions_disable_workflow_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, ..) = response
   case status {
     204 -> Ok(Nil) |> Ok
-    _ -> "API doesn't describe default response" |> Error |> Ok
+    _ -> response |> Error |> Ok
   }
 }
 
@@ -10950,10 +11006,10 @@ pub fn packages_delete_package_for_authenticated_user_request(
 }
 
 pub fn packages_delete_package_for_authenticated_user_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, ..) = response
   case status {
     204 -> Ok(Nil) |> Ok
-    _ -> "API doesn't describe default response" |> Error |> Ok
+    _ -> response |> Error |> Ok
   }
 }
 
@@ -10972,10 +11028,10 @@ pub fn packages_get_package_for_authenticated_user_request(
 }
 
 pub fn packages_get_package_for_authenticated_user_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, body:, ..) = response
   case status {
-    200 -> utils.decode_bits(body, schema.package_decoder()) |> result.map(Ok)
-    _ -> "API doesn't describe default response" |> Error |> Ok
+    200 -> json.parse_bits(body, schema.package_decoder()) |> result.map(Ok)
+    _ -> response |> Error |> Ok
   }
 }
 
@@ -10990,12 +11046,12 @@ pub fn actions_get_repo_public_key_request(base, owner, repo) {
 }
 
 pub fn actions_get_repo_public_key_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, body:, ..) = response
   case status {
     200 ->
-      utils.decode_bits(body, schema.actions_public_key_decoder())
+      json.parse_bits(body, schema.actions_public_key_decoder())
       |> result.map(Ok)
-    _ -> "API doesn't describe default response" |> Error |> Ok
+    _ -> response |> Error |> Ok
   }
 }
 
@@ -11019,12 +11075,12 @@ pub fn activity_list_repo_events_request(
 }
 
 pub fn activity_list_repo_events_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, body:, ..) = response
   case status {
     200 ->
-      utils.decode_bits(body, zero.list(schema.event_decoder()))
+      json.parse_bits(body, decode.list(schema.event_decoder()))
       |> result.map(Ok)
-    _ -> "API doesn't describe default response" |> Error |> Ok
+    _ -> response |> Error |> Ok
   }
 }
 
@@ -11045,10 +11101,10 @@ pub fn codespaces_update_for_authenticated_user_request(
 }
 
 pub fn codespaces_update_for_authenticated_user_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, body:, ..) = response
   case status {
-    200 -> utils.decode_bits(body, schema.codespace_decoder()) |> result.map(Ok)
-    _ -> "API doesn't describe default response" |> Error |> Ok
+    200 -> json.parse_bits(body, schema.codespace_decoder()) |> result.map(Ok)
+    _ -> response |> Error |> Ok
   }
 }
 
@@ -11063,10 +11119,10 @@ pub fn codespaces_delete_for_authenticated_user_request(base, codespace_name) {
 }
 
 pub fn codespaces_delete_for_authenticated_user_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, body:, ..) = response
   case status {
-    202 -> utils.decode_bits(body, zero.dynamic) |> result.map(Ok)
-    _ -> "API doesn't describe default response" |> Error |> Ok
+    202 -> json.parse_bits(body, decode.dynamic) |> result.map(Ok)
+    _ -> response |> Error |> Ok
   }
 }
 
@@ -11081,10 +11137,10 @@ pub fn codespaces_get_for_authenticated_user_request(base, codespace_name) {
 }
 
 pub fn codespaces_get_for_authenticated_user_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, body:, ..) = response
   case status {
-    200 -> utils.decode_bits(body, schema.codespace_decoder()) |> result.map(Ok)
-    _ -> "API doesn't describe default response" |> Error |> Ok
+    200 -> json.parse_bits(body, schema.codespace_decoder()) |> result.map(Ok)
+    _ -> response |> Error |> Ok
   }
 }
 
@@ -11102,12 +11158,12 @@ pub fn orgs_list_request(base, since since, per_page per_page) {
 }
 
 pub fn orgs_list_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, body:, ..) = response
   case status {
     200 ->
-      utils.decode_bits(body, zero.list(schema.organization_simple_decoder()))
+      json.parse_bits(body, decode.list(schema.organization_simple_decoder()))
       |> result.map(Ok)
-    _ -> "API doesn't describe default response" |> Error |> Ok
+    _ -> response |> Error |> Ok
   }
 }
 
@@ -11131,15 +11187,15 @@ pub fn teams_list_pending_invitations_in_org_request(
 }
 
 pub fn teams_list_pending_invitations_in_org_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, body:, ..) = response
   case status {
     200 ->
-      utils.decode_bits(
+      json.parse_bits(
         body,
-        zero.list(schema.organization_invitation_decoder()),
+        decode.list(schema.organization_invitation_decoder()),
       )
       |> result.map(Ok)
-    _ -> "API doesn't describe default response" |> Error |> Ok
+    _ -> response |> Error |> Ok
   }
 }
 
@@ -11156,10 +11212,10 @@ pub fn migrations_start_for_org_request(base, org, data) {
 }
 
 pub fn migrations_start_for_org_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, body:, ..) = response
   case status {
-    201 -> utils.decode_bits(body, schema.migration_decoder()) |> result.map(Ok)
-    _ -> "API doesn't describe default response" |> Error |> Ok
+    201 -> json.parse_bits(body, schema.migration_decoder()) |> result.map(Ok)
+    _ -> response |> Error |> Ok
   }
 }
 
@@ -11175,7 +11231,10 @@ pub fn migrations_list_for_org_request(
   let query = [
     #("per_page", option.map(per_page, int.to_string)),
     #("page", option.map(page, int.to_string)),
-    #("exclude", panic as "exclude"),
+    #(
+      "exclude",
+      option.map(exclude, fn(_) { panic as "query parameter is not supported" }),
+    ),
   ]
   base
   |> utils.set_method(method)
@@ -11184,12 +11243,12 @@ pub fn migrations_list_for_org_request(
 }
 
 pub fn migrations_list_for_org_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, body:, ..) = response
   case status {
     200 ->
-      utils.decode_bits(body, zero.list(schema.migration_decoder()))
+      json.parse_bits(body, decode.list(schema.migration_decoder()))
       |> result.map(Ok)
-    _ -> "API doesn't describe default response" |> Error |> Ok
+    _ -> response |> Error |> Ok
   }
 }
 
@@ -11206,12 +11265,12 @@ pub fn orgs_create_or_update_custom_properties_request(base, org, data) {
 }
 
 pub fn orgs_create_or_update_custom_properties_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, body:, ..) = response
   case status {
     200 ->
-      utils.decode_bits(body, zero.list(schema.custom_property_decoder()))
+      json.parse_bits(body, decode.list(schema.custom_property_decoder()))
       |> result.map(Ok)
-    _ -> "API doesn't describe default response" |> Error |> Ok
+    _ -> response |> Error |> Ok
   }
 }
 
@@ -11226,12 +11285,12 @@ pub fn orgs_get_all_custom_properties_request(base, org) {
 }
 
 pub fn orgs_get_all_custom_properties_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, body:, ..) = response
   case status {
     200 ->
-      utils.decode_bits(body, zero.list(schema.custom_property_decoder()))
+      json.parse_bits(body, decode.list(schema.custom_property_decoder()))
       |> result.map(Ok)
-    _ -> "API doesn't describe default response" |> Error |> Ok
+    _ -> response |> Error |> Ok
   }
 }
 
@@ -11254,10 +11313,10 @@ pub fn teams_remove_repo_in_org_request(base, org, team_slug, owner, repo) {
 }
 
 pub fn teams_remove_repo_in_org_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, ..) = response
   case status {
     204 -> Ok(Nil) |> Ok
-    _ -> "API doesn't describe default response" |> Error |> Ok
+    _ -> response |> Error |> Ok
   }
 }
 
@@ -11289,10 +11348,10 @@ pub fn teams_add_or_update_repo_permissions_in_org_request(
 }
 
 pub fn teams_add_or_update_repo_permissions_in_org_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, ..) = response
   case status {
     204 -> Ok(Nil) |> Ok
-    _ -> "API doesn't describe default response" |> Error |> Ok
+    _ -> response |> Error |> Ok
   }
 }
 
@@ -11321,10 +11380,12 @@ pub fn teams_check_permissions_for_repo_in_org_request(
 }
 
 pub fn teams_check_permissions_for_repo_in_org_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, body:, ..) = response
   case status {
-    204 -> Ok(Nil) |> Ok
-    _ -> "API doesn't describe default response" |> Error |> Ok
+    200 ->
+      json.parse_bits(body, schema.team_repository_decoder())
+      |> result.map(Ok)
+    _ -> Error(Nil) |> Ok
   }
 }
 
@@ -11339,12 +11400,13 @@ pub fn git_list_matching_refs_request(base, owner, repo, ref) {
 }
 
 pub fn git_list_matching_refs_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, body:, ..) = response
   case status {
     200 ->
-      utils.decode_bits(body, zero.list(schema.git_ref_decoder()))
+      json.parse_bits(body, decode.list(schema.git_ref_decoder()))
       |> result.map(Ok)
-    _ -> "API doesn't describe default response" |> Error |> Ok
+    _ ->
+      json.parse_bits(body, schema.basic_error_decoder()) |> result.map(Error)
   }
 }
 
@@ -11360,10 +11422,11 @@ pub fn apps_unsuspend_installation_request(base, installation_id) {
 }
 
 pub fn apps_unsuspend_installation_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, body:, ..) = response
   case status {
     204 -> Ok(Nil) |> Ok
-    _ -> "API doesn't describe default response" |> Error |> Ok
+    _ ->
+      json.parse_bits(body, schema.basic_error_decoder()) |> result.map(Error)
   }
 }
 
@@ -11379,10 +11442,11 @@ pub fn apps_suspend_installation_request(base, installation_id) {
 }
 
 pub fn apps_suspend_installation_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, body:, ..) = response
   case status {
     204 -> Ok(Nil) |> Ok
-    _ -> "API doesn't describe default response" |> Error |> Ok
+    _ ->
+      json.parse_bits(body, schema.basic_error_decoder()) |> result.map(Error)
   }
 }
 
@@ -11406,12 +11470,12 @@ pub fn gists_list_starred_request(
 }
 
 pub fn gists_list_starred_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, body:, ..) = response
   case status {
     200 ->
-      utils.decode_bits(body, zero.list(schema.base_gist_decoder()))
+      json.parse_bits(body, decode.list(schema.base_gist_decoder()))
       |> result.map(Ok)
-    _ -> "API doesn't describe default response" |> Error |> Ok
+    _ -> response |> Error |> Ok
   }
 }
 
@@ -11438,15 +11502,15 @@ pub fn secret_scanning_create_push_protection_bypass_request(
 }
 
 pub fn secret_scanning_create_push_protection_bypass_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, body:, ..) = response
   case status {
     200 ->
-      utils.decode_bits(
+      json.parse_bits(
         body,
         schema.secret_scanning_push_protection_bypass_decoder(),
       )
       |> result.map(Ok)
-    _ -> "API doesn't describe default response" |> Error |> Ok
+    _ -> response |> Error |> Ok
   }
 }
 
@@ -11478,12 +11542,12 @@ pub fn issues_list_labels_for_milestone_request(
 }
 
 pub fn issues_list_labels_for_milestone_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, body:, ..) = response
   case status {
     200 ->
-      utils.decode_bits(body, zero.list(schema.label_decoder()))
+      json.parse_bits(body, decode.list(schema.label_decoder()))
       |> result.map(Ok)
-    _ -> "API doesn't describe default response" |> Error |> Ok
+    _ -> response |> Error |> Ok
   }
 }
 
@@ -11504,10 +11568,10 @@ pub fn actions_delete_workflow_run_request(base, owner, repo, run_id) {
 }
 
 pub fn actions_delete_workflow_run_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, ..) = response
   case status {
     204 -> Ok(Nil) |> Ok
-    _ -> "API doesn't describe default response" |> Error |> Ok
+    _ -> response |> Error |> Ok
   }
 }
 
@@ -11539,12 +11603,11 @@ pub fn actions_get_workflow_run_request(
 }
 
 pub fn actions_get_workflow_run_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, body:, ..) = response
   case status {
     200 ->
-      utils.decode_bits(body, schema.workflow_run_decoder())
-      |> result.map(Ok)
-    _ -> "API doesn't describe default response" |> Error |> Ok
+      json.parse_bits(body, schema.workflow_run_decoder()) |> result.map(Ok)
+    _ -> response |> Error |> Ok
   }
 }
 
@@ -11559,10 +11622,10 @@ pub fn git_get_tag_request(base, owner, repo, tag_sha) {
 }
 
 pub fn git_get_tag_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, body:, ..) = response
   case status {
-    200 -> utils.decode_bits(body, schema.git_tag_decoder()) |> result.map(Ok)
-    _ -> "API doesn't describe default response" |> Error |> Ok
+    200 -> json.parse_bits(body, schema.git_tag_decoder()) |> result.map(Ok)
+    _ -> response |> Error |> Ok
   }
 }
 
@@ -11593,10 +11656,10 @@ pub fn actions_remove_custom_label_from_self_hosted_runner_for_repo_request(
 pub fn actions_remove_custom_label_from_self_hosted_runner_for_repo_response(
   response,
 ) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, body:, ..) = response
   case status {
-    200 -> utils.decode_bits(body, zero.dynamic) |> result.map(Ok)
-    _ -> "API doesn't describe default response" |> Error |> Ok
+    200 -> json.parse_bits(body, decode.dynamic) |> result.map(Ok)
+    _ -> response |> Error |> Ok
   }
 }
 
@@ -11611,12 +11674,10 @@ pub fn gists_get_revision_request(base, gist_id, sha) {
 }
 
 pub fn gists_get_revision_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, body:, ..) = response
   case status {
-    200 ->
-      utils.decode_bits(body, schema.gist_simple_decoder())
-      |> result.map(Ok)
-    _ -> "API doesn't describe default response" |> Error |> Ok
+    200 -> json.parse_bits(body, schema.gist_simple_decoder()) |> result.map(Ok)
+    _ -> response |> Error |> Ok
   }
 }
 
@@ -11648,12 +11709,12 @@ pub fn teams_update_discussion_comment_in_org_request(
 }
 
 pub fn teams_update_discussion_comment_in_org_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, body:, ..) = response
   case status {
     200 ->
-      utils.decode_bits(body, schema.team_discussion_comment_decoder())
+      json.parse_bits(body, schema.team_discussion_comment_decoder())
       |> result.map(Ok)
-    _ -> "API doesn't describe default response" |> Error |> Ok
+    _ -> response |> Error |> Ok
   }
 }
 
@@ -11682,10 +11743,10 @@ pub fn teams_delete_discussion_comment_in_org_request(
 }
 
 pub fn teams_delete_discussion_comment_in_org_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, ..) = response
   case status {
     204 -> Ok(Nil) |> Ok
-    _ -> "API doesn't describe default response" |> Error |> Ok
+    _ -> response |> Error |> Ok
   }
 }
 
@@ -11714,12 +11775,12 @@ pub fn teams_get_discussion_comment_in_org_request(
 }
 
 pub fn teams_get_discussion_comment_in_org_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, body:, ..) = response
   case status {
     200 ->
-      utils.decode_bits(body, schema.team_discussion_comment_decoder())
+      json.parse_bits(body, schema.team_discussion_comment_decoder())
       |> result.map(Ok)
-    _ -> "API doesn't describe default response" |> Error |> Ok
+    _ -> response |> Error |> Ok
   }
 }
 
@@ -11744,15 +11805,15 @@ pub fn codespaces_check_permissions_for_devcontainer_request(
 }
 
 pub fn codespaces_check_permissions_for_devcontainer_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, body:, ..) = response
   case status {
     200 ->
-      utils.decode_bits(
+      json.parse_bits(
         body,
         schema.codespaces_permissions_check_for_devcontainer_decoder(),
       )
       |> result.map(Ok)
-    _ -> "API doesn't describe default response" |> Error |> Ok
+    _ -> response |> Error |> Ok
   }
 }
 
@@ -11767,12 +11828,12 @@ pub fn apps_get_subscription_plan_for_account_request(base, account_id) {
 }
 
 pub fn apps_get_subscription_plan_for_account_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, body:, ..) = response
   case status {
     200 ->
-      utils.decode_bits(body, schema.marketplace_purchase_decoder())
+      json.parse_bits(body, schema.marketplace_purchase_decoder())
       |> result.map(Ok)
-    _ -> "API doesn't describe default response" |> Error |> Ok
+    _ -> response |> Error |> Ok
   }
 }
 
@@ -11798,10 +11859,12 @@ pub fn repos_list_contributors_request(
 }
 
 pub fn repos_list_contributors_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, body:, ..) = response
   case status {
-    204 -> Ok(Nil) |> Ok
-    _ -> "API doesn't describe default response" |> Error |> Ok
+    200 ->
+      json.parse_bits(body, decode.list(schema.contributor_decoder()))
+      |> result.map(Ok)
+    _ -> response |> Error |> Ok
   }
 }
 
@@ -11827,12 +11890,12 @@ pub fn teams_list_members_in_org_request(
 }
 
 pub fn teams_list_members_in_org_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, body:, ..) = response
   case status {
     200 ->
-      utils.decode_bits(body, zero.list(schema.simple_user_decoder()))
+      json.parse_bits(body, decode.list(schema.simple_user_decoder()))
       |> result.map(Ok)
-    _ -> "API doesn't describe default response" |> Error |> Ok
+    _ -> response |> Error |> Ok
   }
 }
 
@@ -11876,12 +11939,12 @@ pub fn secret_scanning_list_alerts_for_repo_request(
 }
 
 pub fn secret_scanning_list_alerts_for_repo_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, body:, ..) = response
   case status {
     200 ->
-      utils.decode_bits(body, zero.list(schema.secret_scanning_alert_decoder()))
+      json.parse_bits(body, decode.list(schema.secret_scanning_alert_decoder()))
       |> result.map(Ok)
-    _ -> "API doesn't describe default response" |> Error |> Ok
+    _ -> response |> Error |> Ok
   }
 }
 
@@ -11904,12 +11967,12 @@ pub fn migrations_map_commit_author_request(base, owner, repo, author_id, data) 
 }
 
 pub fn migrations_map_commit_author_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, body:, ..) = response
   case status {
     200 ->
-      utils.decode_bits(body, schema.porter_author_decoder())
+      json.parse_bits(body, schema.porter_author_decoder())
       |> result.map(Ok)
-    _ -> "API doesn't describe default response" |> Error |> Ok
+    _ -> response |> Error |> Ok
   }
 }
 
@@ -11926,12 +11989,11 @@ pub fn gists_create_comment_request(base, gist_id, data) {
 }
 
 pub fn gists_create_comment_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, body:, ..) = response
   case status {
     201 ->
-      utils.decode_bits(body, schema.gist_comment_decoder())
-      |> result.map(Ok)
-    _ -> "API doesn't describe default response" |> Error |> Ok
+      json.parse_bits(body, schema.gist_comment_decoder()) |> result.map(Ok)
+    _ -> response |> Error |> Ok
   }
 }
 
@@ -11949,12 +12011,12 @@ pub fn gists_list_comments_request(base, gist_id, per_page per_page, page page) 
 }
 
 pub fn gists_list_comments_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, body:, ..) = response
   case status {
     200 ->
-      utils.decode_bits(body, zero.list(schema.gist_comment_decoder()))
+      json.parse_bits(body, decode.list(schema.gist_comment_decoder()))
       |> result.map(Ok)
-    _ -> "API doesn't describe default response" |> Error |> Ok
+    _ -> response |> Error |> Ok
   }
 }
 
@@ -11975,10 +12037,10 @@ pub fn packages_restore_package_for_authenticated_user_request(
 }
 
 pub fn packages_restore_package_for_authenticated_user_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, ..) = response
   case status {
     204 -> Ok(Nil) |> Ok
-    _ -> "API doesn't describe default response" |> Error |> Ok
+    _ -> response |> Error |> Ok
   }
 }
 
@@ -11994,12 +12056,12 @@ pub fn code_scanning_get_sarif_request(base, owner, repo, sarif_id) {
 }
 
 pub fn code_scanning_get_sarif_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, body:, ..) = response
   case status {
     200 ->
-      utils.decode_bits(body, schema.code_scanning_sarifs_status_decoder())
+      json.parse_bits(body, schema.code_scanning_sarifs_status_decoder())
       |> result.map(Ok)
-    _ -> "API doesn't describe default response" |> Error |> Ok
+    _ -> response |> Error |> Ok
   }
 }
 
@@ -12016,10 +12078,10 @@ pub fn activity_mark_repo_notifications_as_read_request(base, owner, repo, data)
 }
 
 pub fn activity_mark_repo_notifications_as_read_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, body:, ..) = response
   case status {
-    202 -> utils.decode_bits(body, zero.dynamic) |> result.map(Ok)
-    _ -> "API doesn't describe default response" |> Error |> Ok
+    202 -> json.parse_bits(body, decode.dynamic) |> result.map(Ok)
+    _ -> response |> Error |> Ok
   }
 }
 
@@ -12053,12 +12115,12 @@ pub fn activity_list_repo_notifications_for_authenticated_user_request(
 pub fn activity_list_repo_notifications_for_authenticated_user_response(
   response,
 ) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, body:, ..) = response
   case status {
     200 ->
-      utils.decode_bits(body, zero.list(schema.thread_decoder()))
+      json.parse_bits(body, decode.list(schema.thread_decoder()))
       |> result.map(Ok)
-    _ -> "API doesn't describe default response" |> Error |> Ok
+    _ -> response |> Error |> Ok
   }
 }
 
@@ -12086,10 +12148,10 @@ pub fn search_users_request(
 }
 
 pub fn search_users_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, body:, ..) = response
   case status {
-    200 -> utils.decode_bits(body, zero.dynamic) |> result.map(Ok)
-    _ -> "API doesn't describe default response" |> Error |> Ok
+    200 -> json.parse_bits(body, decode.dynamic) |> result.map(Ok)
+    _ -> response |> Error |> Ok
   }
 }
 
@@ -12113,12 +12175,14 @@ pub fn activity_list_stargazers_for_repo_request(
 }
 
 pub fn activity_list_stargazers_for_repo_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, body:, ..) = response
   case status {
     200 ->
-      utils.decode_bits(body, zero.failure(Nil, "Unsupported schema"))
+      json.parse_bits(body, decode.failure(Nil, "Unsupported schema"))
       |> result.map(Ok)
-    _ -> "API doesn't describe default response" |> Error |> Ok
+    _ ->
+      json.parse_bits(body, schema.validation_error_decoder())
+      |> result.map(Error)
   }
 }
 
@@ -12141,10 +12205,10 @@ pub fn issues_update_request(base, owner, repo, issue_number, data) {
 }
 
 pub fn issues_update_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, body:, ..) = response
   case status {
-    200 -> utils.decode_bits(body, schema.issue_decoder()) |> result.map(Ok)
-    _ -> "API doesn't describe default response" |> Error |> Ok
+    200 -> json.parse_bits(body, schema.issue_decoder()) |> result.map(Ok)
+    _ -> response |> Error |> Ok
   }
 }
 
@@ -12165,10 +12229,10 @@ pub fn issues_get_request(base, owner, repo, issue_number) {
 }
 
 pub fn issues_get_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, body:, ..) = response
   case status {
-    200 -> utils.decode_bits(body, schema.issue_decoder()) |> result.map(Ok)
-    _ -> "API doesn't describe default response" |> Error |> Ok
+    200 -> json.parse_bits(body, schema.issue_decoder()) |> result.map(Ok)
+    _ -> response |> Error |> Ok
   }
 }
 
@@ -12183,12 +12247,12 @@ pub fn codespaces_get_org_public_key_request(base, org) {
 }
 
 pub fn codespaces_get_org_public_key_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, body:, ..) = response
   case status {
     200 ->
-      utils.decode_bits(body, schema.codespaces_public_key_decoder())
+      json.parse_bits(body, schema.codespaces_public_key_decoder())
       |> result.map(Ok)
-    _ -> "API doesn't describe default response" |> Error |> Ok
+    _ -> response |> Error |> Ok
   }
 }
 
@@ -12203,12 +12267,11 @@ pub fn projects_create_card_request(base, column_id) {
 }
 
 pub fn projects_create_card_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, body:, ..) = response
   case status {
     201 ->
-      utils.decode_bits(body, schema.project_card_decoder())
-      |> result.map(Ok)
-    _ -> "API doesn't describe default response" |> Error |> Ok
+      json.parse_bits(body, schema.project_card_decoder()) |> result.map(Ok)
+    _ -> response |> Error |> Ok
   }
 }
 
@@ -12233,12 +12296,12 @@ pub fn projects_list_cards_request(
 }
 
 pub fn projects_list_cards_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, body:, ..) = response
   case status {
     200 ->
-      utils.decode_bits(body, zero.list(schema.project_card_decoder()))
+      json.parse_bits(body, decode.list(schema.project_card_decoder()))
       |> result.map(Ok)
-    _ -> "API doesn't describe default response" |> Error |> Ok
+    _ -> response |> Error |> Ok
   }
 }
 
@@ -12265,10 +12328,11 @@ pub fn repos_cancel_pages_deployment_request(
 }
 
 pub fn repos_cancel_pages_deployment_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, body:, ..) = response
   case status {
     204 -> Ok(Nil) |> Ok
-    _ -> "API doesn't describe default response" |> Error |> Ok
+    _ ->
+      json.parse_bits(body, schema.basic_error_decoder()) |> result.map(Error)
   }
 }
 
@@ -12285,10 +12349,10 @@ pub fn issues_update_label_request(base, owner, repo, name, data) {
 }
 
 pub fn issues_update_label_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, body:, ..) = response
   case status {
-    200 -> utils.decode_bits(body, schema.label_decoder()) |> result.map(Ok)
-    _ -> "API doesn't describe default response" |> Error |> Ok
+    200 -> json.parse_bits(body, schema.label_decoder()) |> result.map(Ok)
+    _ -> response |> Error |> Ok
   }
 }
 
@@ -12303,10 +12367,10 @@ pub fn issues_delete_label_request(base, owner, repo, name) {
 }
 
 pub fn issues_delete_label_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, ..) = response
   case status {
     204 -> Ok(Nil) |> Ok
-    _ -> "API doesn't describe default response" |> Error |> Ok
+    _ -> response |> Error |> Ok
   }
 }
 
@@ -12321,10 +12385,11 @@ pub fn issues_get_label_request(base, owner, repo, name) {
 }
 
 pub fn issues_get_label_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, body:, ..) = response
   case status {
-    200 -> utils.decode_bits(body, schema.label_decoder()) |> result.map(Ok)
-    _ -> "API doesn't describe default response" |> Error |> Ok
+    200 -> json.parse_bits(body, schema.label_decoder()) |> result.map(Ok)
+    _ ->
+      json.parse_bits(body, schema.basic_error_decoder()) |> result.map(Error)
   }
 }
 
@@ -12339,10 +12404,12 @@ pub fn repos_get_commit_activity_stats_request(base, owner, repo) {
 }
 
 pub fn repos_get_commit_activity_stats_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, body:, ..) = response
   case status {
-    204 -> Ok(Nil) |> Ok
-    _ -> "API doesn't describe default response" |> Error |> Ok
+    200 ->
+      json.parse_bits(body, decode.list(schema.commit_activity_decoder()))
+      |> result.map(Ok)
+    _ -> response |> Error |> Ok
   }
 }
 
@@ -12359,12 +12426,12 @@ pub fn teams_create_discussion_legacy_request(base, team_id, data) {
 }
 
 pub fn teams_create_discussion_legacy_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, body:, ..) = response
   case status {
     201 ->
-      utils.decode_bits(body, schema.team_discussion_decoder())
+      json.parse_bits(body, schema.team_discussion_decoder())
       |> result.map(Ok)
-    _ -> "API doesn't describe default response" |> Error |> Ok
+    _ -> response |> Error |> Ok
   }
 }
 
@@ -12389,12 +12456,12 @@ pub fn teams_list_discussions_legacy_request(
 }
 
 pub fn teams_list_discussions_legacy_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, body:, ..) = response
   case status {
     200 ->
-      utils.decode_bits(body, zero.list(schema.team_discussion_decoder()))
+      json.parse_bits(body, decode.list(schema.team_discussion_decoder()))
       |> result.map(Ok)
-    _ -> "API doesn't describe default response" |> Error |> Ok
+    _ -> response |> Error |> Ok
   }
 }
 
@@ -12411,10 +12478,10 @@ pub fn projects_move_column_request(base, column_id, data) {
 }
 
 pub fn projects_move_column_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, body:, ..) = response
   case status {
-    201 -> utils.decode_bits(body, zero.dynamic) |> result.map(Ok)
-    _ -> "API doesn't describe default response" |> Error |> Ok
+    201 -> json.parse_bits(body, decode.dynamic) |> result.map(Ok)
+    _ -> response |> Error |> Ok
   }
 }
 
@@ -12436,10 +12503,11 @@ pub fn repos_delete_admin_branch_protection_request(base, owner, repo, branch) {
 }
 
 pub fn repos_delete_admin_branch_protection_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, body:, ..) = response
   case status {
     204 -> Ok(Nil) |> Ok
-    _ -> "API doesn't describe default response" |> Error |> Ok
+    _ ->
+      json.parse_bits(body, schema.basic_error_decoder()) |> result.map(Error)
   }
 }
 
@@ -12461,12 +12529,12 @@ pub fn repos_set_admin_branch_protection_request(base, owner, repo, branch) {
 }
 
 pub fn repos_set_admin_branch_protection_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, body:, ..) = response
   case status {
     200 ->
-      utils.decode_bits(body, schema.protected_branch_admin_enforced_decoder())
+      json.parse_bits(body, schema.protected_branch_admin_enforced_decoder())
       |> result.map(Ok)
-    _ -> "API doesn't describe default response" |> Error |> Ok
+    _ -> response |> Error |> Ok
   }
 }
 
@@ -12488,12 +12556,12 @@ pub fn repos_get_admin_branch_protection_request(base, owner, repo, branch) {
 }
 
 pub fn repos_get_admin_branch_protection_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, body:, ..) = response
   case status {
     200 ->
-      utils.decode_bits(body, schema.protected_branch_admin_enforced_decoder())
+      json.parse_bits(body, schema.protected_branch_admin_enforced_decoder())
       |> result.map(Ok)
-    _ -> "API doesn't describe default response" |> Error |> Ok
+    _ -> response |> Error |> Ok
   }
 }
 
@@ -12510,10 +12578,10 @@ pub fn projects_create_for_authenticated_user_request(base, data) {
 }
 
 pub fn projects_create_for_authenticated_user_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, body:, ..) = response
   case status {
-    201 -> utils.decode_bits(body, schema.project_decoder()) |> result.map(Ok)
-    _ -> "API doesn't describe default response" |> Error |> Ok
+    201 -> json.parse_bits(body, schema.project_decoder()) |> result.map(Ok)
+    _ -> response |> Error |> Ok
   }
 }
 
@@ -12531,12 +12599,12 @@ pub fn orgs_list_public_members_request(base, org, per_page per_page, page page)
 }
 
 pub fn orgs_list_public_members_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, body:, ..) = response
   case status {
     200 ->
-      utils.decode_bits(body, zero.list(schema.simple_user_decoder()))
+      json.parse_bits(body, decode.list(schema.simple_user_decoder()))
       |> result.map(Ok)
-    _ -> "API doesn't describe default response" |> Error |> Ok
+    _ -> response |> Error |> Ok
   }
 }
 
@@ -12561,15 +12629,15 @@ pub fn repos_get_branch_rules_request(
 }
 
 pub fn repos_get_branch_rules_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, body:, ..) = response
   case status {
     200 ->
-      utils.decode_bits(
+      json.parse_bits(
         body,
-        zero.list(schema.repository_rule_detailed_decoder()),
+        decode.list(schema.repository_rule_detailed_decoder()),
       )
       |> result.map(Ok)
-    _ -> "API doesn't describe default response" |> Error |> Ok
+    _ -> response |> Error |> Ok
   }
 }
 
@@ -12603,12 +12671,13 @@ pub fn issues_list_for_authenticated_user_request(
 }
 
 pub fn issues_list_for_authenticated_user_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, body:, ..) = response
   case status {
     200 ->
-      utils.decode_bits(body, zero.list(schema.issue_decoder()))
+      json.parse_bits(body, decode.list(schema.issue_decoder()))
       |> result.map(Ok)
-    _ -> "API doesn't describe default response" |> Error |> Ok
+    _ ->
+      json.parse_bits(body, schema.basic_error_decoder()) |> result.map(Error)
   }
 }
 
@@ -12626,12 +12695,12 @@ pub fn classroom_list_classrooms_request(base, page page, per_page per_page) {
 }
 
 pub fn classroom_list_classrooms_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, body:, ..) = response
   case status {
     200 ->
-      utils.decode_bits(body, zero.list(schema.simple_classroom_decoder()))
+      json.parse_bits(body, decode.list(schema.simple_classroom_decoder()))
       |> result.map(Ok)
-    _ -> "API doesn't describe default response" |> Error |> Ok
+    _ -> response |> Error |> Ok
   }
 }
 
@@ -12646,12 +12715,12 @@ pub fn actions_create_registration_token_for_org_request(base, org) {
 }
 
 pub fn actions_create_registration_token_for_org_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, body:, ..) = response
   case status {
     201 ->
-      utils.decode_bits(body, schema.authentication_token_decoder())
+      json.parse_bits(body, schema.authentication_token_decoder())
       |> result.map(Ok)
-    _ -> "API doesn't describe default response" |> Error |> Ok
+    _ -> response |> Error |> Ok
   }
 }
 
@@ -12666,10 +12735,10 @@ pub fn codespaces_create_for_authenticated_user_request(base) {
 }
 
 pub fn codespaces_create_for_authenticated_user_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, body:, ..) = response
   case status {
-    201 -> utils.decode_bits(body, schema.codespace_decoder()) |> result.map(Ok)
-    _ -> "API doesn't describe default response" |> Error |> Ok
+    201 -> json.parse_bits(body, schema.codespace_decoder()) |> result.map(Ok)
+    _ -> response |> Error |> Ok
   }
 }
 
@@ -12693,10 +12762,10 @@ pub fn codespaces_list_for_authenticated_user_request(
 }
 
 pub fn codespaces_list_for_authenticated_user_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, body:, ..) = response
   case status {
-    200 -> utils.decode_bits(body, zero.dynamic) |> result.map(Ok)
-    _ -> "API doesn't describe default response" |> Error |> Ok
+    200 -> json.parse_bits(body, decode.dynamic) |> result.map(Ok)
+    _ -> response |> Error |> Ok
   }
 }
 
@@ -12711,10 +12780,10 @@ pub fn orgs_list_org_roles_request(base, org) {
 }
 
 pub fn orgs_list_org_roles_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, body:, ..) = response
   case status {
-    200 -> utils.decode_bits(body, zero.dynamic) |> result.map(Ok)
-    _ -> "API doesn't describe default response" |> Error |> Ok
+    200 -> json.parse_bits(body, decode.dynamic) |> result.map(Ok)
+    _ -> response |> Error |> Ok
   }
 }
 
@@ -12740,10 +12809,10 @@ pub fn dependabot_remove_selected_repo_from_org_secret_request(
 }
 
 pub fn dependabot_remove_selected_repo_from_org_secret_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, ..) = response
   case status {
     204 -> Ok(Nil) |> Ok
-    _ -> "API doesn't describe default response" |> Error |> Ok
+    _ -> Error(Nil) |> Ok
   }
 }
 
@@ -12769,10 +12838,10 @@ pub fn dependabot_add_selected_repo_to_org_secret_request(
 }
 
 pub fn dependabot_add_selected_repo_to_org_secret_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, ..) = response
   case status {
     204 -> Ok(Nil) |> Ok
-    _ -> "API doesn't describe default response" |> Error |> Ok
+    _ -> Error(Nil) |> Ok
   }
 }
 
@@ -12798,12 +12867,12 @@ pub fn api_insights_get_time_stats_by_user_request(
 }
 
 pub fn api_insights_get_time_stats_by_user_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, body:, ..) = response
   case status {
     200 ->
-      utils.decode_bits(body, schema.api_insights_time_stats_decoder())
+      json.parse_bits(body, schema.api_insights_time_stats_decoder())
       |> result.map(Ok)
-    _ -> "API doesn't describe default response" |> Error |> Ok
+    _ -> response |> Error |> Ok
   }
 }
 
@@ -12832,12 +12901,12 @@ pub fn pulls_delete_pending_review_request(
 }
 
 pub fn pulls_delete_pending_review_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, body:, ..) = response
   case status {
     200 ->
-      utils.decode_bits(body, schema.pull_request_review_decoder())
+      json.parse_bits(body, schema.pull_request_review_decoder())
       |> result.map(Ok)
-    _ -> "API doesn't describe default response" |> Error |> Ok
+    _ -> response |> Error |> Ok
   }
 }
 
@@ -12869,12 +12938,14 @@ pub fn pulls_update_review_request(
 }
 
 pub fn pulls_update_review_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, body:, ..) = response
   case status {
     200 ->
-      utils.decode_bits(body, schema.pull_request_review_decoder())
+      json.parse_bits(body, schema.pull_request_review_decoder())
       |> result.map(Ok)
-    _ -> "API doesn't describe default response" |> Error |> Ok
+    _ ->
+      json.parse_bits(body, schema.validation_error_simple_decoder())
+      |> result.map(Error)
   }
 }
 
@@ -12897,12 +12968,13 @@ pub fn pulls_get_review_request(base, owner, repo, pull_number, review_id) {
 }
 
 pub fn pulls_get_review_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, body:, ..) = response
   case status {
     200 ->
-      utils.decode_bits(body, schema.pull_request_review_decoder())
+      json.parse_bits(body, schema.pull_request_review_decoder())
       |> result.map(Ok)
-    _ -> "API doesn't describe default response" |> Error |> Ok
+    _ ->
+      json.parse_bits(body, schema.basic_error_decoder()) |> result.map(Error)
   }
 }
 
@@ -12917,10 +12989,10 @@ pub fn meta_root_request(base) {
 }
 
 pub fn meta_root_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, body:, ..) = response
   case status {
-    200 -> utils.decode_bits(body, schema.root_decoder()) |> result.map(Ok)
-    _ -> "API doesn't describe default response" |> Error |> Ok
+    200 -> json.parse_bits(body, schema.root_decoder()) |> result.map(Ok)
+    _ -> response |> Error |> Ok
   }
 }
 
@@ -12943,10 +13015,10 @@ pub fn codespaces_set_selected_repos_for_org_secret_request(
 }
 
 pub fn codespaces_set_selected_repos_for_org_secret_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, ..) = response
   case status {
     204 -> Ok(Nil) |> Ok
-    _ -> "API doesn't describe default response" |> Error |> Ok
+    _ -> response |> Error |> Ok
   }
 }
 
@@ -12971,10 +13043,11 @@ pub fn codespaces_list_selected_repos_for_org_secret_request(
 }
 
 pub fn codespaces_list_selected_repos_for_org_secret_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, body:, ..) = response
   case status {
-    200 -> utils.decode_bits(body, zero.dynamic) |> result.map(Ok)
-    _ -> "API doesn't describe default response" |> Error |> Ok
+    200 -> json.parse_bits(body, decode.dynamic) |> result.map(Ok)
+    _ ->
+      json.parse_bits(body, schema.basic_error_decoder()) |> result.map(Error)
   }
 }
 
@@ -12989,11 +13062,10 @@ pub fn repos_get_latest_pages_build_request(base, owner, repo) {
 }
 
 pub fn repos_get_latest_pages_build_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, body:, ..) = response
   case status {
-    200 ->
-      utils.decode_bits(body, schema.page_build_decoder()) |> result.map(Ok)
-    _ -> "API doesn't describe default response" |> Error |> Ok
+    200 -> json.parse_bits(body, schema.page_build_decoder()) |> result.map(Ok)
+    _ -> response |> Error |> Ok
   }
 }
 
@@ -13015,12 +13087,11 @@ pub fn actions_approve_workflow_run_request(base, owner, repo, run_id) {
 }
 
 pub fn actions_approve_workflow_run_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, body:, ..) = response
   case status {
     201 ->
-      utils.decode_bits(body, schema.empty_object_decoder())
-      |> result.map(Ok)
-    _ -> "API doesn't describe default response" |> Error |> Ok
+      json.parse_bits(body, schema.empty_object_decoder()) |> result.map(Ok)
+    _ -> response |> Error |> Ok
   }
 }
 
@@ -13035,10 +13106,10 @@ pub fn gists_unstar_request(base, gist_id) {
 }
 
 pub fn gists_unstar_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, ..) = response
   case status {
     204 -> Ok(Nil) |> Ok
-    _ -> "API doesn't describe default response" |> Error |> Ok
+    _ -> response |> Error |> Ok
   }
 }
 
@@ -13053,10 +13124,10 @@ pub fn gists_star_request(base, gist_id) {
 }
 
 pub fn gists_star_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, ..) = response
   case status {
     204 -> Ok(Nil) |> Ok
-    _ -> "API doesn't describe default response" |> Error |> Ok
+    _ -> response |> Error |> Ok
   }
 }
 
@@ -13071,10 +13142,10 @@ pub fn gists_check_is_starred_request(base, gist_id) {
 }
 
 pub fn gists_check_is_starred_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, ..) = response
   case status {
     204 -> Ok(Nil) |> Ok
-    _ -> "API doesn't describe default response" |> Error |> Ok
+    _ -> response |> Error |> Ok
   }
 }
 
@@ -13091,10 +13162,10 @@ pub fn git_create_tag_request(base, owner, repo, data) {
 }
 
 pub fn git_create_tag_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, body:, ..) = response
   case status {
-    201 -> utils.decode_bits(body, schema.git_tag_decoder()) |> result.map(Ok)
-    _ -> "API doesn't describe default response" |> Error |> Ok
+    201 -> json.parse_bits(body, schema.git_tag_decoder()) |> result.map(Ok)
+    _ -> response |> Error |> Ok
   }
 }
 
@@ -13118,12 +13189,12 @@ pub fn api_insights_get_summary_stats_by_user_request(
 }
 
 pub fn api_insights_get_summary_stats_by_user_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, body:, ..) = response
   case status {
     200 ->
-      utils.decode_bits(body, schema.api_insights_summary_stats_decoder())
+      json.parse_bits(body, schema.api_insights_summary_stats_decoder())
       |> result.map(Ok)
-    _ -> "API doesn't describe default response" |> Error |> Ok
+    _ -> response |> Error |> Ok
   }
 }
 
@@ -13140,12 +13211,12 @@ pub fn orgs_create_invitation_request(base, org, data) {
 }
 
 pub fn orgs_create_invitation_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, body:, ..) = response
   case status {
     201 ->
-      utils.decode_bits(body, schema.organization_invitation_decoder())
+      json.parse_bits(body, schema.organization_invitation_decoder())
       |> result.map(Ok)
-    _ -> "API doesn't describe default response" |> Error |> Ok
+    _ -> response |> Error |> Ok
   }
 }
 
@@ -13172,15 +13243,16 @@ pub fn orgs_list_pending_invitations_request(
 }
 
 pub fn orgs_list_pending_invitations_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, body:, ..) = response
   case status {
     200 ->
-      utils.decode_bits(
+      json.parse_bits(
         body,
-        zero.list(schema.organization_invitation_decoder()),
+        decode.list(schema.organization_invitation_decoder()),
       )
       |> result.map(Ok)
-    _ -> "API doesn't describe default response" |> Error |> Ok
+    _ ->
+      json.parse_bits(body, schema.basic_error_decoder()) |> result.map(Error)
   }
 }
 
@@ -13210,12 +13282,14 @@ pub fn repos_remove_user_access_restrictions_request(
 }
 
 pub fn repos_remove_user_access_restrictions_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, body:, ..) = response
   case status {
     200 ->
-      utils.decode_bits(body, zero.list(schema.simple_user_decoder()))
+      json.parse_bits(body, decode.list(schema.simple_user_decoder()))
       |> result.map(Ok)
-    _ -> "API doesn't describe default response" |> Error |> Ok
+    _ ->
+      json.parse_bits(body, schema.validation_error_decoder())
+      |> result.map(Error)
   }
 }
 
@@ -13245,12 +13319,14 @@ pub fn repos_add_user_access_restrictions_request(
 }
 
 pub fn repos_add_user_access_restrictions_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, body:, ..) = response
   case status {
     200 ->
-      utils.decode_bits(body, zero.list(schema.simple_user_decoder()))
+      json.parse_bits(body, decode.list(schema.simple_user_decoder()))
       |> result.map(Ok)
-    _ -> "API doesn't describe default response" |> Error |> Ok
+    _ ->
+      json.parse_bits(body, schema.validation_error_decoder())
+      |> result.map(Error)
   }
 }
 
@@ -13280,12 +13356,14 @@ pub fn repos_set_user_access_restrictions_request(
 }
 
 pub fn repos_set_user_access_restrictions_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, body:, ..) = response
   case status {
     200 ->
-      utils.decode_bits(body, zero.list(schema.simple_user_decoder()))
+      json.parse_bits(body, decode.list(schema.simple_user_decoder()))
       |> result.map(Ok)
-    _ -> "API doesn't describe default response" |> Error |> Ok
+    _ ->
+      json.parse_bits(body, schema.validation_error_decoder())
+      |> result.map(Error)
   }
 }
 
@@ -13312,12 +13390,13 @@ pub fn repos_get_users_with_access_to_protected_branch_request(
 }
 
 pub fn repos_get_users_with_access_to_protected_branch_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, body:, ..) = response
   case status {
     200 ->
-      utils.decode_bits(body, zero.list(schema.simple_user_decoder()))
+      json.parse_bits(body, decode.list(schema.simple_user_decoder()))
       |> result.map(Ok)
-    _ -> "API doesn't describe default response" |> Error |> Ok
+    _ ->
+      json.parse_bits(body, schema.basic_error_decoder()) |> result.map(Error)
   }
 }
 
@@ -13340,12 +13419,12 @@ pub fn activity_list_received_public_events_for_user_request(
 }
 
 pub fn activity_list_received_public_events_for_user_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, body:, ..) = response
   case status {
     200 ->
-      utils.decode_bits(body, zero.list(schema.event_decoder()))
+      json.parse_bits(body, decode.list(schema.event_decoder()))
       |> result.map(Ok)
-    _ -> "API doesn't describe default response" |> Error |> Ok
+    _ -> response |> Error |> Ok
   }
 }
 
@@ -13360,10 +13439,11 @@ pub fn orgs_remove_member_request(base, org, username) {
 }
 
 pub fn orgs_remove_member_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, body:, ..) = response
   case status {
     204 -> Ok(Nil) |> Ok
-    _ -> "API doesn't describe default response" |> Error |> Ok
+    _ ->
+      json.parse_bits(body, schema.basic_error_decoder()) |> result.map(Error)
   }
 }
 
@@ -13378,10 +13458,10 @@ pub fn orgs_check_membership_for_user_request(base, org, username) {
 }
 
 pub fn orgs_check_membership_for_user_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, ..) = response
   case status {
     204 -> Ok(Nil) |> Ok
-    _ -> "API doesn't describe default response" |> Error |> Ok
+    _ -> Error(Nil) |> Ok
   }
 }
 
@@ -13396,12 +13476,13 @@ pub fn codes_of_conduct_get_conduct_code_request(base, key) {
 }
 
 pub fn codes_of_conduct_get_conduct_code_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, body:, ..) = response
   case status {
     200 ->
-      utils.decode_bits(body, schema.code_of_conduct_decoder())
+      json.parse_bits(body, schema.code_of_conduct_decoder())
       |> result.map(Ok)
-    _ -> "API doesn't describe default response" |> Error |> Ok
+    _ ->
+      json.parse_bits(body, schema.basic_error_decoder()) |> result.map(Error)
   }
 }
 
@@ -13423,10 +13504,10 @@ pub fn apps_list_repos_accessible_to_installation_request(
 }
 
 pub fn apps_list_repos_accessible_to_installation_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, body:, ..) = response
   case status {
-    200 -> utils.decode_bits(body, zero.dynamic) |> result.map(Ok)
-    _ -> "API doesn't describe default response" |> Error |> Ok
+    200 -> json.parse_bits(body, decode.dynamic) |> result.map(Ok)
+    _ -> response |> Error |> Ok
   }
 }
 
@@ -13441,12 +13522,13 @@ pub fn repos_get_top_paths_request(base, owner, repo) {
 }
 
 pub fn repos_get_top_paths_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, body:, ..) = response
   case status {
     200 ->
-      utils.decode_bits(body, zero.list(schema.content_traffic_decoder()))
+      json.parse_bits(body, decode.list(schema.content_traffic_decoder()))
       |> result.map(Ok)
-    _ -> "API doesn't describe default response" |> Error |> Ok
+    _ ->
+      json.parse_bits(body, schema.basic_error_decoder()) |> result.map(Error)
   }
 }
 
@@ -13468,10 +13550,10 @@ pub fn actions_delete_workflow_run_logs_request(base, owner, repo, run_id) {
 }
 
 pub fn actions_delete_workflow_run_logs_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, ..) = response
   case status {
     204 -> Ok(Nil) |> Ok
-    _ -> "API doesn't describe default response" |> Error |> Ok
+    _ -> response |> Error |> Ok
   }
 }
 
@@ -13493,9 +13575,9 @@ pub fn actions_download_workflow_run_logs_request(base, owner, repo, run_id) {
 }
 
 pub fn actions_download_workflow_run_logs_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, ..) = response
   case status {
-    _ -> "API doesn't describe default response" |> Error |> Ok
+    _ -> response |> Error |> Ok
   }
 }
 
@@ -13516,12 +13598,12 @@ pub fn orgs_get_webhook_delivery_request(base, org, hook_id, delivery_id) {
 }
 
 pub fn orgs_get_webhook_delivery_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, body:, ..) = response
   case status {
     200 ->
-      utils.decode_bits(body, schema.hook_delivery_decoder())
+      json.parse_bits(body, schema.hook_delivery_decoder())
       |> result.map(Ok)
-    _ -> "API doesn't describe default response" |> Error |> Ok
+    _ -> response |> Error |> Ok
   }
 }
 
@@ -13543,15 +13625,16 @@ pub fn apps_list_subscriptions_for_authenticated_user_stubbed_request(
 }
 
 pub fn apps_list_subscriptions_for_authenticated_user_stubbed_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, body:, ..) = response
   case status {
     200 ->
-      utils.decode_bits(
+      json.parse_bits(
         body,
-        zero.list(schema.user_marketplace_purchase_decoder()),
+        decode.list(schema.user_marketplace_purchase_decoder()),
       )
       |> result.map(Ok)
-    _ -> "API doesn't describe default response" |> Error |> Ok
+    _ ->
+      json.parse_bits(body, schema.basic_error_decoder()) |> result.map(Error)
   }
 }
 
@@ -13580,12 +13663,12 @@ pub fn orgs_list_org_role_users_request(
 }
 
 pub fn orgs_list_org_role_users_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, body:, ..) = response
   case status {
     200 ->
-      utils.decode_bits(body, zero.list(schema.user_role_assignment_decoder()))
+      json.parse_bits(body, decode.list(schema.user_role_assignment_decoder()))
       |> result.map(Ok)
-    _ -> "API doesn't describe default response" |> Error |> Ok
+    _ -> Error(Nil) |> Ok
   }
 }
 
@@ -13607,12 +13690,11 @@ pub fn checks_rerequest_suite_request(base, owner, repo, check_suite_id) {
 }
 
 pub fn checks_rerequest_suite_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, body:, ..) = response
   case status {
     201 ->
-      utils.decode_bits(body, schema.empty_object_decoder())
-      |> result.map(Ok)
-    _ -> "API doesn't describe default response" |> Error |> Ok
+      json.parse_bits(body, schema.empty_object_decoder()) |> result.map(Ok)
+    _ -> response |> Error |> Ok
   }
 }
 
@@ -13635,10 +13717,10 @@ pub fn orgs_list_app_installations_request(
 }
 
 pub fn orgs_list_app_installations_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, body:, ..) = response
   case status {
-    200 -> utils.decode_bits(body, zero.dynamic) |> result.map(Ok)
-    _ -> "API doesn't describe default response" |> Error |> Ok
+    200 -> json.parse_bits(body, decode.dynamic) |> result.map(Ok)
+    _ -> response |> Error |> Ok
   }
 }
 
@@ -13654,10 +13736,10 @@ pub fn dependabot_delete_repo_secret_request(base, owner, repo, secret_name) {
 }
 
 pub fn dependabot_delete_repo_secret_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, ..) = response
   case status {
     204 -> Ok(Nil) |> Ok
-    _ -> "API doesn't describe default response" |> Error |> Ok
+    _ -> response |> Error |> Ok
   }
 }
 
@@ -13681,10 +13763,11 @@ pub fn dependabot_create_or_update_repo_secret_request(
 }
 
 pub fn dependabot_create_or_update_repo_secret_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, body:, ..) = response
   case status {
-    204 -> Ok(Nil) |> Ok
-    _ -> "API doesn't describe default response" |> Error |> Ok
+    201 ->
+      json.parse_bits(body, schema.empty_object_decoder()) |> result.map(Ok)
+    _ -> response |> Error |> Ok
   }
 }
 
@@ -13700,12 +13783,12 @@ pub fn dependabot_get_repo_secret_request(base, owner, repo, secret_name) {
 }
 
 pub fn dependabot_get_repo_secret_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, body:, ..) = response
   case status {
     200 ->
-      utils.decode_bits(body, schema.dependabot_secret_decoder())
+      json.parse_bits(body, schema.dependabot_secret_decoder())
       |> result.map(Ok)
-    _ -> "API doesn't describe default response" |> Error |> Ok
+    _ -> response |> Error |> Ok
   }
 }
 
@@ -13732,10 +13815,11 @@ pub fn repos_delete_commit_signature_protection_request(
 }
 
 pub fn repos_delete_commit_signature_protection_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, body:, ..) = response
   case status {
     204 -> Ok(Nil) |> Ok
-    _ -> "API doesn't describe default response" |> Error |> Ok
+    _ ->
+      json.parse_bits(body, schema.basic_error_decoder()) |> result.map(Error)
   }
 }
 
@@ -13762,12 +13846,13 @@ pub fn repos_create_commit_signature_protection_request(
 }
 
 pub fn repos_create_commit_signature_protection_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, body:, ..) = response
   case status {
     200 ->
-      utils.decode_bits(body, schema.protected_branch_admin_enforced_decoder())
+      json.parse_bits(body, schema.protected_branch_admin_enforced_decoder())
       |> result.map(Ok)
-    _ -> "API doesn't describe default response" |> Error |> Ok
+    _ ->
+      json.parse_bits(body, schema.basic_error_decoder()) |> result.map(Error)
   }
 }
 
@@ -13789,12 +13874,13 @@ pub fn repos_get_commit_signature_protection_request(base, owner, repo, branch) 
 }
 
 pub fn repos_get_commit_signature_protection_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, body:, ..) = response
   case status {
     200 ->
-      utils.decode_bits(body, schema.protected_branch_admin_enforced_decoder())
+      json.parse_bits(body, schema.protected_branch_admin_enforced_decoder())
       |> result.map(Ok)
-    _ -> "API doesn't describe default response" |> Error |> Ok
+    _ ->
+      json.parse_bits(body, schema.basic_error_decoder()) |> result.map(Error)
   }
 }
 
@@ -13811,12 +13897,11 @@ pub fn actions_create_repo_variable_request(base, owner, repo, data) {
 }
 
 pub fn actions_create_repo_variable_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, body:, ..) = response
   case status {
     201 ->
-      utils.decode_bits(body, schema.empty_object_decoder())
-      |> result.map(Ok)
-    _ -> "API doesn't describe default response" |> Error |> Ok
+      json.parse_bits(body, schema.empty_object_decoder()) |> result.map(Ok)
+    _ -> response |> Error |> Ok
   }
 }
 
@@ -13840,10 +13925,10 @@ pub fn actions_list_repo_variables_request(
 }
 
 pub fn actions_list_repo_variables_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, body:, ..) = response
   case status {
-    200 -> utils.decode_bits(body, zero.dynamic) |> result.map(Ok)
-    _ -> "API doesn't describe default response" |> Error |> Ok
+    200 -> json.parse_bits(body, decode.dynamic) |> result.map(Ok)
+    _ -> response |> Error |> Ok
   }
 }
 
@@ -13873,9 +13958,9 @@ pub fn actions_download_workflow_run_attempt_logs_request(
 }
 
 pub fn actions_download_workflow_run_attempt_logs_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, ..) = response
   case status {
-    _ -> "API doesn't describe default response" |> Error |> Ok
+    _ -> response |> Error |> Ok
   }
 }
 
@@ -13905,10 +13990,10 @@ pub fn codespaces_create_with_pr_for_authenticated_user_request(
 }
 
 pub fn codespaces_create_with_pr_for_authenticated_user_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, body:, ..) = response
   case status {
-    201 -> utils.decode_bits(body, schema.codespace_decoder()) |> result.map(Ok)
-    _ -> "API doesn't describe default response" |> Error |> Ok
+    201 -> json.parse_bits(body, schema.codespace_decoder()) |> result.map(Ok)
+    _ -> response |> Error |> Ok
   }
 }
 
@@ -13937,10 +14022,10 @@ pub fn reactions_delete_for_release_request(
 }
 
 pub fn reactions_delete_for_release_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, ..) = response
   case status {
     204 -> Ok(Nil) |> Ok
-    _ -> "API doesn't describe default response" |> Error |> Ok
+    _ -> response |> Error |> Ok
   }
 }
 
@@ -13961,10 +14046,10 @@ pub fn teams_remove_project_in_org_request(base, org, team_slug, project_id) {
 }
 
 pub fn teams_remove_project_in_org_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, ..) = response
   case status {
     204 -> Ok(Nil) |> Ok
-    _ -> "API doesn't describe default response" |> Error |> Ok
+    _ -> response |> Error |> Ok
   }
 }
 
@@ -13993,10 +14078,10 @@ pub fn teams_add_or_update_project_permissions_in_org_request(
 }
 
 pub fn teams_add_or_update_project_permissions_in_org_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, body:, ..) = response
   case status {
     204 -> Ok(Nil) |> Ok
-    _ -> "API doesn't describe default response" |> Error |> Ok
+    _ -> json.parse_bits(body, decode.dynamic) |> result.map(Error)
   }
 }
 
@@ -14022,12 +14107,11 @@ pub fn teams_check_permissions_for_project_in_org_request(
 }
 
 pub fn teams_check_permissions_for_project_in_org_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, body:, ..) = response
   case status {
     200 ->
-      utils.decode_bits(body, schema.team_project_decoder())
-      |> result.map(Ok)
-    _ -> "API doesn't describe default response" |> Error |> Ok
+      json.parse_bits(body, schema.team_project_decoder()) |> result.map(Ok)
+    _ -> Error(Nil) |> Ok
   }
 }
 
@@ -14054,12 +14138,14 @@ pub fn orgs_list_members_request(
 }
 
 pub fn orgs_list_members_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, body:, ..) = response
   case status {
     200 ->
-      utils.decode_bits(body, zero.list(schema.simple_user_decoder()))
+      json.parse_bits(body, decode.list(schema.simple_user_decoder()))
       |> result.map(Ok)
-    _ -> "API doesn't describe default response" |> Error |> Ok
+    _ ->
+      json.parse_bits(body, schema.validation_error_decoder())
+      |> result.map(Error)
   }
 }
 
@@ -14088,12 +14174,12 @@ pub fn orgs_list_pat_grant_request_repositories_request(
 }
 
 pub fn orgs_list_pat_grant_request_repositories_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, body:, ..) = response
   case status {
     200 ->
-      utils.decode_bits(body, zero.list(schema.minimal_repository_decoder()))
+      json.parse_bits(body, decode.list(schema.minimal_repository_decoder()))
       |> result.map(Ok)
-    _ -> "API doesn't describe default response" |> Error |> Ok
+    _ -> response |> Error |> Ok
   }
 }
 
@@ -14123,15 +14209,15 @@ pub fn pulls_list_review_comments_for_repo_request(
 }
 
 pub fn pulls_list_review_comments_for_repo_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, body:, ..) = response
   case status {
     200 ->
-      utils.decode_bits(
+      json.parse_bits(
         body,
-        zero.list(schema.pull_request_review_comment_decoder()),
+        decode.list(schema.pull_request_review_comment_decoder()),
       )
       |> result.map(Ok)
-    _ -> "API doesn't describe default response" |> Error |> Ok
+    _ -> response |> Error |> Ok
   }
 }
 
@@ -14175,15 +14261,15 @@ pub fn code_scanning_list_alerts_for_repo_request(
 }
 
 pub fn code_scanning_list_alerts_for_repo_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, body:, ..) = response
   case status {
     200 ->
-      utils.decode_bits(
+      json.parse_bits(
         body,
-        zero.list(schema.code_scanning_alert_items_decoder()),
+        decode.list(schema.code_scanning_alert_items_decoder()),
       )
       |> result.map(Ok)
-    _ -> "API doesn't describe default response" |> Error |> Ok
+    _ -> response |> Error |> Ok
   }
 }
 
@@ -14212,10 +14298,10 @@ pub fn security_advisories_create_repository_advisory_cve_request_request(
 pub fn security_advisories_create_repository_advisory_cve_request_response(
   response,
 ) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, body:, ..) = response
   case status {
-    202 -> utils.decode_bits(body, zero.dynamic) |> result.map(Ok)
-    _ -> "API doesn't describe default response" |> Error |> Ok
+    202 -> json.parse_bits(body, decode.dynamic) |> result.map(Ok)
+    _ -> response |> Error |> Ok
   }
 }
 
@@ -14230,10 +14316,10 @@ pub fn users_delete_public_ssh_key_for_authenticated_user_request(base, key_id) 
 }
 
 pub fn users_delete_public_ssh_key_for_authenticated_user_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, ..) = response
   case status {
     204 -> Ok(Nil) |> Ok
-    _ -> "API doesn't describe default response" |> Error |> Ok
+    _ -> response |> Error |> Ok
   }
 }
 
@@ -14248,10 +14334,10 @@ pub fn users_get_public_ssh_key_for_authenticated_user_request(base, key_id) {
 }
 
 pub fn users_get_public_ssh_key_for_authenticated_user_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, body:, ..) = response
   case status {
-    200 -> utils.decode_bits(body, schema.key_decoder()) |> result.map(Ok)
-    _ -> "API doesn't describe default response" |> Error |> Ok
+    200 -> json.parse_bits(body, schema.key_decoder()) |> result.map(Ok)
+    _ -> response |> Error |> Ok
   }
 }
 
@@ -14275,12 +14361,12 @@ pub fn teams_list_child_in_org_request(
 }
 
 pub fn teams_list_child_in_org_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, body:, ..) = response
   case status {
     200 ->
-      utils.decode_bits(body, zero.list(schema.team_decoder()))
+      json.parse_bits(body, decode.list(schema.team_decoder()))
       |> result.map(Ok)
-    _ -> "API doesn't describe default response" |> Error |> Ok
+    _ -> response |> Error |> Ok
   }
 }
 
@@ -14302,12 +14388,12 @@ pub fn repos_remove_status_check_contexts_request(base, owner, repo, branch) {
 }
 
 pub fn repos_remove_status_check_contexts_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, body:, ..) = response
   case status {
     200 ->
-      utils.decode_bits(body, zero.failure(Nil, "Unsupported schema"))
+      json.parse_bits(body, decode.failure(Nil, "Unsupported schema"))
       |> result.map(Ok)
-    _ -> "API doesn't describe default response" |> Error |> Ok
+    _ -> response |> Error |> Ok
   }
 }
 
@@ -14329,12 +14415,12 @@ pub fn repos_add_status_check_contexts_request(base, owner, repo, branch) {
 }
 
 pub fn repos_add_status_check_contexts_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, body:, ..) = response
   case status {
     200 ->
-      utils.decode_bits(body, zero.failure(Nil, "Unsupported schema"))
+      json.parse_bits(body, decode.failure(Nil, "Unsupported schema"))
       |> result.map(Ok)
-    _ -> "API doesn't describe default response" |> Error |> Ok
+    _ -> response |> Error |> Ok
   }
 }
 
@@ -14356,12 +14442,12 @@ pub fn repos_set_status_check_contexts_request(base, owner, repo, branch) {
 }
 
 pub fn repos_set_status_check_contexts_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, body:, ..) = response
   case status {
     200 ->
-      utils.decode_bits(body, zero.failure(Nil, "Unsupported schema"))
+      json.parse_bits(body, decode.failure(Nil, "Unsupported schema"))
       |> result.map(Ok)
-    _ -> "API doesn't describe default response" |> Error |> Ok
+    _ -> response |> Error |> Ok
   }
 }
 
@@ -14383,12 +14469,13 @@ pub fn repos_get_all_status_check_contexts_request(base, owner, repo, branch) {
 }
 
 pub fn repos_get_all_status_check_contexts_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, body:, ..) = response
   case status {
     200 ->
-      utils.decode_bits(body, zero.failure(Nil, "Unsupported schema"))
+      json.parse_bits(body, decode.failure(Nil, "Unsupported schema"))
       |> result.map(Ok)
-    _ -> "API doesn't describe default response" |> Error |> Ok
+    _ ->
+      json.parse_bits(body, schema.basic_error_decoder()) |> result.map(Error)
   }
 }
 
@@ -14405,10 +14492,10 @@ pub fn actions_update_org_variable_request(base, org, name, data) {
 }
 
 pub fn actions_update_org_variable_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, ..) = response
   case status {
     204 -> Ok(Nil) |> Ok
-    _ -> "API doesn't describe default response" |> Error |> Ok
+    _ -> response |> Error |> Ok
   }
 }
 
@@ -14423,10 +14510,10 @@ pub fn actions_delete_org_variable_request(base, org, name) {
 }
 
 pub fn actions_delete_org_variable_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, ..) = response
   case status {
     204 -> Ok(Nil) |> Ok
-    _ -> "API doesn't describe default response" |> Error |> Ok
+    _ -> response |> Error |> Ok
   }
 }
 
@@ -14441,12 +14528,12 @@ pub fn actions_get_org_variable_request(base, org, name) {
 }
 
 pub fn actions_get_org_variable_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, body:, ..) = response
   case status {
     200 ->
-      utils.decode_bits(body, schema.organization_actions_variable_decoder())
+      json.parse_bits(body, schema.organization_actions_variable_decoder())
       |> result.map(Ok)
-    _ -> "API doesn't describe default response" |> Error |> Ok
+    _ -> response |> Error |> Ok
   }
 }
 
@@ -14463,10 +14550,10 @@ pub fn codespaces_set_codespaces_access_request(base, org, data) {
 }
 
 pub fn codespaces_set_codespaces_access_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, ..) = response
   case status {
     204 -> Ok(Nil) |> Ok
-    _ -> "API doesn't describe default response" |> Error |> Ok
+    _ -> response |> Error |> Ok
   }
 }
 
@@ -14493,10 +14580,10 @@ pub fn code_security_set_configuration_as_default_request(
 }
 
 pub fn code_security_set_configuration_as_default_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, body:, ..) = response
   case status {
-    200 -> utils.decode_bits(body, zero.dynamic) |> result.map(Ok)
-    _ -> "API doesn't describe default response" |> Error |> Ok
+    200 -> json.parse_bits(body, decode.dynamic) |> result.map(Ok)
+    _ -> response |> Error |> Ok
   }
 }
 
@@ -14518,12 +14605,12 @@ pub fn security_advisories_create_fork_request(base, owner, repo, ghsa_id) {
 }
 
 pub fn security_advisories_create_fork_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, body:, ..) = response
   case status {
     202 ->
-      utils.decode_bits(body, schema.full_repository_decoder())
+      json.parse_bits(body, schema.full_repository_decoder())
       |> result.map(Ok)
-    _ -> "API doesn't describe default response" |> Error |> Ok
+    _ -> response |> Error |> Ok
   }
 }
 
@@ -14535,7 +14622,7 @@ pub fn oidc_update_oidc_custom_sub_template_for_org_request(
   let method = http.Put
   let path = "/orgs/" <> org <> "/actions/oidc/customization/sub"
   let query = []
-  let body = utils.json_to_bits(schema.oidc_custom_sub_to_json(oidc_custom_sub))
+  let body = utils.json_to_bits(schema.oidc_custom_sub_encode(oidc_custom_sub))
   base
   |> utils.set_method(method)
   |> utils.append_path(path)
@@ -14544,12 +14631,11 @@ pub fn oidc_update_oidc_custom_sub_template_for_org_request(
 }
 
 pub fn oidc_update_oidc_custom_sub_template_for_org_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, body:, ..) = response
   case status {
     201 ->
-      utils.decode_bits(body, schema.empty_object_decoder())
-      |> result.map(Ok)
-    _ -> "API doesn't describe default response" |> Error |> Ok
+      json.parse_bits(body, schema.empty_object_decoder()) |> result.map(Ok)
+    _ -> response |> Error |> Ok
   }
 }
 
@@ -14564,12 +14650,12 @@ pub fn oidc_get_oidc_custom_sub_template_for_org_request(base, org) {
 }
 
 pub fn oidc_get_oidc_custom_sub_template_for_org_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, body:, ..) = response
   case status {
     200 ->
-      utils.decode_bits(body, schema.oidc_custom_sub_decoder())
+      json.parse_bits(body, schema.oidc_custom_sub_decoder())
       |> result.map(Ok)
-    _ -> "API doesn't describe default response" |> Error |> Ok
+    _ -> response |> Error |> Ok
   }
 }
 
@@ -14584,10 +14670,10 @@ pub fn users_delete_email_for_authenticated_user_request(base) {
 }
 
 pub fn users_delete_email_for_authenticated_user_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, ..) = response
   case status {
     204 -> Ok(Nil) |> Ok
-    _ -> "API doesn't describe default response" |> Error |> Ok
+    _ -> response |> Error |> Ok
   }
 }
 
@@ -14602,12 +14688,12 @@ pub fn users_add_email_for_authenticated_user_request(base) {
 }
 
 pub fn users_add_email_for_authenticated_user_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, body:, ..) = response
   case status {
     201 ->
-      utils.decode_bits(body, zero.list(schema.email_decoder()))
+      json.parse_bits(body, decode.list(schema.email_decoder()))
       |> result.map(Ok)
-    _ -> "API doesn't describe default response" |> Error |> Ok
+    _ -> response |> Error |> Ok
   }
 }
 
@@ -14629,12 +14715,12 @@ pub fn users_list_emails_for_authenticated_user_request(
 }
 
 pub fn users_list_emails_for_authenticated_user_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, body:, ..) = response
   case status {
     200 ->
-      utils.decode_bits(body, zero.list(schema.email_decoder()))
+      json.parse_bits(body, decode.list(schema.email_decoder()))
       |> result.map(Ok)
-    _ -> "API doesn't describe default response" |> Error |> Ok
+    _ -> response |> Error |> Ok
   }
 }
 
@@ -14649,10 +14735,10 @@ pub fn repos_delete_pages_site_request(base, owner, repo) {
 }
 
 pub fn repos_delete_pages_site_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, ..) = response
   case status {
     204 -> Ok(Nil) |> Ok
-    _ -> "API doesn't describe default response" |> Error |> Ok
+    _ -> response |> Error |> Ok
   }
 }
 
@@ -14669,10 +14755,10 @@ pub fn repos_create_pages_site_request(base, owner, repo, data) {
 }
 
 pub fn repos_create_pages_site_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, body:, ..) = response
   case status {
-    201 -> utils.decode_bits(body, schema.page_decoder()) |> result.map(Ok)
-    _ -> "API doesn't describe default response" |> Error |> Ok
+    201 -> json.parse_bits(body, schema.page_decoder()) |> result.map(Ok)
+    _ -> response |> Error |> Ok
   }
 }
 
@@ -14694,10 +14780,10 @@ pub fn repos_update_information_about_pages_site_request(
 }
 
 pub fn repos_update_information_about_pages_site_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, ..) = response
   case status {
     204 -> Ok(Nil) |> Ok
-    _ -> "API doesn't describe default response" |> Error |> Ok
+    _ -> response |> Error |> Ok
   }
 }
 
@@ -14712,10 +14798,11 @@ pub fn repos_get_pages_request(base, owner, repo) {
 }
 
 pub fn repos_get_pages_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, body:, ..) = response
   case status {
-    200 -> utils.decode_bits(body, schema.page_decoder()) |> result.map(Ok)
-    _ -> "API doesn't describe default response" |> Error |> Ok
+    200 -> json.parse_bits(body, schema.page_decoder()) |> result.map(Ok)
+    _ ->
+      json.parse_bits(body, schema.basic_error_decoder()) |> result.map(Error)
   }
 }
 
@@ -14739,12 +14826,13 @@ pub fn migrations_list_repos_for_authenticated_user_request(
 }
 
 pub fn migrations_list_repos_for_authenticated_user_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, body:, ..) = response
   case status {
     200 ->
-      utils.decode_bits(body, zero.list(schema.minimal_repository_decoder()))
+      json.parse_bits(body, decode.list(schema.minimal_repository_decoder()))
       |> result.map(Ok)
-    _ -> "API doesn't describe default response" |> Error |> Ok
+    _ ->
+      json.parse_bits(body, schema.basic_error_decoder()) |> result.map(Error)
   }
 }
 
@@ -14759,10 +14847,11 @@ pub fn activity_mark_thread_as_read_request(base, thread_id) {
 }
 
 pub fn activity_mark_thread_as_read_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, body:, ..) = response
   case status {
     205 -> Ok(Nil) |> Ok
-    _ -> "API doesn't describe default response" |> Error |> Ok
+    _ ->
+      json.parse_bits(body, schema.basic_error_decoder()) |> result.map(Error)
   }
 }
 
@@ -14777,10 +14866,10 @@ pub fn activity_mark_thread_as_done_request(base, thread_id) {
 }
 
 pub fn activity_mark_thread_as_done_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, ..) = response
   case status {
     204 -> Ok(Nil) |> Ok
-    _ -> "API doesn't describe default response" |> Error |> Ok
+    _ -> response |> Error |> Ok
   }
 }
 
@@ -14795,10 +14884,10 @@ pub fn activity_get_thread_request(base, thread_id) {
 }
 
 pub fn activity_get_thread_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, body:, ..) = response
   case status {
-    200 -> utils.decode_bits(body, schema.thread_decoder()) |> result.map(Ok)
-    _ -> "API doesn't describe default response" |> Error |> Ok
+    200 -> json.parse_bits(body, schema.thread_decoder()) |> result.map(Ok)
+    _ -> response |> Error |> Ok
   }
 }
 
@@ -14825,10 +14914,10 @@ pub fn codespaces_stop_in_organization_request(
 }
 
 pub fn codespaces_stop_in_organization_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, body:, ..) = response
   case status {
-    200 -> utils.decode_bits(body, schema.codespace_decoder()) |> result.map(Ok)
-    _ -> "API doesn't describe default response" |> Error |> Ok
+    200 -> json.parse_bits(body, schema.codespace_decoder()) |> result.map(Ok)
+    _ -> response |> Error |> Ok
   }
 }
 
@@ -14843,12 +14932,12 @@ pub fn copilot_get_copilot_organization_details_request(base, org) {
 }
 
 pub fn copilot_get_copilot_organization_details_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, body:, ..) = response
   case status {
     200 ->
-      utils.decode_bits(body, schema.copilot_organization_details_decoder())
+      json.parse_bits(body, schema.copilot_organization_details_decoder())
       |> result.map(Ok)
-    _ -> "API doesn't describe default response" |> Error |> Ok
+    _ -> response |> Error |> Ok
   }
 }
 
@@ -14862,7 +14951,7 @@ pub fn security_advisories_create_repository_advisory_request(
   let path = "/repos/" <> owner <> "/" <> repo <> "/security-advisories"
   let query = []
   let body =
-    utils.json_to_bits(schema.repository_advisory_create_to_json(
+    utils.json_to_bits(schema.repository_advisory_create_encode(
       repository_advisory_create,
     ))
   base
@@ -14873,12 +14962,12 @@ pub fn security_advisories_create_repository_advisory_request(
 }
 
 pub fn security_advisories_create_repository_advisory_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, body:, ..) = response
   case status {
     201 ->
-      utils.decode_bits(body, schema.repository_advisory_decoder())
+      json.parse_bits(body, schema.repository_advisory_decoder())
       |> result.map(Ok)
-    _ -> "API doesn't describe default response" |> Error |> Ok
+    _ -> response |> Error |> Ok
   }
 }
 
@@ -14910,12 +14999,12 @@ pub fn security_advisories_list_repository_advisories_request(
 }
 
 pub fn security_advisories_list_repository_advisories_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, body:, ..) = response
   case status {
     200 ->
-      utils.decode_bits(body, zero.list(schema.repository_advisory_decoder()))
+      json.parse_bits(body, decode.list(schema.repository_advisory_decoder()))
       |> result.map(Ok)
-    _ -> "API doesn't describe default response" |> Error |> Ok
+    _ -> response |> Error |> Ok
   }
 }
 
@@ -14931,12 +15020,12 @@ pub fn dependabot_get_repo_public_key_request(base, owner, repo) {
 }
 
 pub fn dependabot_get_repo_public_key_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, body:, ..) = response
   case status {
     200 ->
-      utils.decode_bits(body, schema.dependabot_public_key_decoder())
+      json.parse_bits(body, schema.dependabot_public_key_decoder())
       |> result.map(Ok)
-    _ -> "API doesn't describe default response" |> Error |> Ok
+    _ -> response |> Error |> Ok
   }
 }
 
@@ -14953,12 +15042,12 @@ pub fn repos_create_for_authenticated_user_request(base, data) {
 }
 
 pub fn repos_create_for_authenticated_user_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, body:, ..) = response
   case status {
     201 ->
-      utils.decode_bits(body, schema.full_repository_decoder())
+      json.parse_bits(body, schema.full_repository_decoder())
       |> result.map(Ok)
-    _ -> "API doesn't describe default response" |> Error |> Ok
+    _ -> response |> Error |> Ok
   }
 }
 
@@ -14994,12 +15083,12 @@ pub fn repos_list_for_authenticated_user_request(
 }
 
 pub fn repos_list_for_authenticated_user_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, body:, ..) = response
   case status {
     200 ->
-      utils.decode_bits(body, zero.list(schema.repository_decoder()))
+      json.parse_bits(body, decode.list(schema.repository_decoder()))
       |> result.map(Ok)
-    _ -> "API doesn't describe default response" |> Error |> Ok
+    _ -> response |> Error |> Ok
   }
 }
 
@@ -15029,12 +15118,14 @@ pub fn repos_remove_app_access_restrictions_request(
 }
 
 pub fn repos_remove_app_access_restrictions_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, body:, ..) = response
   case status {
     200 ->
-      utils.decode_bits(body, zero.list(schema.integration_decoder()))
+      json.parse_bits(body, decode.list(schema.integration_decoder()))
       |> result.map(Ok)
-    _ -> "API doesn't describe default response" |> Error |> Ok
+    _ ->
+      json.parse_bits(body, schema.validation_error_decoder())
+      |> result.map(Error)
   }
 }
 
@@ -15064,12 +15155,14 @@ pub fn repos_add_app_access_restrictions_request(
 }
 
 pub fn repos_add_app_access_restrictions_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, body:, ..) = response
   case status {
     200 ->
-      utils.decode_bits(body, zero.list(schema.integration_decoder()))
+      json.parse_bits(body, decode.list(schema.integration_decoder()))
       |> result.map(Ok)
-    _ -> "API doesn't describe default response" |> Error |> Ok
+    _ ->
+      json.parse_bits(body, schema.validation_error_decoder())
+      |> result.map(Error)
   }
 }
 
@@ -15099,12 +15192,14 @@ pub fn repos_set_app_access_restrictions_request(
 }
 
 pub fn repos_set_app_access_restrictions_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, body:, ..) = response
   case status {
     200 ->
-      utils.decode_bits(body, zero.list(schema.integration_decoder()))
+      json.parse_bits(body, decode.list(schema.integration_decoder()))
       |> result.map(Ok)
-    _ -> "API doesn't describe default response" |> Error |> Ok
+    _ ->
+      json.parse_bits(body, schema.validation_error_decoder())
+      |> result.map(Error)
   }
 }
 
@@ -15131,12 +15226,13 @@ pub fn repos_get_apps_with_access_to_protected_branch_request(
 }
 
 pub fn repos_get_apps_with_access_to_protected_branch_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, body:, ..) = response
   case status {
     200 ->
-      utils.decode_bits(body, zero.list(schema.integration_decoder()))
+      json.parse_bits(body, decode.list(schema.integration_decoder()))
       |> result.map(Ok)
-    _ -> "API doesn't describe default response" |> Error |> Ok
+    _ ->
+      json.parse_bits(body, schema.basic_error_decoder()) |> result.map(Error)
   }
 }
 
@@ -15165,15 +15261,15 @@ pub fn copilot_copilot_metrics_for_enterprise_team_request(
 }
 
 pub fn copilot_copilot_metrics_for_enterprise_team_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, body:, ..) = response
   case status {
     200 ->
-      utils.decode_bits(
+      json.parse_bits(
         body,
-        zero.list(schema.copilot_usage_metrics_day_decoder()),
+        decode.list(schema.copilot_usage_metrics_day_decoder()),
       )
       |> result.map(Ok)
-    _ -> "API doesn't describe default response" |> Error |> Ok
+    _ -> response |> Error |> Ok
   }
 }
 
@@ -15190,11 +15286,12 @@ pub fn repos_create_deploy_key_request(base, owner, repo, data) {
 }
 
 pub fn repos_create_deploy_key_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, body:, ..) = response
   case status {
-    201 ->
-      utils.decode_bits(body, schema.deploy_key_decoder()) |> result.map(Ok)
-    _ -> "API doesn't describe default response" |> Error |> Ok
+    201 -> json.parse_bits(body, schema.deploy_key_decoder()) |> result.map(Ok)
+    _ ->
+      json.parse_bits(body, schema.validation_error_decoder())
+      |> result.map(Error)
   }
 }
 
@@ -15218,12 +15315,12 @@ pub fn repos_list_deploy_keys_request(
 }
 
 pub fn repos_list_deploy_keys_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, body:, ..) = response
   case status {
     200 ->
-      utils.decode_bits(body, zero.list(schema.deploy_key_decoder()))
+      json.parse_bits(body, decode.list(schema.deploy_key_decoder()))
       |> result.map(Ok)
-    _ -> "API doesn't describe default response" |> Error |> Ok
+    _ -> response |> Error |> Ok
   }
 }
 
@@ -15247,12 +15344,12 @@ pub fn repos_list_commit_comments_for_repo_request(
 }
 
 pub fn repos_list_commit_comments_for_repo_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, body:, ..) = response
   case status {
     200 ->
-      utils.decode_bits(body, zero.list(schema.commit_comment_decoder()))
+      json.parse_bits(body, decode.list(schema.commit_comment_decoder()))
       |> result.map(Ok)
-    _ -> "API doesn't describe default response" |> Error |> Ok
+    _ -> response |> Error |> Ok
   }
 }
 
@@ -15276,10 +15373,10 @@ pub fn migrations_unlock_repo_for_authenticated_user_request(
 }
 
 pub fn migrations_unlock_repo_for_authenticated_user_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, ..) = response
   case status {
     204 -> Ok(Nil) |> Ok
-    _ -> "API doesn't describe default response" |> Error |> Ok
+    _ -> response |> Error |> Ok
   }
 }
 
@@ -15303,12 +15400,13 @@ pub fn issues_list_assignees_request(
 }
 
 pub fn issues_list_assignees_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, body:, ..) = response
   case status {
     200 ->
-      utils.decode_bits(body, zero.list(schema.simple_user_decoder()))
+      json.parse_bits(body, decode.list(schema.simple_user_decoder()))
       |> result.map(Ok)
-    _ -> "API doesn't describe default response" |> Error |> Ok
+    _ ->
+      json.parse_bits(body, schema.basic_error_decoder()) |> result.map(Error)
   }
 }
 
@@ -15327,10 +15425,10 @@ pub fn orgs_remove_public_membership_for_authenticated_user_request(
 }
 
 pub fn orgs_remove_public_membership_for_authenticated_user_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, ..) = response
   case status {
     204 -> Ok(Nil) |> Ok
-    _ -> "API doesn't describe default response" |> Error |> Ok
+    _ -> response |> Error |> Ok
   }
 }
 
@@ -15349,10 +15447,11 @@ pub fn orgs_set_public_membership_for_authenticated_user_request(
 }
 
 pub fn orgs_set_public_membership_for_authenticated_user_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, body:, ..) = response
   case status {
     204 -> Ok(Nil) |> Ok
-    _ -> "API doesn't describe default response" |> Error |> Ok
+    _ ->
+      json.parse_bits(body, schema.basic_error_decoder()) |> result.map(Error)
   }
 }
 
@@ -15367,10 +15466,10 @@ pub fn orgs_check_public_membership_for_user_request(base, org, username) {
 }
 
 pub fn orgs_check_public_membership_for_user_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, ..) = response
   case status {
     204 -> Ok(Nil) |> Ok
-    _ -> "API doesn't describe default response" |> Error |> Ok
+    _ -> Error(Nil) |> Ok
   }
 }
 
@@ -15397,12 +15496,12 @@ pub fn teams_create_discussion_comment_legacy_request(
 }
 
 pub fn teams_create_discussion_comment_legacy_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, body:, ..) = response
   case status {
     201 ->
-      utils.decode_bits(body, schema.team_discussion_comment_decoder())
+      json.parse_bits(body, schema.team_discussion_comment_decoder())
       |> result.map(Ok)
-    _ -> "API doesn't describe default response" |> Error |> Ok
+    _ -> response |> Error |> Ok
   }
 }
 
@@ -15433,15 +15532,15 @@ pub fn teams_list_discussion_comments_legacy_request(
 }
 
 pub fn teams_list_discussion_comments_legacy_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, body:, ..) = response
   case status {
     200 ->
-      utils.decode_bits(
+      json.parse_bits(
         body,
-        zero.list(schema.team_discussion_comment_decoder()),
+        decode.list(schema.team_discussion_comment_decoder()),
       )
       |> result.map(Ok)
-    _ -> "API doesn't describe default response" |> Error |> Ok
+    _ -> response |> Error |> Ok
   }
 }
 
@@ -15456,10 +15555,10 @@ pub fn repos_disable_automated_security_fixes_request(base, owner, repo) {
 }
 
 pub fn repos_disable_automated_security_fixes_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, ..) = response
   case status {
     204 -> Ok(Nil) |> Ok
-    _ -> "API doesn't describe default response" |> Error |> Ok
+    _ -> response |> Error |> Ok
   }
 }
 
@@ -15474,10 +15573,10 @@ pub fn repos_enable_automated_security_fixes_request(base, owner, repo) {
 }
 
 pub fn repos_enable_automated_security_fixes_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, ..) = response
   case status {
     204 -> Ok(Nil) |> Ok
-    _ -> "API doesn't describe default response" |> Error |> Ok
+    _ -> response |> Error |> Ok
   }
 }
 
@@ -15492,12 +15591,12 @@ pub fn repos_check_automated_security_fixes_request(base, owner, repo) {
 }
 
 pub fn repos_check_automated_security_fixes_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, body:, ..) = response
   case status {
     200 ->
-      utils.decode_bits(body, schema.check_automated_security_fixes_decoder())
+      json.parse_bits(body, schema.check_automated_security_fixes_decoder())
       |> result.map(Ok)
-    _ -> "API doesn't describe default response" |> Error |> Ok
+    _ -> Error(Nil) |> Ok
   }
 }
 
@@ -15523,10 +15622,10 @@ pub fn orgs_list_attestations_request(
 }
 
 pub fn orgs_list_attestations_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, body:, ..) = response
   case status {
-    200 -> utils.decode_bits(body, zero.dynamic) |> result.map(Ok)
-    _ -> "API doesn't describe default response" |> Error |> Ok
+    200 -> json.parse_bits(body, decode.dynamic) |> result.map(Ok)
+    _ -> response |> Error |> Ok
   }
 }
 
@@ -15551,12 +15650,12 @@ pub fn orgs_list_webhook_deliveries_request(
 }
 
 pub fn orgs_list_webhook_deliveries_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, body:, ..) = response
   case status {
     200 ->
-      utils.decode_bits(body, zero.list(schema.hook_delivery_item_decoder()))
+      json.parse_bits(body, decode.list(schema.hook_delivery_item_decoder()))
       |> result.map(Ok)
-    _ -> "API doesn't describe default response" |> Error |> Ok
+    _ -> response |> Error |> Ok
   }
 }
 
@@ -15574,10 +15673,10 @@ pub fn users_delete_ssh_signing_key_for_authenticated_user_request(
 }
 
 pub fn users_delete_ssh_signing_key_for_authenticated_user_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, ..) = response
   case status {
     204 -> Ok(Nil) |> Ok
-    _ -> "API doesn't describe default response" |> Error |> Ok
+    _ -> response |> Error |> Ok
   }
 }
 
@@ -15595,12 +15694,12 @@ pub fn users_get_ssh_signing_key_for_authenticated_user_request(
 }
 
 pub fn users_get_ssh_signing_key_for_authenticated_user_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, body:, ..) = response
   case status {
     200 ->
-      utils.decode_bits(body, schema.ssh_signing_key_decoder())
+      json.parse_bits(body, schema.ssh_signing_key_decoder())
       |> result.map(Ok)
-    _ -> "API doesn't describe default response" |> Error |> Ok
+    _ -> response |> Error |> Ok
   }
 }
 
@@ -15626,12 +15725,12 @@ pub fn code_scanning_get_variant_analysis_request(
 }
 
 pub fn code_scanning_get_variant_analysis_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, body:, ..) = response
   case status {
     200 ->
-      utils.decode_bits(body, schema.code_scanning_variant_analysis_decoder())
+      json.parse_bits(body, schema.code_scanning_variant_analysis_decoder())
       |> result.map(Ok)
-    _ -> "API doesn't describe default response" |> Error |> Ok
+    _ -> response |> Error |> Ok
   }
 }
 
@@ -15646,12 +15745,12 @@ pub fn copilot_get_copilot_seat_details_for_user_request(base, org, username) {
 }
 
 pub fn copilot_get_copilot_seat_details_for_user_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, body:, ..) = response
   case status {
     200 ->
-      utils.decode_bits(body, schema.copilot_seat_details_decoder())
+      json.parse_bits(body, schema.copilot_seat_details_decoder())
       |> result.map(Ok)
-    _ -> "API doesn't describe default response" |> Error |> Ok
+    _ -> response |> Error |> Ok
   }
 }
 
@@ -15684,10 +15783,10 @@ pub fn reactions_create_for_team_discussion_comment_in_org_request(
 }
 
 pub fn reactions_create_for_team_discussion_comment_in_org_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, body:, ..) = response
   case status {
-    200 -> utils.decode_bits(body, schema.reaction_decoder()) |> result.map(Ok)
-    _ -> "API doesn't describe default response" |> Error |> Ok
+    200 -> json.parse_bits(body, schema.reaction_decoder()) |> result.map(Ok)
+    _ -> response |> Error |> Ok
   }
 }
 
@@ -15724,12 +15823,12 @@ pub fn reactions_list_for_team_discussion_comment_in_org_request(
 }
 
 pub fn reactions_list_for_team_discussion_comment_in_org_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, body:, ..) = response
   case status {
     200 ->
-      utils.decode_bits(body, zero.list(schema.reaction_decoder()))
+      json.parse_bits(body, decode.list(schema.reaction_decoder()))
       |> result.map(Ok)
-    _ -> "API doesn't describe default response" |> Error |> Ok
+    _ -> response |> Error |> Ok
   }
 }
 
@@ -15758,12 +15857,12 @@ pub fn teams_update_discussion_in_org_request(
 }
 
 pub fn teams_update_discussion_in_org_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, body:, ..) = response
   case status {
     200 ->
-      utils.decode_bits(body, schema.team_discussion_decoder())
+      json.parse_bits(body, schema.team_discussion_decoder())
       |> result.map(Ok)
-    _ -> "API doesn't describe default response" |> Error |> Ok
+    _ -> response |> Error |> Ok
   }
 }
 
@@ -15789,10 +15888,10 @@ pub fn teams_delete_discussion_in_org_request(
 }
 
 pub fn teams_delete_discussion_in_org_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, ..) = response
   case status {
     204 -> Ok(Nil) |> Ok
-    _ -> "API doesn't describe default response" |> Error |> Ok
+    _ -> response |> Error |> Ok
   }
 }
 
@@ -15818,12 +15917,12 @@ pub fn teams_get_discussion_in_org_request(
 }
 
 pub fn teams_get_discussion_in_org_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, body:, ..) = response
   case status {
     200 ->
-      utils.decode_bits(body, schema.team_discussion_decoder())
+      json.parse_bits(body, schema.team_discussion_decoder())
       |> result.map(Ok)
-    _ -> "API doesn't describe default response" |> Error |> Ok
+    _ -> response |> Error |> Ok
   }
 }
 
@@ -15838,10 +15937,10 @@ pub fn users_delete_gpg_key_for_authenticated_user_request(base, gpg_key_id) {
 }
 
 pub fn users_delete_gpg_key_for_authenticated_user_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, ..) = response
   case status {
     204 -> Ok(Nil) |> Ok
-    _ -> "API doesn't describe default response" |> Error |> Ok
+    _ -> response |> Error |> Ok
   }
 }
 
@@ -15856,10 +15955,10 @@ pub fn users_get_gpg_key_for_authenticated_user_request(base, gpg_key_id) {
 }
 
 pub fn users_get_gpg_key_for_authenticated_user_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, body:, ..) = response
   case status {
-    200 -> utils.decode_bits(body, schema.gpg_key_decoder()) |> result.map(Ok)
-    _ -> "API doesn't describe default response" |> Error |> Ok
+    200 -> json.parse_bits(body, schema.gpg_key_decoder()) |> result.map(Ok)
+    _ -> response |> Error |> Ok
   }
 }
 
@@ -15870,7 +15969,12 @@ pub fn migrations_get_status_for_authenticated_user_request(
 ) {
   let method = http.Get
   let path = "/user/migrations/" <> int.to_string(migration_id)
-  let query = [#("exclude", panic as "exclude")]
+  let query = [
+    #(
+      "exclude",
+      option.map(exclude, fn(_) { panic as "query parameter is not supported" }),
+    ),
+  ]
   base
   |> utils.set_method(method)
   |> utils.append_path(path)
@@ -15878,10 +15982,10 @@ pub fn migrations_get_status_for_authenticated_user_request(
 }
 
 pub fn migrations_get_status_for_authenticated_user_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, body:, ..) = response
   case status {
-    200 -> utils.decode_bits(body, schema.migration_decoder()) |> result.map(Ok)
-    _ -> "API doesn't describe default response" |> Error |> Ok
+    200 -> json.parse_bits(body, schema.migration_decoder()) |> result.map(Ok)
+    _ -> response |> Error |> Ok
   }
 }
 
@@ -15896,10 +16000,10 @@ pub fn interactions_remove_restrictions_for_repo_request(base, owner, repo) {
 }
 
 pub fn interactions_remove_restrictions_for_repo_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, ..) = response
   case status {
     204 -> Ok(Nil) |> Ok
-    _ -> "API doesn't describe default response" |> Error |> Ok
+    _ -> Error(Nil) |> Ok
   }
 }
 
@@ -15913,7 +16017,7 @@ pub fn interactions_set_restrictions_for_repo_request(
   let path = "/repos/" <> owner <> "/" <> repo <> "/interaction-limits"
   let query = []
   let body =
-    utils.json_to_bits(schema.interaction_limit_to_json(interaction_limit))
+    utils.json_to_bits(schema.interaction_limit_encode(interaction_limit))
   base
   |> utils.set_method(method)
   |> utils.append_path(path)
@@ -15922,12 +16026,12 @@ pub fn interactions_set_restrictions_for_repo_request(
 }
 
 pub fn interactions_set_restrictions_for_repo_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, body:, ..) = response
   case status {
     200 ->
-      utils.decode_bits(body, schema.interaction_limit_response_decoder())
+      json.parse_bits(body, schema.interaction_limit_response_decoder())
       |> result.map(Ok)
-    _ -> "API doesn't describe default response" |> Error |> Ok
+    _ -> Error(Nil) |> Ok
   }
 }
 
@@ -15942,12 +16046,12 @@ pub fn interactions_get_restrictions_for_repo_request(base, owner, repo) {
 }
 
 pub fn interactions_get_restrictions_for_repo_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, body:, ..) = response
   case status {
     200 ->
-      utils.decode_bits(body, zero.failure(Nil, "Unsupported schema"))
+      json.parse_bits(body, decode.failure(Nil, "Unsupported schema"))
       |> result.map(Ok)
-    _ -> "API doesn't describe default response" |> Error |> Ok
+    _ -> response |> Error |> Ok
   }
 }
 
@@ -15970,12 +16074,12 @@ pub fn users_list_social_accounts_for_user_request(
 }
 
 pub fn users_list_social_accounts_for_user_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, body:, ..) = response
   case status {
     200 ->
-      utils.decode_bits(body, zero.list(schema.social_account_decoder()))
+      json.parse_bits(body, decode.list(schema.social_account_decoder()))
       |> result.map(Ok)
-    _ -> "API doesn't describe default response" |> Error |> Ok
+    _ -> response |> Error |> Ok
   }
 }
 
@@ -15990,12 +16094,12 @@ pub fn repos_get_community_profile_metrics_request(base, owner, repo) {
 }
 
 pub fn repos_get_community_profile_metrics_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, body:, ..) = response
   case status {
     200 ->
-      utils.decode_bits(body, schema.community_profile_decoder())
+      json.parse_bits(body, schema.community_profile_decoder())
       |> result.map(Ok)
-    _ -> "API doesn't describe default response" |> Error |> Ok
+    _ -> response |> Error |> Ok
   }
 }
 
@@ -16010,12 +16114,13 @@ pub fn rate_limit_get_request(base) {
 }
 
 pub fn rate_limit_get_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, body:, ..) = response
   case status {
     200 ->
-      utils.decode_bits(body, schema.rate_limit_overview_decoder())
+      json.parse_bits(body, schema.rate_limit_overview_decoder())
       |> result.map(Ok)
-    _ -> "API doesn't describe default response" |> Error |> Ok
+    _ ->
+      json.parse_bits(body, schema.basic_error_decoder()) |> result.map(Error)
   }
 }
 
@@ -16038,10 +16143,10 @@ pub fn copilot_list_copilot_seats_request(
 }
 
 pub fn copilot_list_copilot_seats_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, body:, ..) = response
   case status {
-    200 -> utils.decode_bits(body, zero.dynamic) |> result.map(Ok)
-    _ -> "API doesn't describe default response" |> Error |> Ok
+    200 -> json.parse_bits(body, decode.dynamic) |> result.map(Ok)
+    _ -> response |> Error |> Ok
   }
 }
 
@@ -16063,12 +16168,12 @@ pub fn apps_create_installation_access_token_request(
 }
 
 pub fn apps_create_installation_access_token_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, body:, ..) = response
   case status {
     201 ->
-      utils.decode_bits(body, schema.installation_token_decoder())
+      json.parse_bits(body, schema.installation_token_decoder())
       |> result.map(Ok)
-    _ -> "API doesn't describe default response" |> Error |> Ok
+    _ -> response |> Error |> Ok
   }
 }
 
@@ -16085,10 +16190,10 @@ pub fn git_update_ref_request(base, owner, repo, ref, data) {
 }
 
 pub fn git_update_ref_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, body:, ..) = response
   case status {
-    200 -> utils.decode_bits(body, schema.git_ref_decoder()) |> result.map(Ok)
-    _ -> "API doesn't describe default response" |> Error |> Ok
+    200 -> json.parse_bits(body, schema.git_ref_decoder()) |> result.map(Ok)
+    _ -> response |> Error |> Ok
   }
 }
 
@@ -16103,10 +16208,10 @@ pub fn git_delete_ref_request(base, owner, repo, ref) {
 }
 
 pub fn git_delete_ref_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, ..) = response
   case status {
     204 -> Ok(Nil) |> Ok
-    _ -> "API doesn't describe default response" |> Error |> Ok
+    _ -> response |> Error |> Ok
   }
 }
 
@@ -16123,12 +16228,12 @@ pub fn repos_create_pages_deployment_request(base, owner, repo, data) {
 }
 
 pub fn repos_create_pages_deployment_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, body:, ..) = response
   case status {
     200 ->
-      utils.decode_bits(body, schema.page_deployment_decoder())
+      json.parse_bits(body, schema.page_deployment_decoder())
       |> result.map(Ok)
-    _ -> "API doesn't describe default response" |> Error |> Ok
+    _ -> response |> Error |> Ok
   }
 }
 
@@ -16152,10 +16257,12 @@ pub fn reactions_create_for_issue_request(base, owner, repo, issue_number, data)
 }
 
 pub fn reactions_create_for_issue_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, body:, ..) = response
   case status {
-    200 -> utils.decode_bits(body, schema.reaction_decoder()) |> result.map(Ok)
-    _ -> "API doesn't describe default response" |> Error |> Ok
+    200 -> json.parse_bits(body, schema.reaction_decoder()) |> result.map(Ok)
+    _ ->
+      json.parse_bits(body, schema.validation_error_decoder())
+      |> result.map(Error)
   }
 }
 
@@ -16189,12 +16296,12 @@ pub fn reactions_list_for_issue_request(
 }
 
 pub fn reactions_list_for_issue_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, body:, ..) = response
   case status {
     200 ->
-      utils.decode_bits(body, zero.list(schema.reaction_decoder()))
+      json.parse_bits(body, decode.list(schema.reaction_decoder()))
       |> result.map(Ok)
-    _ -> "API doesn't describe default response" |> Error |> Ok
+    _ -> response |> Error |> Ok
   }
 }
 
@@ -16209,12 +16316,13 @@ pub fn meta_get_all_versions_request(base) {
 }
 
 pub fn meta_get_all_versions_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, body:, ..) = response
   case status {
     200 ->
-      utils.decode_bits(body, zero.failure(Nil, "Unsupported schema"))
+      json.parse_bits(body, decode.failure(Nil, "Unsupported schema"))
       |> result.map(Ok)
-    _ -> "API doesn't describe default response" |> Error |> Ok
+    _ ->
+      json.parse_bits(body, schema.basic_error_decoder()) |> result.map(Error)
   }
 }
 
@@ -16236,10 +16344,10 @@ pub fn issues_unlock_request(base, owner, repo, issue_number) {
 }
 
 pub fn issues_unlock_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, ..) = response
   case status {
     204 -> Ok(Nil) |> Ok
-    _ -> "API doesn't describe default response" |> Error |> Ok
+    _ -> response |> Error |> Ok
   }
 }
 
@@ -16263,10 +16371,10 @@ pub fn issues_lock_request(base, owner, repo, issue_number, data) {
 }
 
 pub fn issues_lock_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, ..) = response
   case status {
     204 -> Ok(Nil) |> Ok
-    _ -> "API doesn't describe default response" |> Error |> Ok
+    _ -> response |> Error |> Ok
   }
 }
 
@@ -16287,10 +16395,11 @@ pub fn repos_delete_autolink_request(base, owner, repo, autolink_id) {
 }
 
 pub fn repos_delete_autolink_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, body:, ..) = response
   case status {
     204 -> Ok(Nil) |> Ok
-    _ -> "API doesn't describe default response" |> Error |> Ok
+    _ ->
+      json.parse_bits(body, schema.basic_error_decoder()) |> result.map(Error)
   }
 }
 
@@ -16311,10 +16420,11 @@ pub fn repos_get_autolink_request(base, owner, repo, autolink_id) {
 }
 
 pub fn repos_get_autolink_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, body:, ..) = response
   case status {
-    200 -> utils.decode_bits(body, schema.autolink_decoder()) |> result.map(Ok)
-    _ -> "API doesn't describe default response" |> Error |> Ok
+    200 -> json.parse_bits(body, schema.autolink_decoder()) |> result.map(Ok)
+    _ ->
+      json.parse_bits(body, schema.basic_error_decoder()) |> result.map(Error)
   }
 }
 
@@ -16335,10 +16445,10 @@ pub fn repos_delete_deployment_request(base, owner, repo, deployment_id) {
 }
 
 pub fn repos_delete_deployment_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, ..) = response
   case status {
     204 -> Ok(Nil) |> Ok
-    _ -> "API doesn't describe default response" |> Error |> Ok
+    _ -> response |> Error |> Ok
   }
 }
 
@@ -16359,11 +16469,11 @@ pub fn repos_get_deployment_request(base, owner, repo, deployment_id) {
 }
 
 pub fn repos_get_deployment_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, body:, ..) = response
   case status {
-    200 ->
-      utils.decode_bits(body, schema.deployment_decoder()) |> result.map(Ok)
-    _ -> "API doesn't describe default response" |> Error |> Ok
+    200 -> json.parse_bits(body, schema.deployment_decoder()) |> result.map(Ok)
+    _ ->
+      json.parse_bits(body, schema.basic_error_decoder()) |> result.map(Error)
   }
 }
 
@@ -16393,12 +16503,14 @@ pub fn pulls_remove_requested_reviewers_request(
 }
 
 pub fn pulls_remove_requested_reviewers_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, body:, ..) = response
   case status {
     200 ->
-      utils.decode_bits(body, schema.pull_request_simple_decoder())
+      json.parse_bits(body, schema.pull_request_simple_decoder())
       |> result.map(Ok)
-    _ -> "API doesn't describe default response" |> Error |> Ok
+    _ ->
+      json.parse_bits(body, schema.validation_error_decoder())
+      |> result.map(Error)
   }
 }
 
@@ -16422,12 +16534,12 @@ pub fn pulls_request_reviewers_request(base, owner, repo, pull_number, data) {
 }
 
 pub fn pulls_request_reviewers_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, body:, ..) = response
   case status {
     201 ->
-      utils.decode_bits(body, schema.pull_request_simple_decoder())
+      json.parse_bits(body, schema.pull_request_simple_decoder())
       |> result.map(Ok)
-    _ -> "API doesn't describe default response" |> Error |> Ok
+    _ -> response |> Error |> Ok
   }
 }
 
@@ -16449,12 +16561,12 @@ pub fn pulls_list_requested_reviewers_request(base, owner, repo, pull_number) {
 }
 
 pub fn pulls_list_requested_reviewers_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, body:, ..) = response
   case status {
     200 ->
-      utils.decode_bits(body, schema.pull_request_review_request_decoder())
+      json.parse_bits(body, schema.pull_request_review_request_decoder())
       |> result.map(Ok)
-    _ -> "API doesn't describe default response" |> Error |> Ok
+    _ -> response |> Error |> Ok
   }
 }
 
@@ -16479,10 +16591,10 @@ pub fn actions_disable_selected_repository_github_actions_organization_request(
 pub fn actions_disable_selected_repository_github_actions_organization_response(
   response,
 ) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, ..) = response
   case status {
     204 -> Ok(Nil) |> Ok
-    _ -> "API doesn't describe default response" |> Error |> Ok
+    _ -> response |> Error |> Ok
   }
 }
 
@@ -16507,10 +16619,10 @@ pub fn actions_enable_selected_repository_github_actions_organization_request(
 pub fn actions_enable_selected_repository_github_actions_organization_response(
   response,
 ) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, ..) = response
   case status {
     204 -> Ok(Nil) |> Ok
-    _ -> "API doesn't describe default response" |> Error |> Ok
+    _ -> response |> Error |> Ok
   }
 }
 
@@ -16528,10 +16640,10 @@ pub fn codespaces_codespace_machines_for_authenticated_user_request(
 }
 
 pub fn codespaces_codespace_machines_for_authenticated_user_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, body:, ..) = response
   case status {
-    200 -> utils.decode_bits(body, zero.dynamic) |> result.map(Ok)
-    _ -> "API doesn't describe default response" |> Error |> Ok
+    200 -> json.parse_bits(body, decode.dynamic) |> result.map(Ok)
+    _ -> response |> Error |> Ok
   }
 }
 
@@ -16546,10 +16658,10 @@ pub fn orgs_remove_membership_for_user_request(base, org, username) {
 }
 
 pub fn orgs_remove_membership_for_user_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, ..) = response
   case status {
     204 -> Ok(Nil) |> Ok
-    _ -> "API doesn't describe default response" |> Error |> Ok
+    _ -> response |> Error |> Ok
   }
 }
 
@@ -16566,12 +16678,12 @@ pub fn orgs_set_membership_for_user_request(base, org, username, data) {
 }
 
 pub fn orgs_set_membership_for_user_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, body:, ..) = response
   case status {
     200 ->
-      utils.decode_bits(body, schema.org_membership_decoder())
+      json.parse_bits(body, schema.org_membership_decoder())
       |> result.map(Ok)
-    _ -> "API doesn't describe default response" |> Error |> Ok
+    _ -> response |> Error |> Ok
   }
 }
 
@@ -16586,12 +16698,12 @@ pub fn orgs_get_membership_for_user_request(base, org, username) {
 }
 
 pub fn orgs_get_membership_for_user_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, body:, ..) = response
   case status {
     200 ->
-      utils.decode_bits(body, schema.org_membership_decoder())
+      json.parse_bits(body, schema.org_membership_decoder())
       |> result.map(Ok)
-    _ -> "API doesn't describe default response" |> Error |> Ok
+    _ -> response |> Error |> Ok
   }
 }
 
@@ -16615,10 +16727,10 @@ pub fn apps_list_installation_repos_for_authenticated_user_request(
 }
 
 pub fn apps_list_installation_repos_for_authenticated_user_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, body:, ..) = response
   case status {
-    200 -> utils.decode_bits(body, zero.dynamic) |> result.map(Ok)
-    _ -> "API doesn't describe default response" |> Error |> Ok
+    200 -> json.parse_bits(body, decode.dynamic) |> result.map(Ok)
+    _ -> response |> Error |> Ok
   }
 }
 
@@ -16635,10 +16747,10 @@ pub fn teams_create_request(base, org, data) {
 }
 
 pub fn teams_create_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, body:, ..) = response
   case status {
-    201 -> utils.decode_bits(body, schema.team_full_decoder()) |> result.map(Ok)
-    _ -> "API doesn't describe default response" |> Error |> Ok
+    201 -> json.parse_bits(body, schema.team_full_decoder()) |> result.map(Ok)
+    _ -> response |> Error |> Ok
   }
 }
 
@@ -16656,12 +16768,13 @@ pub fn teams_list_request(base, org, per_page per_page, page page) {
 }
 
 pub fn teams_list_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, body:, ..) = response
   case status {
     200 ->
-      utils.decode_bits(body, zero.list(schema.team_decoder()))
+      json.parse_bits(body, decode.list(schema.team_decoder()))
       |> result.map(Ok)
-    _ -> "API doesn't describe default response" |> Error |> Ok
+    _ ->
+      json.parse_bits(body, schema.basic_error_decoder()) |> result.map(Error)
   }
 }
 
@@ -16687,10 +16800,11 @@ pub fn actions_remove_all_custom_labels_from_self_hosted_runner_for_org_request(
 pub fn actions_remove_all_custom_labels_from_self_hosted_runner_for_org_response(
   response,
 ) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, body:, ..) = response
   case status {
-    200 -> utils.decode_bits(body, zero.dynamic) |> result.map(Ok)
-    _ -> "API doesn't describe default response" |> Error |> Ok
+    200 -> json.parse_bits(body, decode.dynamic) |> result.map(Ok)
+    _ ->
+      json.parse_bits(body, schema.basic_error_decoder()) |> result.map(Error)
   }
 }
 
@@ -16719,10 +16833,10 @@ pub fn actions_add_custom_labels_to_self_hosted_runner_for_org_request(
 pub fn actions_add_custom_labels_to_self_hosted_runner_for_org_response(
   response,
 ) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, body:, ..) = response
   case status {
-    200 -> utils.decode_bits(body, zero.dynamic) |> result.map(Ok)
-    _ -> "API doesn't describe default response" |> Error |> Ok
+    200 -> json.parse_bits(body, decode.dynamic) |> result.map(Ok)
+    _ -> response |> Error |> Ok
   }
 }
 
@@ -16751,10 +16865,10 @@ pub fn actions_set_custom_labels_for_self_hosted_runner_for_org_request(
 pub fn actions_set_custom_labels_for_self_hosted_runner_for_org_response(
   response,
 ) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, body:, ..) = response
   case status {
-    200 -> utils.decode_bits(body, zero.dynamic) |> result.map(Ok)
-    _ -> "API doesn't describe default response" |> Error |> Ok
+    200 -> json.parse_bits(body, decode.dynamic) |> result.map(Ok)
+    _ -> response |> Error |> Ok
   }
 }
 
@@ -16778,10 +16892,11 @@ pub fn actions_list_labels_for_self_hosted_runner_for_org_request(
 }
 
 pub fn actions_list_labels_for_self_hosted_runner_for_org_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, body:, ..) = response
   case status {
-    200 -> utils.decode_bits(body, zero.dynamic) |> result.map(Ok)
-    _ -> "API doesn't describe default response" |> Error |> Ok
+    200 -> json.parse_bits(body, decode.dynamic) |> result.map(Ok)
+    _ ->
+      json.parse_bits(body, schema.basic_error_decoder()) |> result.map(Error)
   }
 }
 
@@ -16798,10 +16913,10 @@ pub fn users_create_gpg_key_for_authenticated_user_request(base, data) {
 }
 
 pub fn users_create_gpg_key_for_authenticated_user_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, body:, ..) = response
   case status {
-    201 -> utils.decode_bits(body, schema.gpg_key_decoder()) |> result.map(Ok)
-    _ -> "API doesn't describe default response" |> Error |> Ok
+    201 -> json.parse_bits(body, schema.gpg_key_decoder()) |> result.map(Ok)
+    _ -> response |> Error |> Ok
   }
 }
 
@@ -16823,12 +16938,12 @@ pub fn users_list_gpg_keys_for_authenticated_user_request(
 }
 
 pub fn users_list_gpg_keys_for_authenticated_user_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, body:, ..) = response
   case status {
     200 ->
-      utils.decode_bits(body, zero.list(schema.gpg_key_decoder()))
+      json.parse_bits(body, decode.list(schema.gpg_key_decoder()))
       |> result.map(Ok)
-    _ -> "API doesn't describe default response" |> Error |> Ok
+    _ -> response |> Error |> Ok
   }
 }
 
@@ -16845,12 +16960,11 @@ pub fn projects_update_card_request(base, card_id, data) {
 }
 
 pub fn projects_update_card_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, body:, ..) = response
   case status {
     200 ->
-      utils.decode_bits(body, schema.project_card_decoder())
-      |> result.map(Ok)
-    _ -> "API doesn't describe default response" |> Error |> Ok
+      json.parse_bits(body, schema.project_card_decoder()) |> result.map(Ok)
+    _ -> response |> Error |> Ok
   }
 }
 
@@ -16865,10 +16979,10 @@ pub fn projects_delete_card_request(base, card_id) {
 }
 
 pub fn projects_delete_card_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, ..) = response
   case status {
     204 -> Ok(Nil) |> Ok
-    _ -> "API doesn't describe default response" |> Error |> Ok
+    _ -> response |> Error |> Ok
   }
 }
 
@@ -16883,12 +16997,11 @@ pub fn projects_get_card_request(base, card_id) {
 }
 
 pub fn projects_get_card_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, body:, ..) = response
   case status {
     200 ->
-      utils.decode_bits(body, schema.project_card_decoder())
-      |> result.map(Ok)
-    _ -> "API doesn't describe default response" |> Error |> Ok
+      json.parse_bits(body, schema.project_card_decoder()) |> result.map(Ok)
+    _ -> response |> Error |> Ok
   }
 }
 
@@ -16904,7 +17017,7 @@ pub fn security_advisories_update_repository_advisory_request(
     "/repos/" <> owner <> "/" <> repo <> "/security-advisories/" <> ghsa_id
   let query = []
   let body =
-    utils.json_to_bits(schema.repository_advisory_update_to_json(
+    utils.json_to_bits(schema.repository_advisory_update_encode(
       repository_advisory_update,
     ))
   base
@@ -16915,12 +17028,12 @@ pub fn security_advisories_update_repository_advisory_request(
 }
 
 pub fn security_advisories_update_repository_advisory_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, body:, ..) = response
   case status {
     200 ->
-      utils.decode_bits(body, schema.repository_advisory_decoder())
+      json.parse_bits(body, schema.repository_advisory_decoder())
       |> result.map(Ok)
-    _ -> "API doesn't describe default response" |> Error |> Ok
+    _ -> response |> Error |> Ok
   }
 }
 
@@ -16941,12 +17054,12 @@ pub fn security_advisories_get_repository_advisory_request(
 }
 
 pub fn security_advisories_get_repository_advisory_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, body:, ..) = response
   case status {
     200 ->
-      utils.decode_bits(body, schema.repository_advisory_decoder())
+      json.parse_bits(body, schema.repository_advisory_decoder())
       |> result.map(Ok)
-    _ -> "API doesn't describe default response" |> Error |> Ok
+    _ -> response |> Error |> Ok
   }
 }
 
@@ -16976,12 +17089,11 @@ pub fn actions_create_environment_variable_request(
 }
 
 pub fn actions_create_environment_variable_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, body:, ..) = response
   case status {
     201 ->
-      utils.decode_bits(body, schema.empty_object_decoder())
-      |> result.map(Ok)
-    _ -> "API doesn't describe default response" |> Error |> Ok
+      json.parse_bits(body, schema.empty_object_decoder()) |> result.map(Ok)
+    _ -> response |> Error |> Ok
   }
 }
 
@@ -17013,10 +17125,10 @@ pub fn actions_list_environment_variables_request(
 }
 
 pub fn actions_list_environment_variables_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, body:, ..) = response
   case status {
-    200 -> utils.decode_bits(body, zero.dynamic) |> result.map(Ok)
-    _ -> "API doesn't describe default response" |> Error |> Ok
+    200 -> json.parse_bits(body, decode.dynamic) |> result.map(Ok)
+    _ -> response |> Error |> Ok
   }
 }
 
@@ -17039,12 +17151,12 @@ pub fn activity_list_received_events_for_user_request(
 }
 
 pub fn activity_list_received_events_for_user_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, body:, ..) = response
   case status {
     200 ->
-      utils.decode_bits(body, zero.list(schema.event_decoder()))
+      json.parse_bits(body, decode.list(schema.event_decoder()))
       |> result.map(Ok)
-    _ -> "API doesn't describe default response" |> Error |> Ok
+    _ -> response |> Error |> Ok
   }
 }
 
@@ -17068,15 +17180,15 @@ pub fn classroom_list_accepted_assignments_for_an_assignment_request(
 }
 
 pub fn classroom_list_accepted_assignments_for_an_assignment_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, body:, ..) = response
   case status {
     200 ->
-      utils.decode_bits(
+      json.parse_bits(
         body,
-        zero.list(schema.classroom_accepted_assignment_decoder()),
+        decode.list(schema.classroom_accepted_assignment_decoder()),
       )
       |> result.map(Ok)
-    _ -> "API doesn't describe default response" |> Error |> Ok
+    _ -> response |> Error |> Ok
   }
 }
 
@@ -17097,10 +17209,10 @@ pub fn orgs_review_pat_grant_request_request(base, org, pat_request_id, data) {
 }
 
 pub fn orgs_review_pat_grant_request_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, ..) = response
   case status {
     204 -> Ok(Nil) |> Ok
-    _ -> "API doesn't describe default response" |> Error |> Ok
+    _ -> response |> Error |> Ok
   }
 }
 
@@ -17115,12 +17227,13 @@ pub fn users_get_by_id_request(base, account_id) {
 }
 
 pub fn users_get_by_id_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, body:, ..) = response
   case status {
     200 ->
-      utils.decode_bits(body, zero.failure(Nil, "Unsupported schema"))
+      json.parse_bits(body, decode.failure(Nil, "Unsupported schema"))
       |> result.map(Ok)
-    _ -> "API doesn't describe default response" |> Error |> Ok
+    _ ->
+      json.parse_bits(body, schema.basic_error_decoder()) |> result.map(Error)
   }
 }
 
@@ -17146,10 +17259,11 @@ pub fn users_list_attestations_request(
 }
 
 pub fn users_list_attestations_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, body:, ..) = response
   case status {
-    204 -> Ok(Nil) |> Ok
-    _ -> "API doesn't describe default response" |> Error |> Ok
+    200 -> json.parse_bits(body, decode.dynamic) |> result.map(Ok)
+    _ ->
+      json.parse_bits(body, schema.basic_error_decoder()) |> result.map(Error)
   }
 }
 
@@ -17173,10 +17287,10 @@ pub fn actions_list_repo_workflows_request(
 }
 
 pub fn actions_list_repo_workflows_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, body:, ..) = response
   case status {
-    200 -> utils.decode_bits(body, zero.dynamic) |> result.map(Ok)
-    _ -> "API doesn't describe default response" |> Error |> Ok
+    200 -> json.parse_bits(body, decode.dynamic) |> result.map(Ok)
+    _ -> response |> Error |> Ok
   }
 }
 
@@ -17192,10 +17306,10 @@ pub fn repos_delete_deploy_key_request(base, owner, repo, key_id) {
 }
 
 pub fn repos_delete_deploy_key_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, ..) = response
   case status {
     204 -> Ok(Nil) |> Ok
-    _ -> "API doesn't describe default response" |> Error |> Ok
+    _ -> response |> Error |> Ok
   }
 }
 
@@ -17211,11 +17325,11 @@ pub fn repos_get_deploy_key_request(base, owner, repo, key_id) {
 }
 
 pub fn repos_get_deploy_key_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, body:, ..) = response
   case status {
-    200 ->
-      utils.decode_bits(body, schema.deploy_key_decoder()) |> result.map(Ok)
-    _ -> "API doesn't describe default response" |> Error |> Ok
+    200 -> json.parse_bits(body, schema.deploy_key_decoder()) |> result.map(Ok)
+    _ ->
+      json.parse_bits(body, schema.basic_error_decoder()) |> result.map(Error)
   }
 }
 
@@ -17238,12 +17352,13 @@ pub fn repos_update_commit_comment_request(base, owner, repo, comment_id, data) 
 }
 
 pub fn repos_update_commit_comment_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, body:, ..) = response
   case status {
     200 ->
-      utils.decode_bits(body, schema.commit_comment_decoder())
+      json.parse_bits(body, schema.commit_comment_decoder())
       |> result.map(Ok)
-    _ -> "API doesn't describe default response" |> Error |> Ok
+    _ ->
+      json.parse_bits(body, schema.basic_error_decoder()) |> result.map(Error)
   }
 }
 
@@ -17264,10 +17379,11 @@ pub fn repos_delete_commit_comment_request(base, owner, repo, comment_id) {
 }
 
 pub fn repos_delete_commit_comment_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, body:, ..) = response
   case status {
     204 -> Ok(Nil) |> Ok
-    _ -> "API doesn't describe default response" |> Error |> Ok
+    _ ->
+      json.parse_bits(body, schema.basic_error_decoder()) |> result.map(Error)
   }
 }
 
@@ -17288,12 +17404,13 @@ pub fn repos_get_commit_comment_request(base, owner, repo, comment_id) {
 }
 
 pub fn repos_get_commit_comment_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, body:, ..) = response
   case status {
     200 ->
-      utils.decode_bits(body, schema.commit_comment_decoder())
+      json.parse_bits(body, schema.commit_comment_decoder())
       |> result.map(Ok)
-    _ -> "API doesn't describe default response" |> Error |> Ok
+    _ ->
+      json.parse_bits(body, schema.basic_error_decoder()) |> result.map(Error)
   }
 }
 
@@ -17311,10 +17428,10 @@ pub fn repos_update_webhook_request(base, owner, repo, hook_id, data) {
 }
 
 pub fn repos_update_webhook_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, body:, ..) = response
   case status {
-    200 -> utils.decode_bits(body, schema.hook_decoder()) |> result.map(Ok)
-    _ -> "API doesn't describe default response" |> Error |> Ok
+    200 -> json.parse_bits(body, schema.hook_decoder()) |> result.map(Ok)
+    _ -> response |> Error |> Ok
   }
 }
 
@@ -17330,10 +17447,11 @@ pub fn repos_delete_webhook_request(base, owner, repo, hook_id) {
 }
 
 pub fn repos_delete_webhook_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, body:, ..) = response
   case status {
     204 -> Ok(Nil) |> Ok
-    _ -> "API doesn't describe default response" |> Error |> Ok
+    _ ->
+      json.parse_bits(body, schema.basic_error_decoder()) |> result.map(Error)
   }
 }
 
@@ -17349,10 +17467,11 @@ pub fn repos_get_webhook_request(base, owner, repo, hook_id) {
 }
 
 pub fn repos_get_webhook_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, body:, ..) = response
   case status {
-    200 -> utils.decode_bits(body, schema.hook_decoder()) |> result.map(Ok)
-    _ -> "API doesn't describe default response" |> Error |> Ok
+    200 -> json.parse_bits(body, schema.hook_decoder()) |> result.map(Ok)
+    _ ->
+      json.parse_bits(body, schema.basic_error_decoder()) |> result.map(Error)
   }
 }
 
@@ -17379,9 +17498,9 @@ pub fn actions_download_job_logs_for_workflow_run_request(
 }
 
 pub fn actions_download_job_logs_for_workflow_run_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, ..) = response
   case status {
-    _ -> "API doesn't describe default response" |> Error |> Ok
+    _ -> response |> Error |> Ok
   }
 }
 
@@ -17396,15 +17515,12 @@ pub fn actions_get_actions_cache_usage_request(base, owner, repo) {
 }
 
 pub fn actions_get_actions_cache_usage_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, body:, ..) = response
   case status {
     200 ->
-      utils.decode_bits(
-        body,
-        schema.actions_cache_usage_by_repository_decoder(),
-      )
+      json.parse_bits(body, schema.actions_cache_usage_by_repository_decoder())
       |> result.map(Ok)
-    _ -> "API doesn't describe default response" |> Error |> Ok
+    _ -> response |> Error |> Ok
   }
 }
 
@@ -17421,10 +17537,10 @@ pub fn code_security_detach_configuration_request(base, org, data) {
 }
 
 pub fn code_security_detach_configuration_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, ..) = response
   case status {
     204 -> Ok(Nil) |> Ok
-    _ -> "API doesn't describe default response" |> Error |> Ok
+    _ -> response |> Error |> Ok
   }
 }
 
@@ -17453,12 +17569,12 @@ pub fn copilot_usage_metrics_for_enterprise_team_request(
 }
 
 pub fn copilot_usage_metrics_for_enterprise_team_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, body:, ..) = response
   case status {
     200 ->
-      utils.decode_bits(body, zero.list(schema.copilot_usage_metrics_decoder()))
+      json.parse_bits(body, decode.list(schema.copilot_usage_metrics_decoder()))
       |> result.map(Ok)
-    _ -> "API doesn't describe default response" |> Error |> Ok
+    _ -> response |> Error |> Ok
   }
 }
 
@@ -17473,10 +17589,10 @@ pub fn orgs_remove_security_manager_team_request(base, org, team_slug) {
 }
 
 pub fn orgs_remove_security_manager_team_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, ..) = response
   case status {
     204 -> Ok(Nil) |> Ok
-    _ -> "API doesn't describe default response" |> Error |> Ok
+    _ -> response |> Error |> Ok
   }
 }
 
@@ -17491,10 +17607,10 @@ pub fn orgs_add_security_manager_team_request(base, org, team_slug) {
 }
 
 pub fn orgs_add_security_manager_team_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, ..) = response
   case status {
     204 -> Ok(Nil) |> Ok
-    _ -> "API doesn't describe default response" |> Error |> Ok
+    _ -> response |> Error |> Ok
   }
 }
 
@@ -17520,12 +17636,12 @@ pub fn activity_list_repos_starred_by_authenticated_user_request(
 }
 
 pub fn activity_list_repos_starred_by_authenticated_user_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, body:, ..) = response
   case status {
     200 ->
-      utils.decode_bits(body, zero.list(schema.repository_decoder()))
+      json.parse_bits(body, decode.list(schema.repository_decoder()))
       |> result.map(Ok)
-    _ -> "API doesn't describe default response" |> Error |> Ok
+    _ -> response |> Error |> Ok
   }
 }
 
@@ -17551,10 +17667,10 @@ pub fn codespaces_list_devcontainers_in_repository_for_authenticated_user_reques
 pub fn codespaces_list_devcontainers_in_repository_for_authenticated_user_response(
   response,
 ) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, body:, ..) = response
   case status {
-    200 -> utils.decode_bits(body, zero.dynamic) |> result.map(Ok)
-    _ -> "API doesn't describe default response" |> Error |> Ok
+    200 -> json.parse_bits(body, decode.dynamic) |> result.map(Ok)
+    _ -> response |> Error |> Ok
   }
 }
 
@@ -17569,12 +17685,12 @@ pub fn billing_get_github_actions_billing_user_request(base, username) {
 }
 
 pub fn billing_get_github_actions_billing_user_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, body:, ..) = response
   case status {
     200 ->
-      utils.decode_bits(body, schema.actions_billing_usage_decoder())
+      json.parse_bits(body, schema.actions_billing_usage_decoder())
       |> result.map(Ok)
-    _ -> "API doesn't describe default response" |> Error |> Ok
+    _ -> response |> Error |> Ok
   }
 }
 
@@ -17597,12 +17713,12 @@ pub fn repos_update_invitation_request(base, owner, repo, invitation_id, data) {
 }
 
 pub fn repos_update_invitation_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, body:, ..) = response
   case status {
     200 ->
-      utils.decode_bits(body, schema.repository_invitation_decoder())
+      json.parse_bits(body, schema.repository_invitation_decoder())
       |> result.map(Ok)
-    _ -> "API doesn't describe default response" |> Error |> Ok
+    _ -> response |> Error |> Ok
   }
 }
 
@@ -17623,10 +17739,10 @@ pub fn repos_delete_invitation_request(base, owner, repo, invitation_id) {
 }
 
 pub fn repos_delete_invitation_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, ..) = response
   case status {
     204 -> Ok(Nil) |> Ok
-    _ -> "API doesn't describe default response" |> Error |> Ok
+    _ -> response |> Error |> Ok
   }
 }
 
@@ -17648,10 +17764,10 @@ pub fn actions_set_selected_repos_for_org_variable_request(
 }
 
 pub fn actions_set_selected_repos_for_org_variable_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, ..) = response
   case status {
     204 -> Ok(Nil) |> Ok
-    _ -> "API doesn't describe default response" |> Error |> Ok
+    _ -> Error(Nil) |> Ok
   }
 }
 
@@ -17675,10 +17791,10 @@ pub fn actions_list_selected_repos_for_org_variable_request(
 }
 
 pub fn actions_list_selected_repos_for_org_variable_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, body:, ..) = response
   case status {
-    200 -> utils.decode_bits(body, zero.dynamic) |> result.map(Ok)
-    _ -> "API doesn't describe default response" |> Error |> Ok
+    200 -> json.parse_bits(body, decode.dynamic) |> result.map(Ok)
+    _ -> Error(Nil) |> Ok
   }
 }
 
@@ -17700,12 +17816,12 @@ pub fn actions_get_workflow_run_usage_request(base, owner, repo, run_id) {
 }
 
 pub fn actions_get_workflow_run_usage_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, body:, ..) = response
   case status {
     200 ->
-      utils.decode_bits(body, schema.workflow_run_usage_decoder())
+      json.parse_bits(body, schema.workflow_run_usage_decoder())
       |> result.map(Ok)
-    _ -> "API doesn't describe default response" |> Error |> Ok
+    _ -> response |> Error |> Ok
   }
 }
 
@@ -17720,10 +17836,10 @@ pub fn orgs_unblock_user_request(base, org, username) {
 }
 
 pub fn orgs_unblock_user_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, ..) = response
   case status {
     204 -> Ok(Nil) |> Ok
-    _ -> "API doesn't describe default response" |> Error |> Ok
+    _ -> response |> Error |> Ok
   }
 }
 
@@ -17738,10 +17854,12 @@ pub fn orgs_block_user_request(base, org, username) {
 }
 
 pub fn orgs_block_user_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, body:, ..) = response
   case status {
     204 -> Ok(Nil) |> Ok
-    _ -> "API doesn't describe default response" |> Error |> Ok
+    _ ->
+      json.parse_bits(body, schema.validation_error_decoder())
+      |> result.map(Error)
   }
 }
 
@@ -17756,10 +17874,11 @@ pub fn orgs_check_blocked_user_request(base, org, username) {
 }
 
 pub fn orgs_check_blocked_user_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, body:, ..) = response
   case status {
     204 -> Ok(Nil) |> Ok
-    _ -> "API doesn't describe default response" |> Error |> Ok
+    _ ->
+      json.parse_bits(body, schema.basic_error_decoder()) |> result.map(Error)
   }
 }
 
@@ -17774,12 +17893,12 @@ pub fn apps_create_from_manifest_request(base, code) {
 }
 
 pub fn apps_create_from_manifest_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, body:, ..) = response
   case status {
     201 ->
-      utils.decode_bits(body, zero.failure(Nil, "Unsupported schema"))
+      json.parse_bits(body, decode.failure(Nil, "Unsupported schema"))
       |> result.map(Ok)
-    _ -> "API doesn't describe default response" |> Error |> Ok
+    _ -> response |> Error |> Ok
   }
 }
 
@@ -17821,12 +17940,12 @@ pub fn issues_list_request(
 }
 
 pub fn issues_list_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, body:, ..) = response
   case status {
     200 ->
-      utils.decode_bits(body, zero.list(schema.issue_decoder()))
+      json.parse_bits(body, decode.list(schema.issue_decoder()))
       |> result.map(Ok)
-    _ -> "API doesn't describe default response" |> Error |> Ok
+    _ -> response |> Error |> Ok
   }
 }
 
@@ -17849,12 +17968,12 @@ pub fn dependabot_update_alert_request(base, owner, repo, alert_number, data) {
 }
 
 pub fn dependabot_update_alert_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, body:, ..) = response
   case status {
     200 ->
-      utils.decode_bits(body, schema.dependabot_alert_decoder())
+      json.parse_bits(body, schema.dependabot_alert_decoder())
       |> result.map(Ok)
-    _ -> "API doesn't describe default response" |> Error |> Ok
+    _ -> response |> Error |> Ok
   }
 }
 
@@ -17875,12 +17994,12 @@ pub fn dependabot_get_alert_request(base, owner, repo, alert_number) {
 }
 
 pub fn dependabot_get_alert_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, body:, ..) = response
   case status {
     200 ->
-      utils.decode_bits(body, schema.dependabot_alert_decoder())
+      json.parse_bits(body, schema.dependabot_alert_decoder())
       |> result.map(Ok)
-    _ -> "API doesn't describe default response" |> Error |> Ok
+    _ -> response |> Error |> Ok
   }
 }
 
@@ -17897,12 +18016,12 @@ pub fn apps_scope_token_request(base, client_id, data) {
 }
 
 pub fn apps_scope_token_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, body:, ..) = response
   case status {
     200 ->
-      utils.decode_bits(body, schema.authorization_decoder())
+      json.parse_bits(body, schema.authorization_decoder())
       |> result.map(Ok)
-    _ -> "API doesn't describe default response" |> Error |> Ok
+    _ -> response |> Error |> Ok
   }
 }
 
@@ -17925,12 +18044,12 @@ pub fn pulls_update_review_comment_request(base, owner, repo, comment_id, data) 
 }
 
 pub fn pulls_update_review_comment_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, body:, ..) = response
   case status {
     200 ->
-      utils.decode_bits(body, schema.pull_request_review_comment_decoder())
+      json.parse_bits(body, schema.pull_request_review_comment_decoder())
       |> result.map(Ok)
-    _ -> "API doesn't describe default response" |> Error |> Ok
+    _ -> response |> Error |> Ok
   }
 }
 
@@ -17951,10 +18070,11 @@ pub fn pulls_delete_review_comment_request(base, owner, repo, comment_id) {
 }
 
 pub fn pulls_delete_review_comment_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, body:, ..) = response
   case status {
     204 -> Ok(Nil) |> Ok
-    _ -> "API doesn't describe default response" |> Error |> Ok
+    _ ->
+      json.parse_bits(body, schema.basic_error_decoder()) |> result.map(Error)
   }
 }
 
@@ -17975,12 +18095,13 @@ pub fn pulls_get_review_comment_request(base, owner, repo, comment_id) {
 }
 
 pub fn pulls_get_review_comment_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, body:, ..) = response
   case status {
     200 ->
-      utils.decode_bits(body, schema.pull_request_review_comment_decoder())
+      json.parse_bits(body, schema.pull_request_review_comment_decoder())
       |> result.map(Ok)
-    _ -> "API doesn't describe default response" |> Error |> Ok
+    _ ->
+      json.parse_bits(body, schema.basic_error_decoder()) |> result.map(Error)
   }
 }
 
@@ -17995,10 +18116,10 @@ pub fn licenses_get_request(base, license) {
 }
 
 pub fn licenses_get_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, body:, ..) = response
   case status {
-    200 -> utils.decode_bits(body, schema.license_decoder()) |> result.map(Ok)
-    _ -> "API doesn't describe default response" |> Error |> Ok
+    200 -> json.parse_bits(body, schema.license_decoder()) |> result.map(Ok)
+    _ -> response |> Error |> Ok
   }
 }
 
@@ -18020,15 +18141,15 @@ pub fn apps_list_subscriptions_for_authenticated_user_request(
 }
 
 pub fn apps_list_subscriptions_for_authenticated_user_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, body:, ..) = response
   case status {
     200 ->
-      utils.decode_bits(
+      json.parse_bits(
         body,
-        zero.list(schema.user_marketplace_purchase_decoder()),
+        decode.list(schema.user_marketplace_purchase_decoder()),
       )
       |> result.map(Ok)
-    _ -> "API doesn't describe default response" |> Error |> Ok
+    _ -> response |> Error |> Ok
   }
 }
 
@@ -18045,10 +18166,10 @@ pub fn users_create_public_ssh_key_for_authenticated_user_request(base, data) {
 }
 
 pub fn users_create_public_ssh_key_for_authenticated_user_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, body:, ..) = response
   case status {
-    201 -> utils.decode_bits(body, schema.key_decoder()) |> result.map(Ok)
-    _ -> "API doesn't describe default response" |> Error |> Ok
+    201 -> json.parse_bits(body, schema.key_decoder()) |> result.map(Ok)
+    _ -> response |> Error |> Ok
   }
 }
 
@@ -18070,12 +18191,12 @@ pub fn users_list_public_ssh_keys_for_authenticated_user_request(
 }
 
 pub fn users_list_public_ssh_keys_for_authenticated_user_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, body:, ..) = response
   case status {
     200 ->
-      utils.decode_bits(body, zero.list(schema.key_decoder()))
+      json.parse_bits(body, decode.list(schema.key_decoder()))
       |> result.map(Ok)
-    _ -> "API doesn't describe default response" |> Error |> Ok
+    _ -> response |> Error |> Ok
   }
 }
 
@@ -18098,10 +18219,10 @@ pub fn actions_get_actions_cache_usage_by_repo_for_org_request(
 }
 
 pub fn actions_get_actions_cache_usage_by_repo_for_org_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, body:, ..) = response
   case status {
-    200 -> utils.decode_bits(body, zero.dynamic) |> result.map(Ok)
-    _ -> "API doesn't describe default response" |> Error |> Ok
+    200 -> json.parse_bits(body, decode.dynamic) |> result.map(Ok)
+    _ -> response |> Error |> Ok
   }
 }
 
@@ -18116,10 +18237,12 @@ pub fn repos_get_punch_card_stats_request(base, owner, repo) {
 }
 
 pub fn repos_get_punch_card_stats_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, body:, ..) = response
   case status {
-    204 -> Ok(Nil) |> Ok
-    _ -> "API doesn't describe default response" |> Error |> Ok
+    200 ->
+      json.parse_bits(body, decode.list(schema.code_frequency_stat_decoder()))
+      |> result.map(Ok)
+    _ -> response |> Error |> Ok
   }
 }
 
@@ -18134,12 +18257,13 @@ pub fn licenses_get_for_repo_request(base, owner, repo, ref ref) {
 }
 
 pub fn licenses_get_for_repo_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, body:, ..) = response
   case status {
     200 ->
-      utils.decode_bits(body, schema.license_content_decoder())
+      json.parse_bits(body, schema.license_content_decoder())
       |> result.map(Ok)
-    _ -> "API doesn't describe default response" |> Error |> Ok
+    _ ->
+      json.parse_bits(body, schema.basic_error_decoder()) |> result.map(Error)
   }
 }
 
@@ -18156,10 +18280,10 @@ pub fn actions_generate_runner_jitconfig_for_org_request(base, org, data) {
 }
 
 pub fn actions_generate_runner_jitconfig_for_org_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, body:, ..) = response
   case status {
-    201 -> utils.decode_bits(body, zero.dynamic) |> result.map(Ok)
-    _ -> "API doesn't describe default response" |> Error |> Ok
+    201 -> json.parse_bits(body, decode.dynamic) |> result.map(Ok)
+    _ -> response |> Error |> Ok
   }
 }
 
@@ -18174,10 +18298,11 @@ pub fn codespaces_delete_org_secret_request(base, org, secret_name) {
 }
 
 pub fn codespaces_delete_org_secret_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, body:, ..) = response
   case status {
     204 -> Ok(Nil) |> Ok
-    _ -> "API doesn't describe default response" |> Error |> Ok
+    _ ->
+      json.parse_bits(body, schema.basic_error_decoder()) |> result.map(Error)
   }
 }
 
@@ -18199,10 +18324,11 @@ pub fn codespaces_create_or_update_org_secret_request(
 }
 
 pub fn codespaces_create_or_update_org_secret_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, body:, ..) = response
   case status {
-    204 -> Ok(Nil) |> Ok
-    _ -> "API doesn't describe default response" |> Error |> Ok
+    201 ->
+      json.parse_bits(body, schema.empty_object_decoder()) |> result.map(Ok)
+    _ -> response |> Error |> Ok
   }
 }
 
@@ -18217,12 +18343,12 @@ pub fn codespaces_get_org_secret_request(base, org, secret_name) {
 }
 
 pub fn codespaces_get_org_secret_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, body:, ..) = response
   case status {
     200 ->
-      utils.decode_bits(body, schema.codespaces_org_secret_decoder())
+      json.parse_bits(body, schema.codespaces_org_secret_decoder())
       |> result.map(Ok)
-    _ -> "API doesn't describe default response" |> Error |> Ok
+    _ -> response |> Error |> Ok
   }
 }
 
@@ -18254,12 +18380,12 @@ pub fn pulls_list_commits_request(
 }
 
 pub fn pulls_list_commits_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, body:, ..) = response
   case status {
     200 ->
-      utils.decode_bits(body, zero.list(schema.commit_decoder()))
+      json.parse_bits(body, decode.list(schema.commit_decoder()))
       |> result.map(Ok)
-    _ -> "API doesn't describe default response" |> Error |> Ok
+    _ -> response |> Error |> Ok
   }
 }
 
@@ -18274,12 +18400,12 @@ pub fn billing_get_github_actions_billing_org_request(base, org) {
 }
 
 pub fn billing_get_github_actions_billing_org_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, body:, ..) = response
   case status {
     200 ->
-      utils.decode_bits(body, schema.actions_billing_usage_decoder())
+      json.parse_bits(body, schema.actions_billing_usage_decoder())
       |> result.map(Ok)
-    _ -> "API doesn't describe default response" |> Error |> Ok
+    _ -> response |> Error |> Ok
   }
 }
 
@@ -18294,15 +18420,15 @@ pub fn code_security_get_default_configurations_request(base, org) {
 }
 
 pub fn code_security_get_default_configurations_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, body:, ..) = response
   case status {
     200 ->
-      utils.decode_bits(
+      json.parse_bits(
         body,
         schema.code_security_default_configurations_decoder(),
       )
       |> result.map(Ok)
-    _ -> "API doesn't describe default response" |> Error |> Ok
+    _ -> response |> Error |> Ok
   }
 }
 
@@ -18323,10 +18449,10 @@ pub fn packages_delete_package_for_user_request(
 }
 
 pub fn packages_delete_package_for_user_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, ..) = response
   case status {
     204 -> Ok(Nil) |> Ok
-    _ -> "API doesn't describe default response" |> Error |> Ok
+    _ -> response |> Error |> Ok
   }
 }
 
@@ -18347,10 +18473,10 @@ pub fn packages_get_package_for_user_request(
 }
 
 pub fn packages_get_package_for_user_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, body:, ..) = response
   case status {
-    200 -> utils.decode_bits(body, schema.package_decoder()) |> result.map(Ok)
-    _ -> "API doesn't describe default response" |> Error |> Ok
+    200 -> json.parse_bits(body, schema.package_decoder()) |> result.map(Ok)
+    _ -> response |> Error |> Ok
   }
 }
 
@@ -18376,10 +18502,10 @@ pub fn codespaces_repo_machines_for_authenticated_user_request(
 }
 
 pub fn codespaces_repo_machines_for_authenticated_user_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, body:, ..) = response
   case status {
-    200 -> utils.decode_bits(body, zero.dynamic) |> result.map(Ok)
-    _ -> "API doesn't describe default response" |> Error |> Ok
+    200 -> json.parse_bits(body, decode.dynamic) |> result.map(Ok)
+    _ -> response |> Error |> Ok
   }
 }
 
@@ -18402,12 +18528,12 @@ pub fn activity_list_repos_watched_by_user_request(
 }
 
 pub fn activity_list_repos_watched_by_user_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, body:, ..) = response
   case status {
     200 ->
-      utils.decode_bits(body, zero.list(schema.minimal_repository_decoder()))
+      json.parse_bits(body, decode.list(schema.minimal_repository_decoder()))
       |> result.map(Ok)
-    _ -> "API doesn't describe default response" |> Error |> Ok
+    _ -> response |> Error |> Ok
   }
 }
 
@@ -18423,10 +18549,10 @@ pub fn actions_delete_repo_secret_request(base, owner, repo, secret_name) {
 }
 
 pub fn actions_delete_repo_secret_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, ..) = response
   case status {
     204 -> Ok(Nil) |> Ok
-    _ -> "API doesn't describe default response" |> Error |> Ok
+    _ -> response |> Error |> Ok
   }
 }
 
@@ -18450,10 +18576,11 @@ pub fn actions_create_or_update_repo_secret_request(
 }
 
 pub fn actions_create_or_update_repo_secret_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, body:, ..) = response
   case status {
-    204 -> Ok(Nil) |> Ok
-    _ -> "API doesn't describe default response" |> Error |> Ok
+    201 ->
+      json.parse_bits(body, schema.empty_object_decoder()) |> result.map(Ok)
+    _ -> response |> Error |> Ok
   }
 }
 
@@ -18469,12 +18596,12 @@ pub fn actions_get_repo_secret_request(base, owner, repo, secret_name) {
 }
 
 pub fn actions_get_repo_secret_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, body:, ..) = response
   case status {
     200 ->
-      utils.decode_bits(body, schema.actions_secret_decoder())
+      json.parse_bits(body, schema.actions_secret_decoder())
       |> result.map(Ok)
-    _ -> "API doesn't describe default response" |> Error |> Ok
+    _ -> response |> Error |> Ok
   }
 }
 
@@ -18491,10 +18618,10 @@ pub fn interactions_remove_restrictions_for_authenticated_user_request(base) {
 pub fn interactions_remove_restrictions_for_authenticated_user_response(
   response,
 ) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, ..) = response
   case status {
     204 -> Ok(Nil) |> Ok
-    _ -> "API doesn't describe default response" |> Error |> Ok
+    _ -> response |> Error |> Ok
   }
 }
 
@@ -18506,7 +18633,7 @@ pub fn interactions_set_restrictions_for_authenticated_user_request(
   let path = "/user/interaction-limits"
   let query = []
   let body =
-    utils.json_to_bits(schema.interaction_limit_to_json(interaction_limit))
+    utils.json_to_bits(schema.interaction_limit_encode(interaction_limit))
   base
   |> utils.set_method(method)
   |> utils.append_path(path)
@@ -18515,12 +18642,14 @@ pub fn interactions_set_restrictions_for_authenticated_user_request(
 }
 
 pub fn interactions_set_restrictions_for_authenticated_user_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, body:, ..) = response
   case status {
     200 ->
-      utils.decode_bits(body, schema.interaction_limit_response_decoder())
+      json.parse_bits(body, schema.interaction_limit_response_decoder())
       |> result.map(Ok)
-    _ -> "API doesn't describe default response" |> Error |> Ok
+    _ ->
+      json.parse_bits(body, schema.validation_error_decoder())
+      |> result.map(Error)
   }
 }
 
@@ -18535,10 +18664,12 @@ pub fn interactions_get_restrictions_for_authenticated_user_request(base) {
 }
 
 pub fn interactions_get_restrictions_for_authenticated_user_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, body:, ..) = response
   case status {
-    204 -> Ok(Nil) |> Ok
-    _ -> "API doesn't describe default response" |> Error |> Ok
+    200 ->
+      json.parse_bits(body, decode.failure(Nil, "Unsupported schema"))
+      |> result.map(Ok)
+    _ -> response |> Error |> Ok
   }
 }
 
@@ -18562,12 +18693,12 @@ pub fn pulls_create_review_request(base, owner, repo, pull_number, data) {
 }
 
 pub fn pulls_create_review_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, body:, ..) = response
   case status {
     200 ->
-      utils.decode_bits(body, schema.pull_request_review_decoder())
+      json.parse_bits(body, schema.pull_request_review_decoder())
       |> result.map(Ok)
-    _ -> "API doesn't describe default response" |> Error |> Ok
+    _ -> response |> Error |> Ok
   }
 }
 
@@ -18599,12 +18730,12 @@ pub fn pulls_list_reviews_request(
 }
 
 pub fn pulls_list_reviews_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, body:, ..) = response
   case status {
     200 ->
-      utils.decode_bits(body, zero.list(schema.pull_request_review_decoder()))
+      json.parse_bits(body, decode.list(schema.pull_request_review_decoder()))
       |> result.map(Ok)
-    _ -> "API doesn't describe default response" |> Error |> Ok
+    _ -> response |> Error |> Ok
   }
 }
 
@@ -18619,12 +18750,12 @@ pub fn repos_request_pages_build_request(base, owner, repo) {
 }
 
 pub fn repos_request_pages_build_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, body:, ..) = response
   case status {
     201 ->
-      utils.decode_bits(body, schema.page_build_status_decoder())
+      json.parse_bits(body, schema.page_build_status_decoder())
       |> result.map(Ok)
-    _ -> "API doesn't describe default response" |> Error |> Ok
+    _ -> response |> Error |> Ok
   }
 }
 
@@ -18648,12 +18779,12 @@ pub fn repos_list_pages_builds_request(
 }
 
 pub fn repos_list_pages_builds_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, body:, ..) = response
   case status {
     200 ->
-      utils.decode_bits(body, zero.list(schema.page_build_decoder()))
+      json.parse_bits(body, decode.list(schema.page_build_decoder()))
       |> result.map(Ok)
-    _ -> "API doesn't describe default response" |> Error |> Ok
+    _ -> response |> Error |> Ok
   }
 }
 
@@ -18681,10 +18812,10 @@ pub fn packages_restore_package_for_user_request(
 }
 
 pub fn packages_restore_package_for_user_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, ..) = response
   case status {
     204 -> Ok(Nil) |> Ok
-    _ -> "API doesn't describe default response" |> Error |> Ok
+    _ -> response |> Error |> Ok
   }
 }
 
@@ -18707,12 +18838,12 @@ pub fn users_list_followers_for_user_request(
 }
 
 pub fn users_list_followers_for_user_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, body:, ..) = response
   case status {
     200 ->
-      utils.decode_bits(body, zero.list(schema.simple_user_decoder()))
+      json.parse_bits(body, decode.list(schema.simple_user_decoder()))
       |> result.map(Ok)
-    _ -> "API doesn't describe default response" |> Error |> Ok
+    _ -> response |> Error |> Ok
   }
 }
 
@@ -18729,12 +18860,12 @@ pub fn code_scanning_upload_sarif_request(base, owner, repo, data) {
 }
 
 pub fn code_scanning_upload_sarif_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, body:, ..) = response
   case status {
     202 ->
-      utils.decode_bits(body, schema.code_scanning_sarifs_receipt_decoder())
+      json.parse_bits(body, schema.code_scanning_sarifs_receipt_decoder())
       |> result.map(Ok)
-    _ -> "API doesn't describe default response" |> Error |> Ok
+    _ -> response |> Error |> Ok
   }
 }
 
@@ -18747,7 +18878,7 @@ pub fn actions_set_github_actions_default_workflow_permissions_organization_requ
   let path = "/orgs/" <> org <> "/actions/permissions/workflow"
   let query = []
   let body =
-    utils.json_to_bits(schema.actions_set_default_workflow_permissions_to_json(
+    utils.json_to_bits(schema.actions_set_default_workflow_permissions_encode(
       actions_set_default_workflow_permissions,
     ))
   base
@@ -18760,10 +18891,10 @@ pub fn actions_set_github_actions_default_workflow_permissions_organization_requ
 pub fn actions_set_github_actions_default_workflow_permissions_organization_response(
   response,
 ) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, ..) = response
   case status {
     204 -> Ok(Nil) |> Ok
-    _ -> "API doesn't describe default response" |> Error |> Ok
+    _ -> response |> Error |> Ok
   }
 }
 
@@ -18783,15 +18914,15 @@ pub fn actions_get_github_actions_default_workflow_permissions_organization_requ
 pub fn actions_get_github_actions_default_workflow_permissions_organization_response(
   response,
 ) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, body:, ..) = response
   case status {
     200 ->
-      utils.decode_bits(
+      json.parse_bits(
         body,
         schema.actions_get_default_workflow_permissions_decoder(),
       )
       |> result.map(Ok)
-    _ -> "API doesn't describe default response" |> Error |> Ok
+    _ -> response |> Error |> Ok
   }
 }
 
@@ -18809,12 +18940,12 @@ pub fn activity_list_public_events_request(base, per_page per_page, page page) {
 }
 
 pub fn activity_list_public_events_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, body:, ..) = response
   case status {
     200 ->
-      utils.decode_bits(body, zero.list(schema.event_decoder()))
+      json.parse_bits(body, decode.list(schema.event_decoder()))
       |> result.map(Ok)
-    _ -> "API doesn't describe default response" |> Error |> Ok
+    _ -> response |> Error |> Ok
   }
 }
 
@@ -18834,12 +18965,12 @@ pub fn projects_get_permission_for_user_request(base, project_id, username) {
 }
 
 pub fn projects_get_permission_for_user_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, body:, ..) = response
   case status {
     200 ->
-      utils.decode_bits(body, schema.project_collaborator_permission_decoder())
+      json.parse_bits(body, schema.project_collaborator_permission_decoder())
       |> result.map(Ok)
-    _ -> "API doesn't describe default response" |> Error |> Ok
+    _ -> response |> Error |> Ok
   }
 }
 
@@ -18854,10 +18985,11 @@ pub fn orgs_ping_webhook_request(base, org, hook_id) {
 }
 
 pub fn orgs_ping_webhook_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, body:, ..) = response
   case status {
     204 -> Ok(Nil) |> Ok
-    _ -> "API doesn't describe default response" |> Error |> Ok
+    _ ->
+      json.parse_bits(body, schema.basic_error_decoder()) |> result.map(Error)
   }
 }
 
@@ -18883,12 +19015,13 @@ pub fn repos_list_pull_requests_associated_with_commit_request(
 }
 
 pub fn repos_list_pull_requests_associated_with_commit_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, body:, ..) = response
   case status {
     200 ->
-      utils.decode_bits(body, zero.list(schema.pull_request_simple_decoder()))
+      json.parse_bits(body, decode.list(schema.pull_request_simple_decoder()))
       |> result.map(Ok)
-    _ -> "API doesn't describe default response" |> Error |> Ok
+    _ ->
+      json.parse_bits(body, schema.basic_error_decoder()) |> result.map(Error)
   }
 }
 
@@ -18921,12 +19054,13 @@ pub fn pulls_create_reply_for_review_comment_request(
 }
 
 pub fn pulls_create_reply_for_review_comment_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, body:, ..) = response
   case status {
     201 ->
-      utils.decode_bits(body, schema.pull_request_review_comment_decoder())
+      json.parse_bits(body, schema.pull_request_review_comment_decoder())
       |> result.map(Ok)
-    _ -> "API doesn't describe default response" |> Error |> Ok
+    _ ->
+      json.parse_bits(body, schema.basic_error_decoder()) |> result.map(Error)
   }
 }
 
@@ -18943,12 +19077,12 @@ pub fn repos_merge_upstream_request(base, owner, repo, data) {
 }
 
 pub fn repos_merge_upstream_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, body:, ..) = response
   case status {
     200 ->
-      utils.decode_bits(body, schema.merged_upstream_decoder())
+      json.parse_bits(body, schema.merged_upstream_decoder())
       |> result.map(Ok)
-    _ -> "API doesn't describe default response" |> Error |> Ok
+    _ -> Error(Nil) |> Ok
   }
 }
 
@@ -18974,12 +19108,13 @@ pub fn repos_list_branches_request(
 }
 
 pub fn repos_list_branches_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, body:, ..) = response
   case status {
     200 ->
-      utils.decode_bits(body, zero.list(schema.short_branch_decoder()))
+      json.parse_bits(body, decode.list(schema.short_branch_decoder()))
       |> result.map(Ok)
-    _ -> "API doesn't describe default response" |> Error |> Ok
+    _ ->
+      json.parse_bits(body, schema.basic_error_decoder()) |> result.map(Error)
   }
 }
 
@@ -19022,15 +19157,15 @@ pub fn dependabot_list_alerts_for_org_request(
 }
 
 pub fn dependabot_list_alerts_for_org_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, body:, ..) = response
   case status {
     200 ->
-      utils.decode_bits(
+      json.parse_bits(
         body,
-        zero.list(schema.dependabot_alert_with_repository_decoder()),
+        decode.list(schema.dependabot_alert_with_repository_decoder()),
       )
       |> result.map(Ok)
-    _ -> "API doesn't describe default response" |> Error |> Ok
+    _ -> response |> Error |> Ok
   }
 }
 
@@ -19051,10 +19186,10 @@ pub fn packages_delete_package_for_org_request(
 }
 
 pub fn packages_delete_package_for_org_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, ..) = response
   case status {
     204 -> Ok(Nil) |> Ok
-    _ -> "API doesn't describe default response" |> Error |> Ok
+    _ -> response |> Error |> Ok
   }
 }
 
@@ -19075,10 +19210,10 @@ pub fn packages_get_package_for_organization_request(
 }
 
 pub fn packages_get_package_for_organization_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, body:, ..) = response
   case status {
-    200 -> utils.decode_bits(body, schema.package_decoder()) |> result.map(Ok)
-    _ -> "API doesn't describe default response" |> Error |> Ok
+    200 -> json.parse_bits(body, schema.package_decoder()) |> result.map(Ok)
+    _ -> response |> Error |> Ok
   }
 }
 
@@ -19101,12 +19236,12 @@ pub fn issues_remove_label_request(base, owner, repo, issue_number, name) {
 }
 
 pub fn issues_remove_label_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, body:, ..) = response
   case status {
     200 ->
-      utils.decode_bits(body, zero.list(schema.label_decoder()))
+      json.parse_bits(body, decode.list(schema.label_decoder()))
       |> result.map(Ok)
-    _ -> "API doesn't describe default response" |> Error |> Ok
+    _ -> response |> Error |> Ok
   }
 }
 
@@ -19131,10 +19266,10 @@ pub fn actions_list_repo_organization_variables_request(
 }
 
 pub fn actions_list_repo_organization_variables_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, body:, ..) = response
   case status {
-    200 -> utils.decode_bits(body, zero.dynamic) |> result.map(Ok)
-    _ -> "API doesn't describe default response" |> Error |> Ok
+    200 -> json.parse_bits(body, decode.dynamic) |> result.map(Ok)
+    _ -> response |> Error |> Ok
   }
 }
 
@@ -19151,10 +19286,10 @@ pub fn projects_update_request(base, project_id, data) {
 }
 
 pub fn projects_update_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, body:, ..) = response
   case status {
-    200 -> utils.decode_bits(body, schema.project_decoder()) |> result.map(Ok)
-    _ -> "API doesn't describe default response" |> Error |> Ok
+    200 -> json.parse_bits(body, schema.project_decoder()) |> result.map(Ok)
+    _ -> response |> Error |> Ok
   }
 }
 
@@ -19169,10 +19304,10 @@ pub fn projects_delete_request(base, project_id) {
 }
 
 pub fn projects_delete_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, ..) = response
   case status {
     204 -> Ok(Nil) |> Ok
-    _ -> "API doesn't describe default response" |> Error |> Ok
+    _ -> response |> Error |> Ok
   }
 }
 
@@ -19187,10 +19322,10 @@ pub fn projects_get_request(base, project_id) {
 }
 
 pub fn projects_get_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, body:, ..) = response
   case status {
-    200 -> utils.decode_bits(body, schema.project_decoder()) |> result.map(Ok)
-    _ -> "API doesn't describe default response" |> Error |> Ok
+    200 -> json.parse_bits(body, schema.project_decoder()) |> result.map(Ok)
+    _ -> response |> Error |> Ok
   }
 }
 
@@ -19205,12 +19340,12 @@ pub fn codespaces_get_public_key_for_authenticated_user_request(base) {
 }
 
 pub fn codespaces_get_public_key_for_authenticated_user_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, body:, ..) = response
   case status {
     200 ->
-      utils.decode_bits(body, schema.codespaces_user_public_key_decoder())
+      json.parse_bits(body, schema.codespaces_user_public_key_decoder())
       |> result.map(Ok)
-    _ -> "API doesn't describe default response" |> Error |> Ok
+    _ -> response |> Error |> Ok
   }
 }
 
@@ -19238,10 +19373,10 @@ pub fn packages_restore_package_for_org_request(
 }
 
 pub fn packages_restore_package_for_org_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, ..) = response
   case status {
     204 -> Ok(Nil) |> Ok
-    _ -> "API doesn't describe default response" |> Error |> Ok
+    _ -> response |> Error |> Ok
   }
 }
 
@@ -19271,12 +19406,12 @@ pub fn repos_update_webhook_config_for_repo_request(
 }
 
 pub fn repos_update_webhook_config_for_repo_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, body:, ..) = response
   case status {
     200 ->
-      utils.decode_bits(body, schema.webhook_config_decoder())
+      json.parse_bits(body, schema.webhook_config_decoder())
       |> result.map(Ok)
-    _ -> "API doesn't describe default response" |> Error |> Ok
+    _ -> response |> Error |> Ok
   }
 }
 
@@ -19298,12 +19433,12 @@ pub fn repos_get_webhook_config_for_repo_request(base, owner, repo, hook_id) {
 }
 
 pub fn repos_get_webhook_config_for_repo_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, body:, ..) = response
   case status {
     200 ->
-      utils.decode_bits(body, schema.webhook_config_decoder())
+      json.parse_bits(body, schema.webhook_config_decoder())
       |> result.map(Ok)
-    _ -> "API doesn't describe default response" |> Error |> Ok
+    _ -> response |> Error |> Ok
   }
 }
 
@@ -19318,12 +19453,13 @@ pub fn repos_get_branch_request(base, owner, repo, branch) {
 }
 
 pub fn repos_get_branch_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, body:, ..) = response
   case status {
     200 ->
-      utils.decode_bits(body, schema.branch_with_protection_decoder())
+      json.parse_bits(body, schema.branch_with_protection_decoder())
       |> result.map(Ok)
-    _ -> "API doesn't describe default response" |> Error |> Ok
+    _ ->
+      json.parse_bits(body, schema.basic_error_decoder()) |> result.map(Error)
   }
 }
 
@@ -19338,10 +19474,10 @@ pub fn git_get_blob_request(base, owner, repo, file_sha) {
 }
 
 pub fn git_get_blob_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, body:, ..) = response
   case status {
-    200 -> utils.decode_bits(body, schema.blob_decoder()) |> result.map(Ok)
-    _ -> "API doesn't describe default response" |> Error |> Ok
+    200 -> json.parse_bits(body, schema.blob_decoder()) |> result.map(Ok)
+    _ -> response |> Error |> Ok
   }
 }
 
@@ -19366,12 +19502,14 @@ pub fn projects_list_for_user_request(
 }
 
 pub fn projects_list_for_user_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, body:, ..) = response
   case status {
     200 ->
-      utils.decode_bits(body, zero.list(schema.project_decoder()))
+      json.parse_bits(body, decode.list(schema.project_decoder()))
       |> result.map(Ok)
-    _ -> "API doesn't describe default response" |> Error |> Ok
+    _ ->
+      json.parse_bits(body, schema.validation_error_decoder())
+      |> result.map(Error)
   }
 }
 
@@ -19386,12 +19524,12 @@ pub fn billing_get_shared_storage_billing_org_request(base, org) {
 }
 
 pub fn billing_get_shared_storage_billing_org_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, body:, ..) = response
   case status {
     200 ->
-      utils.decode_bits(body, schema.combined_billing_usage_decoder())
+      json.parse_bits(body, schema.combined_billing_usage_decoder())
       |> result.map(Ok)
-    _ -> "API doesn't describe default response" |> Error |> Ok
+    _ -> response |> Error |> Ok
   }
 }
 
@@ -19410,12 +19548,12 @@ pub fn packages_list_docker_migration_conflicting_packages_for_authenticated_use
 pub fn packages_list_docker_migration_conflicting_packages_for_authenticated_user_response(
   response,
 ) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, body:, ..) = response
   case status {
     200 ->
-      utils.decode_bits(body, zero.list(schema.package_decoder()))
+      json.parse_bits(body, decode.list(schema.package_decoder()))
       |> result.map(Ok)
-    _ -> "API doesn't describe default response" |> Error |> Ok
+    _ -> response |> Error |> Ok
   }
 }
 
@@ -19432,11 +19570,10 @@ pub fn git_create_commit_request(base, owner, repo, data) {
 }
 
 pub fn git_create_commit_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, body:, ..) = response
   case status {
-    201 ->
-      utils.decode_bits(body, schema.git_commit_decoder()) |> result.map(Ok)
-    _ -> "API doesn't describe default response" |> Error |> Ok
+    201 -> json.parse_bits(body, schema.git_commit_decoder()) |> result.map(Ok)
+    _ -> response |> Error |> Ok
   }
 }
 
@@ -19466,12 +19603,12 @@ pub fn actions_review_pending_deployments_for_run_request(
 }
 
 pub fn actions_review_pending_deployments_for_run_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, body:, ..) = response
   case status {
     200 ->
-      utils.decode_bits(body, zero.list(schema.deployment_decoder()))
+      json.parse_bits(body, decode.list(schema.deployment_decoder()))
       |> result.map(Ok)
-    _ -> "API doesn't describe default response" |> Error |> Ok
+    _ -> response |> Error |> Ok
   }
 }
 
@@ -19498,12 +19635,12 @@ pub fn actions_get_pending_deployments_for_run_request(
 }
 
 pub fn actions_get_pending_deployments_for_run_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, body:, ..) = response
   case status {
     200 ->
-      utils.decode_bits(body, zero.list(schema.pending_deployment_decoder()))
+      json.parse_bits(body, decode.list(schema.pending_deployment_decoder()))
       |> result.map(Ok)
-    _ -> "API doesn't describe default response" |> Error |> Ok
+    _ -> response |> Error |> Ok
   }
 }
 
@@ -19539,12 +19676,14 @@ pub fn repos_list_activities_request(
 }
 
 pub fn repos_list_activities_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, body:, ..) = response
   case status {
     200 ->
-      utils.decode_bits(body, zero.list(schema.activity_decoder()))
+      json.parse_bits(body, decode.list(schema.activity_decoder()))
       |> result.map(Ok)
-    _ -> "API doesn't describe default response" |> Error |> Ok
+    _ ->
+      json.parse_bits(body, schema.validation_error_simple_decoder())
+      |> result.map(Error)
   }
 }
 
@@ -19559,12 +19698,11 @@ pub fn apps_get_user_installation_request(base, username) {
 }
 
 pub fn apps_get_user_installation_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, body:, ..) = response
   case status {
     200 ->
-      utils.decode_bits(body, schema.installation_decoder())
-      |> result.map(Ok)
-    _ -> "API doesn't describe default response" |> Error |> Ok
+      json.parse_bits(body, schema.installation_decoder()) |> result.map(Ok)
+    _ -> response |> Error |> Ok
   }
 }
 
@@ -19581,10 +19719,10 @@ pub fn copilot_cancel_copilot_seat_assignment_for_users_request(base, org, data)
 }
 
 pub fn copilot_cancel_copilot_seat_assignment_for_users_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, body:, ..) = response
   case status {
-    200 -> utils.decode_bits(body, zero.dynamic) |> result.map(Ok)
-    _ -> "API doesn't describe default response" |> Error |> Ok
+    200 -> json.parse_bits(body, decode.dynamic) |> result.map(Ok)
+    _ -> response |> Error |> Ok
   }
 }
 
@@ -19601,10 +19739,10 @@ pub fn copilot_add_copilot_seats_for_users_request(base, org, data) {
 }
 
 pub fn copilot_add_copilot_seats_for_users_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, body:, ..) = response
   case status {
-    201 -> utils.decode_bits(body, zero.dynamic) |> result.map(Ok)
-    _ -> "API doesn't describe default response" |> Error |> Ok
+    201 -> json.parse_bits(body, decode.dynamic) |> result.map(Ok)
+    _ -> response |> Error |> Ok
   }
 }
 
@@ -19621,10 +19759,10 @@ pub fn migrations_set_lfs_preference_request(base, owner, repo, data) {
 }
 
 pub fn migrations_set_lfs_preference_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, body:, ..) = response
   case status {
-    200 -> utils.decode_bits(body, schema.import__decoder()) |> result.map(Ok)
-    _ -> "API doesn't describe default response" |> Error |> Ok
+    200 -> json.parse_bits(body, schema.import__decoder()) |> result.map(Ok)
+    _ -> response |> Error |> Ok
   }
 }
 
@@ -19639,12 +19777,12 @@ pub fn orgs_list_security_manager_teams_request(base, org) {
 }
 
 pub fn orgs_list_security_manager_teams_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, body:, ..) = response
   case status {
     200 ->
-      utils.decode_bits(body, zero.list(schema.team_simple_decoder()))
+      json.parse_bits(body, decode.list(schema.team_simple_decoder()))
       |> result.map(Ok)
-    _ -> "API doesn't describe default response" |> Error |> Ok
+    _ -> response |> Error |> Ok
   }
 }
 
@@ -19669,12 +19807,12 @@ pub fn orgs_list_outside_collaborators_request(
 }
 
 pub fn orgs_list_outside_collaborators_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, body:, ..) = response
   case status {
     200 ->
-      utils.decode_bits(body, zero.list(schema.simple_user_decoder()))
+      json.parse_bits(body, decode.list(schema.simple_user_decoder()))
       |> result.map(Ok)
-    _ -> "API doesn't describe default response" |> Error |> Ok
+    _ -> response |> Error |> Ok
   }
 }
 
@@ -19700,10 +19838,10 @@ pub fn codespaces_remove_selected_repo_from_org_secret_request(
 }
 
 pub fn codespaces_remove_selected_repo_from_org_secret_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, ..) = response
   case status {
     204 -> Ok(Nil) |> Ok
-    _ -> "API doesn't describe default response" |> Error |> Ok
+    _ -> response |> Error |> Ok
   }
 }
 
@@ -19729,10 +19867,10 @@ pub fn codespaces_add_selected_repo_to_org_secret_request(
 }
 
 pub fn codespaces_add_selected_repo_to_org_secret_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, ..) = response
   case status {
     204 -> Ok(Nil) |> Ok
-    _ -> "API doesn't describe default response" |> Error |> Ok
+    _ -> response |> Error |> Ok
   }
 }
 
@@ -19747,12 +19885,12 @@ pub fn gitignore_get_template_request(base, name) {
 }
 
 pub fn gitignore_get_template_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, body:, ..) = response
   case status {
     200 ->
-      utils.decode_bits(body, schema.gitignore_template_decoder())
+      json.parse_bits(body, schema.gitignore_template_decoder())
       |> result.map(Ok)
-    _ -> "API doesn't describe default response" |> Error |> Ok
+    _ -> response |> Error |> Ok
   }
 }
 
@@ -19774,10 +19912,10 @@ pub fn actions_review_custom_gates_for_run_request(base, owner, repo, run_id) {
 }
 
 pub fn actions_review_custom_gates_for_run_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, ..) = response
   case status {
     204 -> Ok(Nil) |> Ok
-    _ -> "API doesn't describe default response" |> Error |> Ok
+    _ -> response |> Error |> Ok
   }
 }
 
@@ -19792,12 +19930,10 @@ pub fn apps_get_by_slug_request(base, app_slug) {
 }
 
 pub fn apps_get_by_slug_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, body:, ..) = response
   case status {
-    200 ->
-      utils.decode_bits(body, schema.integration_decoder())
-      |> result.map(Ok)
-    _ -> "API doesn't describe default response" |> Error |> Ok
+    200 -> json.parse_bits(body, schema.integration_decoder()) |> result.map(Ok)
+    _ -> response |> Error |> Ok
   }
 }
 
@@ -19813,15 +19949,15 @@ pub fn code_scanning_list_codeql_databases_request(base, owner, repo) {
 }
 
 pub fn code_scanning_list_codeql_databases_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, body:, ..) = response
   case status {
     200 ->
-      utils.decode_bits(
+      json.parse_bits(
         body,
-        zero.list(schema.code_scanning_codeql_database_decoder()),
+        decode.list(schema.code_scanning_codeql_database_decoder()),
       )
       |> result.map(Ok)
-    _ -> "API doesn't describe default response" |> Error |> Ok
+    _ -> response |> Error |> Ok
   }
 }
 
@@ -19847,12 +19983,13 @@ pub fn repos_get_combined_status_for_ref_request(
 }
 
 pub fn repos_get_combined_status_for_ref_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, body:, ..) = response
   case status {
     200 ->
-      utils.decode_bits(body, schema.combined_commit_status_decoder())
+      json.parse_bits(body, schema.combined_commit_status_decoder())
       |> result.map(Ok)
-    _ -> "API doesn't describe default response" |> Error |> Ok
+    _ ->
+      json.parse_bits(body, schema.basic_error_decoder()) |> result.map(Error)
   }
 }
 
@@ -19873,10 +20010,10 @@ pub fn teams_remove_membership_for_user_in_org_request(
 }
 
 pub fn teams_remove_membership_for_user_in_org_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, ..) = response
   case status {
     204 -> Ok(Nil) |> Ok
-    _ -> "API doesn't describe default response" |> Error |> Ok
+    _ -> Error(Nil) |> Ok
   }
 }
 
@@ -19900,12 +20037,12 @@ pub fn teams_add_or_update_membership_for_user_in_org_request(
 }
 
 pub fn teams_add_or_update_membership_for_user_in_org_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, body:, ..) = response
   case status {
     200 ->
-      utils.decode_bits(body, schema.team_membership_decoder())
+      json.parse_bits(body, schema.team_membership_decoder())
       |> result.map(Ok)
-    _ -> "API doesn't describe default response" |> Error |> Ok
+    _ -> Error(Nil) |> Ok
   }
 }
 
@@ -19926,12 +20063,12 @@ pub fn teams_get_membership_for_user_in_org_request(
 }
 
 pub fn teams_get_membership_for_user_in_org_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, body:, ..) = response
   case status {
     200 ->
-      utils.decode_bits(body, schema.team_membership_decoder())
+      json.parse_bits(body, schema.team_membership_decoder())
       |> result.map(Ok)
-    _ -> "API doesn't describe default response" |> Error |> Ok
+    _ -> Error(Nil) |> Ok
   }
 }
 
@@ -19967,15 +20104,15 @@ pub fn code_scanning_list_alert_instances_request(
 }
 
 pub fn code_scanning_list_alert_instances_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, body:, ..) = response
   case status {
     200 ->
-      utils.decode_bits(
+      json.parse_bits(
         body,
-        zero.list(schema.code_scanning_alert_instance_decoder()),
+        decode.list(schema.code_scanning_alert_instance_decoder()),
       )
       |> result.map(Ok)
-    _ -> "API doesn't describe default response" |> Error |> Ok
+    _ -> response |> Error |> Ok
   }
 }
 
@@ -19995,10 +20132,11 @@ pub fn migrations_delete_archive_for_org_request(base, org, migration_id) {
 }
 
 pub fn migrations_delete_archive_for_org_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, body:, ..) = response
   case status {
     204 -> Ok(Nil) |> Ok
-    _ -> "API doesn't describe default response" |> Error |> Ok
+    _ ->
+      json.parse_bits(body, schema.basic_error_decoder()) |> result.map(Error)
   }
 }
 
@@ -20018,9 +20156,10 @@ pub fn migrations_download_archive_for_org_request(base, org, migration_id) {
 }
 
 pub fn migrations_download_archive_for_org_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, body:, ..) = response
   case status {
-    _ -> "API doesn't describe default response" |> Error |> Ok
+    _ ->
+      json.parse_bits(body, schema.basic_error_decoder()) |> result.map(Error)
   }
 }
 
@@ -20042,10 +20181,10 @@ pub fn orgs_redeliver_webhook_delivery_request(base, org, hook_id, delivery_id) 
 }
 
 pub fn orgs_redeliver_webhook_delivery_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, body:, ..) = response
   case status {
-    202 -> utils.decode_bits(body, zero.dynamic) |> result.map(Ok)
-    _ -> "API doesn't describe default response" |> Error |> Ok
+    202 -> json.parse_bits(body, decode.dynamic) |> result.map(Ok)
+    _ -> response |> Error |> Ok
   }
 }
 
@@ -20069,12 +20208,12 @@ pub fn pulls_create_review_comment_request(base, owner, repo, pull_number, data)
 }
 
 pub fn pulls_create_review_comment_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, body:, ..) = response
   case status {
     201 ->
-      utils.decode_bits(body, schema.pull_request_review_comment_decoder())
+      json.parse_bits(body, schema.pull_request_review_comment_decoder())
       |> result.map(Ok)
-    _ -> "API doesn't describe default response" |> Error |> Ok
+    _ -> response |> Error |> Ok
   }
 }
 
@@ -20112,15 +20251,15 @@ pub fn pulls_list_review_comments_request(
 }
 
 pub fn pulls_list_review_comments_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, body:, ..) = response
   case status {
     200 ->
-      utils.decode_bits(
+      json.parse_bits(
         body,
-        zero.list(schema.pull_request_review_comment_decoder()),
+        decode.list(schema.pull_request_review_comment_decoder()),
       )
       |> result.map(Ok)
-    _ -> "API doesn't describe default response" |> Error |> Ok
+    _ -> response |> Error |> Ok
   }
 }
 
@@ -20136,12 +20275,12 @@ pub fn actions_create_remove_token_for_repo_request(base, owner, repo) {
 }
 
 pub fn actions_create_remove_token_for_repo_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, body:, ..) = response
   case status {
     201 ->
-      utils.decode_bits(body, schema.authentication_token_decoder())
+      json.parse_bits(body, schema.authentication_token_decoder())
       |> result.map(Ok)
-    _ -> "API doesn't describe default response" |> Error |> Ok
+    _ -> response |> Error |> Ok
   }
 }
 
@@ -20176,12 +20315,13 @@ pub fn issues_list_for_org_request(
 }
 
 pub fn issues_list_for_org_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, body:, ..) = response
   case status {
     200 ->
-      utils.decode_bits(body, zero.list(schema.issue_decoder()))
+      json.parse_bits(body, decode.list(schema.issue_decoder()))
       |> result.map(Ok)
-    _ -> "API doesn't describe default response" |> Error |> Ok
+    _ ->
+      json.parse_bits(body, schema.basic_error_decoder()) |> result.map(Error)
   }
 }
 
@@ -20196,10 +20336,10 @@ pub fn activity_get_feeds_request(base) {
 }
 
 pub fn activity_get_feeds_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, body:, ..) = response
   case status {
-    200 -> utils.decode_bits(body, schema.feed_decoder()) |> result.map(Ok)
-    _ -> "API doesn't describe default response" |> Error |> Ok
+    200 -> json.parse_bits(body, schema.feed_decoder()) |> result.map(Ok)
+    _ -> response |> Error |> Ok
   }
 }
 
@@ -20222,10 +20362,10 @@ pub fn codespaces_list_in_organization_request(
 }
 
 pub fn codespaces_list_in_organization_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, body:, ..) = response
   case status {
-    200 -> utils.decode_bits(body, zero.dynamic) |> result.map(Ok)
-    _ -> "API doesn't describe default response" |> Error |> Ok
+    200 -> json.parse_bits(body, decode.dynamic) |> result.map(Ok)
+    _ -> response |> Error |> Ok
   }
 }
 
@@ -20248,10 +20388,10 @@ pub fn checks_update_request(base, owner, repo, check_run_id, data) {
 }
 
 pub fn checks_update_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, body:, ..) = response
   case status {
-    200 -> utils.decode_bits(body, schema.check_run_decoder()) |> result.map(Ok)
-    _ -> "API doesn't describe default response" |> Error |> Ok
+    200 -> json.parse_bits(body, schema.check_run_decoder()) |> result.map(Ok)
+    _ -> response |> Error |> Ok
   }
 }
 
@@ -20272,10 +20412,10 @@ pub fn checks_get_request(base, owner, repo, check_run_id) {
 }
 
 pub fn checks_get_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, body:, ..) = response
   case status {
-    200 -> utils.decode_bits(body, schema.check_run_decoder()) |> result.map(Ok)
-    _ -> "API doesn't describe default response" |> Error |> Ok
+    200 -> json.parse_bits(body, schema.check_run_decoder()) |> result.map(Ok)
+    _ -> response |> Error |> Ok
   }
 }
 
@@ -20302,10 +20442,10 @@ pub fn actions_set_self_hosted_runners_in_group_for_org_request(
 }
 
 pub fn actions_set_self_hosted_runners_in_group_for_org_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, ..) = response
   case status {
     204 -> Ok(Nil) |> Ok
-    _ -> "API doesn't describe default response" |> Error |> Ok
+    _ -> response |> Error |> Ok
   }
 }
 
@@ -20334,10 +20474,10 @@ pub fn actions_list_self_hosted_runners_in_group_for_org_request(
 }
 
 pub fn actions_list_self_hosted_runners_in_group_for_org_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, body:, ..) = response
   case status {
-    200 -> utils.decode_bits(body, zero.dynamic) |> result.map(Ok)
-    _ -> "API doesn't describe default response" |> Error |> Ok
+    200 -> json.parse_bits(body, decode.dynamic) |> result.map(Ok)
+    _ -> response |> Error |> Ok
   }
 }
 
@@ -20355,12 +20495,12 @@ pub fn repos_rename_branch_request(base, owner, repo, branch, data) {
 }
 
 pub fn repos_rename_branch_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, body:, ..) = response
   case status {
     201 ->
-      utils.decode_bits(body, schema.branch_with_protection_decoder())
+      json.parse_bits(body, schema.branch_with_protection_decoder())
       |> result.map(Ok)
-    _ -> "API doesn't describe default response" |> Error |> Ok
+    _ -> response |> Error |> Ok
   }
 }
 
@@ -20375,12 +20515,11 @@ pub fn repos_get_readme_request(base, owner, repo, ref ref) {
 }
 
 pub fn repos_get_readme_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, body:, ..) = response
   case status {
     200 ->
-      utils.decode_bits(body, schema.content_file_decoder())
-      |> result.map(Ok)
-    _ -> "API doesn't describe default response" |> Error |> Ok
+      json.parse_bits(body, schema.content_file_decoder()) |> result.map(Ok)
+    _ -> response |> Error |> Ok
   }
 }
 
@@ -20403,12 +20542,12 @@ pub fn activity_list_events_for_authenticated_user_request(
 }
 
 pub fn activity_list_events_for_authenticated_user_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, body:, ..) = response
   case status {
     200 ->
-      utils.decode_bits(body, zero.list(schema.event_decoder()))
+      json.parse_bits(body, decode.list(schema.event_decoder()))
       |> result.map(Ok)
-    _ -> "API doesn't describe default response" |> Error |> Ok
+    _ -> response |> Error |> Ok
   }
 }
 
@@ -20425,10 +20564,10 @@ pub fn projects_create_for_org_request(base, org, data) {
 }
 
 pub fn projects_create_for_org_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, body:, ..) = response
   case status {
-    201 -> utils.decode_bits(body, schema.project_decoder()) |> result.map(Ok)
-    _ -> "API doesn't describe default response" |> Error |> Ok
+    201 -> json.parse_bits(body, schema.project_decoder()) |> result.map(Ok)
+    _ -> response |> Error |> Ok
   }
 }
 
@@ -20453,12 +20592,14 @@ pub fn projects_list_for_org_request(
 }
 
 pub fn projects_list_for_org_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, body:, ..) = response
   case status {
     200 ->
-      utils.decode_bits(body, zero.list(schema.project_decoder()))
+      json.parse_bits(body, decode.list(schema.project_decoder()))
       |> result.map(Ok)
-    _ -> "API doesn't describe default response" |> Error |> Ok
+    _ ->
+      json.parse_bits(body, schema.validation_error_simple_decoder())
+      |> result.map(Error)
   }
 }
 
@@ -20487,10 +20628,10 @@ pub fn repos_delete_deployment_branch_policy_request(
 }
 
 pub fn repos_delete_deployment_branch_policy_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, ..) = response
   case status {
     204 -> Ok(Nil) |> Ok
-    _ -> "API doesn't describe default response" |> Error |> Ok
+    _ -> response |> Error |> Ok
   }
 }
 
@@ -20514,7 +20655,7 @@ pub fn repos_update_deployment_branch_policy_request(
     <> int.to_string(branch_policy_id)
   let query = []
   let body =
-    utils.json_to_bits(schema.deployment_branch_policy_name_pattern_to_json(
+    utils.json_to_bits(schema.deployment_branch_policy_name_pattern_encode(
       deployment_branch_policy_name_pattern,
     ))
   base
@@ -20525,12 +20666,12 @@ pub fn repos_update_deployment_branch_policy_request(
 }
 
 pub fn repos_update_deployment_branch_policy_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, body:, ..) = response
   case status {
     200 ->
-      utils.decode_bits(body, schema.deployment_branch_policy_decoder())
+      json.parse_bits(body, schema.deployment_branch_policy_decoder())
       |> result.map(Ok)
-    _ -> "API doesn't describe default response" |> Error |> Ok
+    _ -> response |> Error |> Ok
   }
 }
 
@@ -20559,12 +20700,12 @@ pub fn repos_get_deployment_branch_policy_request(
 }
 
 pub fn repos_get_deployment_branch_policy_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, body:, ..) = response
   case status {
     200 ->
-      utils.decode_bits(body, schema.deployment_branch_policy_decoder())
+      json.parse_bits(body, schema.deployment_branch_policy_decoder())
       |> result.map(Ok)
-    _ -> "API doesn't describe default response" |> Error |> Ok
+    _ -> response |> Error |> Ok
   }
 }
 
@@ -20585,11 +20726,10 @@ pub fn repos_get_repo_rule_suite_request(base, owner, repo, rule_suite_id) {
 }
 
 pub fn repos_get_repo_rule_suite_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, body:, ..) = response
   case status {
-    200 ->
-      utils.decode_bits(body, schema.rule_suite_decoder()) |> result.map(Ok)
-    _ -> "API doesn't describe default response" |> Error |> Ok
+    200 -> json.parse_bits(body, schema.rule_suite_decoder()) |> result.map(Ok)
+    _ -> response |> Error |> Ok
   }
 }
 
@@ -20604,11 +20744,10 @@ pub fn git_get_commit_request(base, owner, repo, commit_sha) {
 }
 
 pub fn git_get_commit_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, body:, ..) = response
   case status {
-    200 ->
-      utils.decode_bits(body, schema.git_commit_decoder()) |> result.map(Ok)
-    _ -> "API doesn't describe default response" |> Error |> Ok
+    200 -> json.parse_bits(body, schema.git_commit_decoder()) |> result.map(Ok)
+    _ -> response |> Error |> Ok
   }
 }
 
@@ -20623,12 +20762,11 @@ pub fn apps_get_org_installation_request(base, org) {
 }
 
 pub fn apps_get_org_installation_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, body:, ..) = response
   case status {
     200 ->
-      utils.decode_bits(body, schema.installation_decoder())
-      |> result.map(Ok)
-    _ -> "API doesn't describe default response" |> Error |> Ok
+      json.parse_bits(body, schema.installation_decoder()) |> result.map(Ok)
+    _ -> response |> Error |> Ok
   }
 }
 
@@ -20645,10 +20783,10 @@ pub fn teams_update_in_org_request(base, org, team_slug, data) {
 }
 
 pub fn teams_update_in_org_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, body:, ..) = response
   case status {
-    200 -> utils.decode_bits(body, schema.team_full_decoder()) |> result.map(Ok)
-    _ -> "API doesn't describe default response" |> Error |> Ok
+    200 -> json.parse_bits(body, schema.team_full_decoder()) |> result.map(Ok)
+    _ -> response |> Error |> Ok
   }
 }
 
@@ -20663,10 +20801,10 @@ pub fn teams_delete_in_org_request(base, org, team_slug) {
 }
 
 pub fn teams_delete_in_org_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, ..) = response
   case status {
     204 -> Ok(Nil) |> Ok
-    _ -> "API doesn't describe default response" |> Error |> Ok
+    _ -> response |> Error |> Ok
   }
 }
 
@@ -20681,10 +20819,11 @@ pub fn teams_get_by_name_request(base, org, team_slug) {
 }
 
 pub fn teams_get_by_name_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, body:, ..) = response
   case status {
-    200 -> utils.decode_bits(body, schema.team_full_decoder()) |> result.map(Ok)
-    _ -> "API doesn't describe default response" |> Error |> Ok
+    200 -> json.parse_bits(body, schema.team_full_decoder()) |> result.map(Ok)
+    _ ->
+      json.parse_bits(body, schema.basic_error_decoder()) |> result.map(Error)
   }
 }
 
@@ -20713,12 +20852,13 @@ pub fn repos_get_deployment_status_request(
 }
 
 pub fn repos_get_deployment_status_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, body:, ..) = response
   case status {
     200 ->
-      utils.decode_bits(body, schema.deployment_status_decoder())
+      json.parse_bits(body, schema.deployment_status_decoder())
       |> result.map(Ok)
-    _ -> "API doesn't describe default response" |> Error |> Ok
+    _ ->
+      json.parse_bits(body, schema.basic_error_decoder()) |> result.map(Error)
   }
 }
 
@@ -20733,10 +20873,10 @@ pub fn repos_remove_collaborator_request(base, owner, repo, username) {
 }
 
 pub fn repos_remove_collaborator_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, ..) = response
   case status {
     204 -> Ok(Nil) |> Ok
-    _ -> "API doesn't describe default response" |> Error |> Ok
+    _ -> response |> Error |> Ok
   }
 }
 
@@ -20753,10 +20893,12 @@ pub fn repos_add_collaborator_request(base, owner, repo, username, data) {
 }
 
 pub fn repos_add_collaborator_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, body:, ..) = response
   case status {
-    204 -> Ok(Nil) |> Ok
-    _ -> "API doesn't describe default response" |> Error |> Ok
+    201 ->
+      json.parse_bits(body, schema.repository_invitation_decoder())
+      |> result.map(Ok)
+    _ -> response |> Error |> Ok
   }
 }
 
@@ -20771,10 +20913,10 @@ pub fn repos_check_collaborator_request(base, owner, repo, username) {
 }
 
 pub fn repos_check_collaborator_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, ..) = response
   case status {
     204 -> Ok(Nil) |> Ok
-    _ -> "API doesn't describe default response" |> Error |> Ok
+    _ -> Error(Nil) |> Ok
   }
 }
 
@@ -20791,10 +20933,10 @@ pub fn codespaces_delete_codespaces_access_users_request(base, org, data) {
 }
 
 pub fn codespaces_delete_codespaces_access_users_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, ..) = response
   case status {
     204 -> Ok(Nil) |> Ok
-    _ -> "API doesn't describe default response" |> Error |> Ok
+    _ -> response |> Error |> Ok
   }
 }
 
@@ -20811,10 +20953,10 @@ pub fn codespaces_set_codespaces_access_users_request(base, org, data) {
 }
 
 pub fn codespaces_set_codespaces_access_users_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, ..) = response
   case status {
     204 -> Ok(Nil) |> Ok
-    _ -> "API doesn't describe default response" |> Error |> Ok
+    _ -> response |> Error |> Ok
   }
 }
 
@@ -20829,12 +20971,12 @@ pub fn billing_get_shared_storage_billing_user_request(base, username) {
 }
 
 pub fn billing_get_shared_storage_billing_user_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, body:, ..) = response
   case status {
     200 ->
-      utils.decode_bits(body, schema.combined_billing_usage_decoder())
+      json.parse_bits(body, schema.combined_billing_usage_decoder())
       |> result.map(Ok)
-    _ -> "API doesn't describe default response" |> Error |> Ok
+    _ -> response |> Error |> Ok
   }
 }
 
@@ -20856,10 +20998,10 @@ pub fn repos_create_or_update_custom_properties_values_request(
 }
 
 pub fn repos_create_or_update_custom_properties_values_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, ..) = response
   case status {
     204 -> Ok(Nil) |> Ok
-    _ -> "API doesn't describe default response" |> Error |> Ok
+    _ -> response |> Error |> Ok
   }
 }
 
@@ -20874,12 +21016,12 @@ pub fn repos_get_custom_properties_values_request(base, owner, repo) {
 }
 
 pub fn repos_get_custom_properties_values_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, body:, ..) = response
   case status {
     200 ->
-      utils.decode_bits(body, zero.list(schema.custom_property_value_decoder()))
+      json.parse_bits(body, decode.list(schema.custom_property_value_decoder()))
       |> result.map(Ok)
-    _ -> "API doesn't describe default response" |> Error |> Ok
+    _ -> response |> Error |> Ok
   }
 }
 
@@ -20900,10 +21042,10 @@ pub fn actions_set_github_actions_permissions_organization_request(
 }
 
 pub fn actions_set_github_actions_permissions_organization_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, ..) = response
   case status {
     204 -> Ok(Nil) |> Ok
-    _ -> "API doesn't describe default response" |> Error |> Ok
+    _ -> response |> Error |> Ok
   }
 }
 
@@ -20918,12 +21060,12 @@ pub fn actions_get_github_actions_permissions_organization_request(base, org) {
 }
 
 pub fn actions_get_github_actions_permissions_organization_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, body:, ..) = response
   case status {
     200 ->
-      utils.decode_bits(body, schema.actions_organization_permissions_decoder())
+      json.parse_bits(body, schema.actions_organization_permissions_decoder())
       |> result.map(Ok)
-    _ -> "API doesn't describe default response" |> Error |> Ok
+    _ -> response |> Error |> Ok
   }
 }
 
@@ -20938,10 +21080,10 @@ pub fn git_get_tree_request(base, owner, repo, tree_sha, recursive recursive) {
 }
 
 pub fn git_get_tree_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, body:, ..) = response
   case status {
-    200 -> utils.decode_bits(body, schema.git_tree_decoder()) |> result.map(Ok)
-    _ -> "API doesn't describe default response" |> Error |> Ok
+    200 -> json.parse_bits(body, schema.git_tree_decoder()) |> result.map(Ok)
+    _ -> response |> Error |> Ok
   }
 }
 
@@ -20971,10 +21113,10 @@ pub fn reactions_create_for_team_discussion_in_org_request(
 }
 
 pub fn reactions_create_for_team_discussion_in_org_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, body:, ..) = response
   case status {
-    200 -> utils.decode_bits(body, schema.reaction_decoder()) |> result.map(Ok)
-    _ -> "API doesn't describe default response" |> Error |> Ok
+    200 -> json.parse_bits(body, schema.reaction_decoder()) |> result.map(Ok)
+    _ -> response |> Error |> Ok
   }
 }
 
@@ -21008,12 +21150,12 @@ pub fn reactions_list_for_team_discussion_in_org_request(
 }
 
 pub fn reactions_list_for_team_discussion_in_org_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, body:, ..) = response
   case status {
     200 ->
-      utils.decode_bits(body, zero.list(schema.reaction_decoder()))
+      json.parse_bits(body, decode.list(schema.reaction_decoder()))
       |> result.map(Ok)
-    _ -> "API doesn't describe default response" |> Error |> Ok
+    _ -> response |> Error |> Ok
   }
 }
 
@@ -21046,9 +21188,15 @@ pub fn security_advisories_list_global_advisories_request(
     #("cve_id", cve_id),
     #("ecosystem", ecosystem),
     #("severity", severity),
-    #("cwes", panic as "cwes"),
+    #(
+      "cwes",
+      option.map(cwes, fn(_) { panic as "query parameter is not supported" }),
+    ),
     #("is_withdrawn", option.map(is_withdrawn, bool.to_string)),
-    #("affects", panic as "affects"),
+    #(
+      "affects",
+      option.map(affects, fn(_) { panic as "query parameter is not supported" }),
+    ),
     #("published", published),
     #("updated", updated),
     #("modified", modified),
@@ -21067,12 +21215,12 @@ pub fn security_advisories_list_global_advisories_request(
 }
 
 pub fn security_advisories_list_global_advisories_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, body:, ..) = response
   case status {
     200 ->
-      utils.decode_bits(body, zero.list(schema.global_advisory_decoder()))
+      json.parse_bits(body, decode.list(schema.global_advisory_decoder()))
       |> result.map(Ok)
-    _ -> "API doesn't describe default response" |> Error |> Ok
+    _ -> response |> Error |> Ok
   }
 }
 
@@ -21096,10 +21244,10 @@ pub fn codespaces_list_repo_secrets_request(
 }
 
 pub fn codespaces_list_repo_secrets_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, body:, ..) = response
   case status {
-    200 -> utils.decode_bits(body, zero.dynamic) |> result.map(Ok)
-    _ -> "API doesn't describe default response" |> Error |> Ok
+    200 -> json.parse_bits(body, decode.dynamic) |> result.map(Ok)
+    _ -> response |> Error |> Ok
   }
 }
 
@@ -21116,12 +21264,12 @@ pub fn gists_update_comment_request(base, gist_id, comment_id, data) {
 }
 
 pub fn gists_update_comment_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, body:, ..) = response
   case status {
     200 ->
-      utils.decode_bits(body, schema.gist_comment_decoder())
-      |> result.map(Ok)
-    _ -> "API doesn't describe default response" |> Error |> Ok
+      json.parse_bits(body, schema.gist_comment_decoder()) |> result.map(Ok)
+    _ ->
+      json.parse_bits(body, schema.basic_error_decoder()) |> result.map(Error)
   }
 }
 
@@ -21136,10 +21284,10 @@ pub fn gists_delete_comment_request(base, gist_id, comment_id) {
 }
 
 pub fn gists_delete_comment_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, ..) = response
   case status {
     204 -> Ok(Nil) |> Ok
-    _ -> "API doesn't describe default response" |> Error |> Ok
+    _ -> response |> Error |> Ok
   }
 }
 
@@ -21154,12 +21302,11 @@ pub fn gists_get_comment_request(base, gist_id, comment_id) {
 }
 
 pub fn gists_get_comment_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, body:, ..) = response
   case status {
     200 ->
-      utils.decode_bits(body, schema.gist_comment_decoder())
-      |> result.map(Ok)
-    _ -> "API doesn't describe default response" |> Error |> Ok
+      json.parse_bits(body, schema.gist_comment_decoder()) |> result.map(Ok)
+    _ -> response |> Error |> Ok
   }
 }
 
@@ -21186,12 +21333,12 @@ pub fn dependency_graph_diff_range_request(
 }
 
 pub fn dependency_graph_diff_range_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, body:, ..) = response
   case status {
     200 ->
-      utils.decode_bits(body, schema.dependency_graph_diff_decoder())
+      json.parse_bits(body, schema.dependency_graph_diff_decoder())
       |> result.map(Ok)
-    _ -> "API doesn't describe default response" |> Error |> Ok
+    _ -> response |> Error |> Ok
   }
 }
 
@@ -21221,12 +21368,12 @@ pub fn repos_update_status_check_protection_request(
 }
 
 pub fn repos_update_status_check_protection_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, body:, ..) = response
   case status {
     200 ->
-      utils.decode_bits(body, schema.status_check_policy_decoder())
+      json.parse_bits(body, schema.status_check_policy_decoder())
       |> result.map(Ok)
-    _ -> "API doesn't describe default response" |> Error |> Ok
+    _ -> response |> Error |> Ok
   }
 }
 
@@ -21248,10 +21395,10 @@ pub fn repos_remove_status_check_protection_request(base, owner, repo, branch) {
 }
 
 pub fn repos_remove_status_check_protection_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, ..) = response
   case status {
     204 -> Ok(Nil) |> Ok
-    _ -> "API doesn't describe default response" |> Error |> Ok
+    _ -> response |> Error |> Ok
   }
 }
 
@@ -21273,12 +21420,13 @@ pub fn repos_get_status_checks_protection_request(base, owner, repo, branch) {
 }
 
 pub fn repos_get_status_checks_protection_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, body:, ..) = response
   case status {
     200 ->
-      utils.decode_bits(body, schema.status_check_policy_decoder())
+      json.parse_bits(body, schema.status_check_policy_decoder())
       |> result.map(Ok)
-    _ -> "API doesn't describe default response" |> Error |> Ok
+    _ ->
+      json.parse_bits(body, schema.basic_error_decoder()) |> result.map(Error)
   }
 }
 
@@ -21307,10 +21455,10 @@ pub fn actions_delete_environment_secret_request(
 }
 
 pub fn actions_delete_environment_secret_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, ..) = response
   case status {
     204 -> Ok(Nil) |> Ok
-    _ -> "API doesn't describe default response" |> Error |> Ok
+    _ -> response |> Error |> Ok
   }
 }
 
@@ -21342,10 +21490,11 @@ pub fn actions_create_or_update_environment_secret_request(
 }
 
 pub fn actions_create_or_update_environment_secret_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, body:, ..) = response
   case status {
-    204 -> Ok(Nil) |> Ok
-    _ -> "API doesn't describe default response" |> Error |> Ok
+    201 ->
+      json.parse_bits(body, schema.empty_object_decoder()) |> result.map(Ok)
+    _ -> response |> Error |> Ok
   }
 }
 
@@ -21374,12 +21523,12 @@ pub fn actions_get_environment_secret_request(
 }
 
 pub fn actions_get_environment_secret_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, body:, ..) = response
   case status {
     200 ->
-      utils.decode_bits(body, schema.actions_secret_decoder())
+      json.parse_bits(body, schema.actions_secret_decoder())
       |> result.map(Ok)
-    _ -> "API doesn't describe default response" |> Error |> Ok
+    _ -> response |> Error |> Ok
   }
 }
 
@@ -21408,9 +21557,10 @@ pub fn actions_download_artifact_request(
 }
 
 pub fn actions_download_artifact_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, body:, ..) = response
   case status {
-    _ -> "API doesn't describe default response" |> Error |> Ok
+    _ ->
+      json.parse_bits(body, schema.basic_error_decoder()) |> result.map(Error)
   }
 }
 
@@ -21433,12 +21583,14 @@ pub fn issues_update_comment_request(base, owner, repo, comment_id, data) {
 }
 
 pub fn issues_update_comment_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, body:, ..) = response
   case status {
     200 ->
-      utils.decode_bits(body, schema.issue_comment_decoder())
+      json.parse_bits(body, schema.issue_comment_decoder())
       |> result.map(Ok)
-    _ -> "API doesn't describe default response" |> Error |> Ok
+    _ ->
+      json.parse_bits(body, schema.validation_error_decoder())
+      |> result.map(Error)
   }
 }
 
@@ -21459,10 +21611,10 @@ pub fn issues_delete_comment_request(base, owner, repo, comment_id) {
 }
 
 pub fn issues_delete_comment_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, ..) = response
   case status {
     204 -> Ok(Nil) |> Ok
-    _ -> "API doesn't describe default response" |> Error |> Ok
+    _ -> response |> Error |> Ok
   }
 }
 
@@ -21483,12 +21635,13 @@ pub fn issues_get_comment_request(base, owner, repo, comment_id) {
 }
 
 pub fn issues_get_comment_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, body:, ..) = response
   case status {
     200 ->
-      utils.decode_bits(body, schema.issue_comment_decoder())
+      json.parse_bits(body, schema.issue_comment_decoder())
       |> result.map(Ok)
-    _ -> "API doesn't describe default response" |> Error |> Ok
+    _ ->
+      json.parse_bits(body, schema.basic_error_decoder()) |> result.map(Error)
   }
 }
 
@@ -21517,10 +21670,10 @@ pub fn actions_set_repo_access_to_self_hosted_runner_group_in_org_request(
 pub fn actions_set_repo_access_to_self_hosted_runner_group_in_org_response(
   response,
 ) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, ..) = response
   case status {
     204 -> Ok(Nil) |> Ok
-    _ -> "API doesn't describe default response" |> Error |> Ok
+    _ -> response |> Error |> Ok
   }
 }
 
@@ -21551,10 +21704,10 @@ pub fn actions_list_repo_access_to_self_hosted_runner_group_in_org_request(
 pub fn actions_list_repo_access_to_self_hosted_runner_group_in_org_response(
   response,
 ) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, body:, ..) = response
   case status {
-    200 -> utils.decode_bits(body, zero.dynamic) |> result.map(Ok)
-    _ -> "API doesn't describe default response" |> Error |> Ok
+    200 -> json.parse_bits(body, decode.dynamic) |> result.map(Ok)
+    _ -> response |> Error |> Ok
   }
 }
 
@@ -21578,12 +21731,12 @@ pub fn pulls_merge_request(base, owner, repo, pull_number, data) {
 }
 
 pub fn pulls_merge_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, body:, ..) = response
   case status {
     200 ->
-      utils.decode_bits(body, schema.pull_request_merge_result_decoder())
+      json.parse_bits(body, schema.pull_request_merge_result_decoder())
       |> result.map(Ok)
-    _ -> "API doesn't describe default response" |> Error |> Ok
+    _ -> response |> Error |> Ok
   }
 }
 
@@ -21605,10 +21758,10 @@ pub fn pulls_check_if_merged_request(base, owner, repo, pull_number) {
 }
 
 pub fn pulls_check_if_merged_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, ..) = response
   case status {
     204 -> Ok(Nil) |> Ok
-    _ -> "API doesn't describe default response" |> Error |> Ok
+    _ -> Error(Nil) |> Ok
   }
 }
 
@@ -21634,10 +21787,10 @@ pub fn actions_remove_self_hosted_runner_from_group_for_org_request(
 }
 
 pub fn actions_remove_self_hosted_runner_from_group_for_org_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, ..) = response
   case status {
     204 -> Ok(Nil) |> Ok
-    _ -> "API doesn't describe default response" |> Error |> Ok
+    _ -> response |> Error |> Ok
   }
 }
 
@@ -21663,10 +21816,10 @@ pub fn actions_add_self_hosted_runner_to_group_for_org_request(
 }
 
 pub fn actions_add_self_hosted_runner_to_group_for_org_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, ..) = response
   case status {
     204 -> Ok(Nil) |> Ok
-    _ -> "API doesn't describe default response" |> Error |> Ok
+    _ -> response |> Error |> Ok
   }
 }
 
@@ -21694,10 +21847,10 @@ pub fn search_code_request(
 }
 
 pub fn search_code_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, body:, ..) = response
   case status {
-    200 -> utils.decode_bits(body, zero.dynamic) |> result.map(Ok)
-    _ -> "API doesn't describe default response" |> Error |> Ok
+    200 -> json.parse_bits(body, decode.dynamic) |> result.map(Ok)
+    _ -> response |> Error |> Ok
   }
 }
 
@@ -21720,12 +21873,12 @@ pub fn activity_list_public_org_events_request(
 }
 
 pub fn activity_list_public_org_events_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, body:, ..) = response
   case status {
     200 ->
-      utils.decode_bits(body, zero.list(schema.event_decoder()))
+      json.parse_bits(body, decode.list(schema.event_decoder()))
       |> result.map(Ok)
-    _ -> "API doesn't describe default response" |> Error |> Ok
+    _ -> response |> Error |> Ok
   }
 }
 
@@ -21742,10 +21895,10 @@ pub fn checks_create_request(base, owner, repo, data) {
 }
 
 pub fn checks_create_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, body:, ..) = response
   case status {
-    201 -> utils.decode_bits(body, schema.check_run_decoder()) |> result.map(Ok)
-    _ -> "API doesn't describe default response" |> Error |> Ok
+    201 -> json.parse_bits(body, schema.check_run_decoder()) |> result.map(Ok)
+    _ -> response |> Error |> Ok
   }
 }
 
@@ -21768,10 +21921,10 @@ pub fn codespaces_set_repositories_for_secret_for_authenticated_user_request(
 pub fn codespaces_set_repositories_for_secret_for_authenticated_user_response(
   response,
 ) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, ..) = response
   case status {
     204 -> Ok(Nil) |> Ok
-    _ -> "API doesn't describe default response" |> Error |> Ok
+    _ -> response |> Error |> Ok
   }
 }
 
@@ -21791,10 +21944,10 @@ pub fn codespaces_list_repositories_for_secret_for_authenticated_user_request(
 pub fn codespaces_list_repositories_for_secret_for_authenticated_user_response(
   response,
 ) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, body:, ..) = response
   case status {
-    200 -> utils.decode_bits(body, zero.dynamic) |> result.map(Ok)
-    _ -> "API doesn't describe default response" |> Error |> Ok
+    200 -> json.parse_bits(body, decode.dynamic) |> result.map(Ok)
+    _ -> response |> Error |> Ok
   }
 }
 
@@ -21820,10 +21973,10 @@ pub fn codespaces_delete_from_organization_request(
 }
 
 pub fn codespaces_delete_from_organization_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, body:, ..) = response
   case status {
-    202 -> utils.decode_bits(body, zero.dynamic) |> result.map(Ok)
-    _ -> "API doesn't describe default response" |> Error |> Ok
+    202 -> json.parse_bits(body, decode.dynamic) |> result.map(Ok)
+    _ -> response |> Error |> Ok
   }
 }
 
@@ -21847,10 +22000,10 @@ pub fn issues_remove_assignees_request(base, owner, repo, issue_number, data) {
 }
 
 pub fn issues_remove_assignees_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, body:, ..) = response
   case status {
-    200 -> utils.decode_bits(body, schema.issue_decoder()) |> result.map(Ok)
-    _ -> "API doesn't describe default response" |> Error |> Ok
+    200 -> json.parse_bits(body, schema.issue_decoder()) |> result.map(Ok)
+    _ -> response |> Error |> Ok
   }
 }
 
@@ -21874,10 +22027,10 @@ pub fn issues_add_assignees_request(base, owner, repo, issue_number, data) {
 }
 
 pub fn issues_add_assignees_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, body:, ..) = response
   case status {
-    201 -> utils.decode_bits(body, schema.issue_decoder()) |> result.map(Ok)
-    _ -> "API doesn't describe default response" |> Error |> Ok
+    201 -> json.parse_bits(body, schema.issue_decoder()) |> result.map(Ok)
+    _ -> response |> Error |> Ok
   }
 }
 
@@ -21907,10 +22060,12 @@ pub fn reactions_create_for_commit_comment_request(
 }
 
 pub fn reactions_create_for_commit_comment_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, body:, ..) = response
   case status {
-    200 -> utils.decode_bits(body, schema.reaction_decoder()) |> result.map(Ok)
-    _ -> "API doesn't describe default response" |> Error |> Ok
+    200 -> json.parse_bits(body, schema.reaction_decoder()) |> result.map(Ok)
+    _ ->
+      json.parse_bits(body, schema.validation_error_decoder())
+      |> result.map(Error)
   }
 }
 
@@ -21944,12 +22099,13 @@ pub fn reactions_list_for_commit_comment_request(
 }
 
 pub fn reactions_list_for_commit_comment_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, body:, ..) = response
   case status {
     200 ->
-      utils.decode_bits(body, zero.list(schema.reaction_decoder()))
+      json.parse_bits(body, decode.list(schema.reaction_decoder()))
       |> result.map(Ok)
-    _ -> "API doesn't describe default response" |> Error |> Ok
+    _ ->
+      json.parse_bits(body, schema.basic_error_decoder()) |> result.map(Error)
   }
 }
 
@@ -21967,10 +22123,10 @@ pub fn actions_list_org_secrets_request(base, org, per_page per_page, page page)
 }
 
 pub fn actions_list_org_secrets_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, body:, ..) = response
   case status {
-    200 -> utils.decode_bits(body, zero.dynamic) |> result.map(Ok)
-    _ -> "API doesn't describe default response" |> Error |> Ok
+    200 -> json.parse_bits(body, decode.dynamic) |> result.map(Ok)
+    _ -> response |> Error |> Ok
   }
 }
 
@@ -21995,12 +22151,12 @@ pub fn projects_list_collaborators_request(
 }
 
 pub fn projects_list_collaborators_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, body:, ..) = response
   case status {
     200 ->
-      utils.decode_bits(body, zero.list(schema.simple_user_decoder()))
+      json.parse_bits(body, decode.list(schema.simple_user_decoder()))
       |> result.map(Ok)
-    _ -> "API doesn't describe default response" |> Error |> Ok
+    _ -> response |> Error |> Ok
   }
 }
 
@@ -22030,12 +22186,14 @@ pub fn repos_create_deployment_status_request(
 }
 
 pub fn repos_create_deployment_status_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, body:, ..) = response
   case status {
     201 ->
-      utils.decode_bits(body, schema.deployment_status_decoder())
+      json.parse_bits(body, schema.deployment_status_decoder())
       |> result.map(Ok)
-    _ -> "API doesn't describe default response" |> Error |> Ok
+    _ ->
+      json.parse_bits(body, schema.validation_error_decoder())
+      |> result.map(Error)
   }
 }
 
@@ -22067,12 +22225,13 @@ pub fn repos_list_deployment_statuses_request(
 }
 
 pub fn repos_list_deployment_statuses_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, body:, ..) = response
   case status {
     200 ->
-      utils.decode_bits(body, zero.list(schema.deployment_status_decoder()))
+      json.parse_bits(body, decode.list(schema.deployment_status_decoder()))
       |> result.map(Ok)
-    _ -> "API doesn't describe default response" |> Error |> Ok
+    _ ->
+      json.parse_bits(body, schema.basic_error_decoder()) |> result.map(Error)
   }
 }
 
@@ -22097,10 +22256,10 @@ pub fn actions_list_self_hosted_runners_for_org_request(
 }
 
 pub fn actions_list_self_hosted_runners_for_org_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, body:, ..) = response
   case status {
-    200 -> utils.decode_bits(body, zero.dynamic) |> result.map(Ok)
-    _ -> "API doesn't describe default response" |> Error |> Ok
+    200 -> json.parse_bits(body, decode.dynamic) |> result.map(Ok)
+    _ -> response |> Error |> Ok
   }
 }
 
@@ -22117,12 +22276,12 @@ pub fn repos_create_repo_ruleset_request(base, owner, repo, data) {
 }
 
 pub fn repos_create_repo_ruleset_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, body:, ..) = response
   case status {
     201 ->
-      utils.decode_bits(body, schema.repository_ruleset_decoder())
+      json.parse_bits(body, schema.repository_ruleset_decoder())
       |> result.map(Ok)
-    _ -> "API doesn't describe default response" |> Error |> Ok
+    _ -> response |> Error |> Ok
   }
 }
 
@@ -22150,12 +22309,12 @@ pub fn repos_get_repo_rulesets_request(
 }
 
 pub fn repos_get_repo_rulesets_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, body:, ..) = response
   case status {
     200 ->
-      utils.decode_bits(body, zero.list(schema.repository_ruleset_decoder()))
+      json.parse_bits(body, decode.list(schema.repository_ruleset_decoder()))
       |> result.map(Ok)
-    _ -> "API doesn't describe default response" |> Error |> Ok
+    _ -> response |> Error |> Ok
   }
 }
 
@@ -22178,12 +22337,13 @@ pub fn teams_list_repos_legacy_request(
 }
 
 pub fn teams_list_repos_legacy_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, body:, ..) = response
   case status {
     200 ->
-      utils.decode_bits(body, zero.list(schema.minimal_repository_decoder()))
+      json.parse_bits(body, decode.list(schema.minimal_repository_decoder()))
       |> result.map(Ok)
-    _ -> "API doesn't describe default response" |> Error |> Ok
+    _ ->
+      json.parse_bits(body, schema.basic_error_decoder()) |> result.map(Error)
   }
 }
 
@@ -22198,10 +22358,11 @@ pub fn apps_delete_installation_request(base, installation_id) {
 }
 
 pub fn apps_delete_installation_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, body:, ..) = response
   case status {
     204 -> Ok(Nil) |> Ok
-    _ -> "API doesn't describe default response" |> Error |> Ok
+    _ ->
+      json.parse_bits(body, schema.basic_error_decoder()) |> result.map(Error)
   }
 }
 
@@ -22216,12 +22377,12 @@ pub fn apps_get_installation_request(base, installation_id) {
 }
 
 pub fn apps_get_installation_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, body:, ..) = response
   case status {
     200 ->
-      utils.decode_bits(body, schema.installation_decoder())
-      |> result.map(Ok)
-    _ -> "API doesn't describe default response" |> Error |> Ok
+      json.parse_bits(body, schema.installation_decoder()) |> result.map(Ok)
+    _ ->
+      json.parse_bits(body, schema.basic_error_decoder()) |> result.map(Error)
   }
 }
 
@@ -22236,12 +22397,12 @@ pub fn actions_get_org_public_key_request(base, org) {
 }
 
 pub fn actions_get_org_public_key_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, body:, ..) = response
   case status {
     200 ->
-      utils.decode_bits(body, schema.actions_public_key_decoder())
+      json.parse_bits(body, schema.actions_public_key_decoder())
       |> result.map(Ok)
-    _ -> "API doesn't describe default response" |> Error |> Ok
+    _ -> response |> Error |> Ok
   }
 }
 
@@ -22277,12 +22438,12 @@ pub fn repos_list_commits_request(
 }
 
 pub fn repos_list_commits_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, body:, ..) = response
   case status {
     200 ->
-      utils.decode_bits(body, zero.list(schema.commit_decoder()))
+      json.parse_bits(body, decode.list(schema.commit_decoder()))
       |> result.map(Ok)
-    _ -> "API doesn't describe default response" |> Error |> Ok
+    _ -> response |> Error |> Ok
   }
 }
 
@@ -22312,10 +22473,12 @@ pub fn reactions_create_for_pull_request_review_comment_request(
 }
 
 pub fn reactions_create_for_pull_request_review_comment_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, body:, ..) = response
   case status {
-    200 -> utils.decode_bits(body, schema.reaction_decoder()) |> result.map(Ok)
-    _ -> "API doesn't describe default response" |> Error |> Ok
+    200 -> json.parse_bits(body, schema.reaction_decoder()) |> result.map(Ok)
+    _ ->
+      json.parse_bits(body, schema.validation_error_decoder())
+      |> result.map(Error)
   }
 }
 
@@ -22349,12 +22512,13 @@ pub fn reactions_list_for_pull_request_review_comment_request(
 }
 
 pub fn reactions_list_for_pull_request_review_comment_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, body:, ..) = response
   case status {
     200 ->
-      utils.decode_bits(body, zero.list(schema.reaction_decoder()))
+      json.parse_bits(body, decode.list(schema.reaction_decoder()))
       |> result.map(Ok)
-    _ -> "API doesn't describe default response" |> Error |> Ok
+    _ ->
+      json.parse_bits(body, schema.basic_error_decoder()) |> result.map(Error)
   }
 }
 
@@ -22369,12 +22533,12 @@ pub fn repos_get_views_request(base, owner, repo, per per) {
 }
 
 pub fn repos_get_views_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, body:, ..) = response
   case status {
     200 ->
-      utils.decode_bits(body, schema.view_traffic_decoder())
-      |> result.map(Ok)
-    _ -> "API doesn't describe default response" |> Error |> Ok
+      json.parse_bits(body, schema.view_traffic_decoder()) |> result.map(Ok)
+    _ ->
+      json.parse_bits(body, schema.basic_error_decoder()) |> result.map(Error)
   }
 }
 
@@ -22390,10 +22554,10 @@ pub fn teams_remove_repo_legacy_request(base, team_id, owner, repo) {
 }
 
 pub fn teams_remove_repo_legacy_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, ..) = response
   case status {
     204 -> Ok(Nil) |> Ok
-    _ -> "API doesn't describe default response" |> Error |> Ok
+    _ -> response |> Error |> Ok
   }
 }
 
@@ -22417,10 +22581,10 @@ pub fn teams_add_or_update_repo_permissions_legacy_request(
 }
 
 pub fn teams_add_or_update_repo_permissions_legacy_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, ..) = response
   case status {
     204 -> Ok(Nil) |> Ok
-    _ -> "API doesn't describe default response" |> Error |> Ok
+    _ -> response |> Error |> Ok
   }
 }
 
@@ -22441,10 +22605,12 @@ pub fn teams_check_permissions_for_repo_legacy_request(
 }
 
 pub fn teams_check_permissions_for_repo_legacy_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, body:, ..) = response
   case status {
-    204 -> Ok(Nil) |> Ok
-    _ -> "API doesn't describe default response" |> Error |> Ok
+    200 ->
+      json.parse_bits(body, schema.team_repository_decoder())
+      |> result.map(Ok)
+    _ -> Error(Nil) |> Ok
   }
 }
 
@@ -22459,12 +22625,12 @@ pub fn codes_of_conduct_get_all_codes_of_conduct_request(base) {
 }
 
 pub fn codes_of_conduct_get_all_codes_of_conduct_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, body:, ..) = response
   case status {
     200 ->
-      utils.decode_bits(body, zero.list(schema.code_of_conduct_decoder()))
+      json.parse_bits(body, decode.list(schema.code_of_conduct_decoder()))
       |> result.map(Ok)
-    _ -> "API doesn't describe default response" |> Error |> Ok
+    _ -> response |> Error |> Ok
   }
 }
 
@@ -22479,10 +22645,10 @@ pub fn codespaces_start_for_authenticated_user_request(base, codespace_name) {
 }
 
 pub fn codespaces_start_for_authenticated_user_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, body:, ..) = response
   case status {
-    200 -> utils.decode_bits(body, schema.codespace_decoder()) |> result.map(Ok)
-    _ -> "API doesn't describe default response" |> Error |> Ok
+    200 -> json.parse_bits(body, schema.codespace_decoder()) |> result.map(Ok)
+    _ -> response |> Error |> Ok
   }
 }
 
@@ -22510,10 +22676,10 @@ pub fn search_commits_request(
 }
 
 pub fn search_commits_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, body:, ..) = response
   case status {
-    200 -> utils.decode_bits(body, zero.dynamic) |> result.map(Ok)
-    _ -> "API doesn't describe default response" |> Error |> Ok
+    200 -> json.parse_bits(body, decode.dynamic) |> result.map(Ok)
+    _ -> response |> Error |> Ok
   }
 }
 
@@ -22535,12 +22701,12 @@ pub fn orgs_list_for_authenticated_user_request(
 }
 
 pub fn orgs_list_for_authenticated_user_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, body:, ..) = response
   case status {
     200 ->
-      utils.decode_bits(body, zero.list(schema.organization_simple_decoder()))
+      json.parse_bits(body, decode.list(schema.organization_simple_decoder()))
       |> result.map(Ok)
-    _ -> "API doesn't describe default response" |> Error |> Ok
+    _ -> response |> Error |> Ok
   }
 }
 
@@ -22555,10 +22721,10 @@ pub fn repos_delete_org_ruleset_request(base, org, ruleset_id) {
 }
 
 pub fn repos_delete_org_ruleset_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, ..) = response
   case status {
     204 -> Ok(Nil) |> Ok
-    _ -> "API doesn't describe default response" |> Error |> Ok
+    _ -> response |> Error |> Ok
   }
 }
 
@@ -22575,12 +22741,12 @@ pub fn repos_update_org_ruleset_request(base, org, ruleset_id, data) {
 }
 
 pub fn repos_update_org_ruleset_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, body:, ..) = response
   case status {
     200 ->
-      utils.decode_bits(body, schema.repository_ruleset_decoder())
+      json.parse_bits(body, schema.repository_ruleset_decoder())
       |> result.map(Ok)
-    _ -> "API doesn't describe default response" |> Error |> Ok
+    _ -> response |> Error |> Ok
   }
 }
 
@@ -22595,12 +22761,12 @@ pub fn repos_get_org_ruleset_request(base, org, ruleset_id) {
 }
 
 pub fn repos_get_org_ruleset_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, body:, ..) = response
   case status {
     200 ->
-      utils.decode_bits(body, schema.repository_ruleset_decoder())
+      json.parse_bits(body, schema.repository_ruleset_decoder())
       |> result.map(Ok)
-    _ -> "API doesn't describe default response" |> Error |> Ok
+    _ -> response |> Error |> Ok
   }
 }
 
@@ -22619,12 +22785,13 @@ pub fn codespaces_get_export_details_for_authenticated_user_request(
 }
 
 pub fn codespaces_get_export_details_for_authenticated_user_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, body:, ..) = response
   case status {
     200 ->
-      utils.decode_bits(body, schema.codespace_export_details_decoder())
+      json.parse_bits(body, schema.codespace_export_details_decoder())
       |> result.map(Ok)
-    _ -> "API doesn't describe default response" |> Error |> Ok
+    _ ->
+      json.parse_bits(body, schema.basic_error_decoder()) |> result.map(Error)
   }
 }
 
@@ -22640,12 +22807,12 @@ pub fn codespaces_get_repo_public_key_request(base, owner, repo) {
 }
 
 pub fn codespaces_get_repo_public_key_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, body:, ..) = response
   case status {
     200 ->
-      utils.decode_bits(body, schema.codespaces_public_key_decoder())
+      json.parse_bits(body, schema.codespaces_public_key_decoder())
       |> result.map(Ok)
-    _ -> "API doesn't describe default response" |> Error |> Ok
+    _ -> response |> Error |> Ok
   }
 }
 
@@ -22658,7 +22825,7 @@ pub fn dependency_graph_create_repository_snapshot_request(
   let method = http.Post
   let path = "/repos/" <> owner <> "/" <> repo <> "/dependency-graph/snapshots"
   let query = []
-  let body = utils.json_to_bits(schema.snapshot_to_json(snapshot))
+  let body = utils.json_to_bits(schema.snapshot_encode(snapshot))
   base
   |> utils.set_method(method)
   |> utils.append_path(path)
@@ -22667,10 +22834,10 @@ pub fn dependency_graph_create_repository_snapshot_request(
 }
 
 pub fn dependency_graph_create_repository_snapshot_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, body:, ..) = response
   case status {
-    201 -> utils.decode_bits(body, zero.dynamic) |> result.map(Ok)
-    _ -> "API doesn't describe default response" |> Error |> Ok
+    201 -> json.parse_bits(body, decode.dynamic) |> result.map(Ok)
+    _ -> response |> Error |> Ok
   }
 }
 
@@ -22693,15 +22860,16 @@ pub fn orgs_list_failed_invitations_request(
 }
 
 pub fn orgs_list_failed_invitations_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, body:, ..) = response
   case status {
     200 ->
-      utils.decode_bits(
+      json.parse_bits(
         body,
-        zero.list(schema.organization_invitation_decoder()),
+        decode.list(schema.organization_invitation_decoder()),
       )
       |> result.map(Ok)
-    _ -> "API doesn't describe default response" |> Error |> Ok
+    _ ->
+      json.parse_bits(body, schema.basic_error_decoder()) |> result.map(Error)
   }
 }
 
@@ -22716,12 +22884,12 @@ pub fn apps_get_webhook_delivery_request(base, delivery_id) {
 }
 
 pub fn apps_get_webhook_delivery_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, body:, ..) = response
   case status {
     200 ->
-      utils.decode_bits(body, schema.hook_delivery_decoder())
+      json.parse_bits(body, schema.hook_delivery_decoder())
       |> result.map(Ok)
-    _ -> "API doesn't describe default response" |> Error |> Ok
+    _ -> response |> Error |> Ok
   }
 }
 
@@ -22753,15 +22921,15 @@ pub fn secret_scanning_list_locations_for_alert_request(
 }
 
 pub fn secret_scanning_list_locations_for_alert_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, body:, ..) = response
   case status {
     200 ->
-      utils.decode_bits(
+      json.parse_bits(
         body,
-        zero.list(schema.secret_scanning_location_decoder()),
+        decode.list(schema.secret_scanning_location_decoder()),
       )
       |> result.map(Ok)
-    _ -> "API doesn't describe default response" |> Error |> Ok
+    _ -> response |> Error |> Ok
   }
 }
 
@@ -22804,15 +22972,15 @@ pub fn secret_scanning_list_alerts_for_org_request(
 }
 
 pub fn secret_scanning_list_alerts_for_org_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, body:, ..) = response
   case status {
     200 ->
-      utils.decode_bits(
+      json.parse_bits(
         body,
-        zero.list(schema.organization_secret_scanning_alert_decoder()),
+        decode.list(schema.organization_secret_scanning_alert_decoder()),
       )
       |> result.map(Ok)
-    _ -> "API doesn't describe default response" |> Error |> Ok
+    _ -> response |> Error |> Ok
   }
 }
 
@@ -22835,12 +23003,12 @@ pub fn users_list_following_for_user_request(
 }
 
 pub fn users_list_following_for_user_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, body:, ..) = response
   case status {
     200 ->
-      utils.decode_bits(body, zero.list(schema.simple_user_decoder()))
+      json.parse_bits(body, decode.list(schema.simple_user_decoder()))
       |> result.map(Ok)
-    _ -> "API doesn't describe default response" |> Error |> Ok
+    _ -> response |> Error |> Ok
   }
 }
 
@@ -22861,10 +23029,10 @@ pub fn repos_delete_tag_protection_request(base, owner, repo, tag_protection_id)
 }
 
 pub fn repos_delete_tag_protection_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, ..) = response
   case status {
     204 -> Ok(Nil) |> Ok
-    _ -> "API doesn't describe default response" |> Error |> Ok
+    _ -> response |> Error |> Ok
   }
 }
 
@@ -22879,10 +23047,10 @@ pub fn actions_delete_self_hosted_runner_from_org_request(base, org, runner_id) 
 }
 
 pub fn actions_delete_self_hosted_runner_from_org_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, ..) = response
   case status {
     204 -> Ok(Nil) |> Ok
-    _ -> "API doesn't describe default response" |> Error |> Ok
+    _ -> response |> Error |> Ok
   }
 }
 
@@ -22897,10 +23065,10 @@ pub fn actions_get_self_hosted_runner_for_org_request(base, org, runner_id) {
 }
 
 pub fn actions_get_self_hosted_runner_for_org_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, body:, ..) = response
   case status {
-    200 -> utils.decode_bits(body, schema.runner_decoder()) |> result.map(Ok)
-    _ -> "API doesn't describe default response" |> Error |> Ok
+    200 -> json.parse_bits(body, schema.runner_decoder()) |> result.map(Ok)
+    _ -> response |> Error |> Ok
   }
 }
 
@@ -22932,12 +23100,12 @@ pub fn pulls_list_files_request(
 }
 
 pub fn pulls_list_files_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, body:, ..) = response
   case status {
     200 ->
-      utils.decode_bits(body, zero.list(schema.diff_entry_decoder()))
+      json.parse_bits(body, decode.list(schema.diff_entry_decoder()))
       |> result.map(Ok)
-    _ -> "API doesn't describe default response" |> Error |> Ok
+    _ -> response |> Error |> Ok
   }
 }
 
@@ -22954,10 +23122,10 @@ pub fn orgs_create_webhook_request(base, org, data) {
 }
 
 pub fn orgs_create_webhook_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, body:, ..) = response
   case status {
-    201 -> utils.decode_bits(body, schema.org_hook_decoder()) |> result.map(Ok)
-    _ -> "API doesn't describe default response" |> Error |> Ok
+    201 -> json.parse_bits(body, schema.org_hook_decoder()) |> result.map(Ok)
+    _ -> response |> Error |> Ok
   }
 }
 
@@ -22975,12 +23143,13 @@ pub fn orgs_list_webhooks_request(base, org, per_page per_page, page page) {
 }
 
 pub fn orgs_list_webhooks_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, body:, ..) = response
   case status {
     200 ->
-      utils.decode_bits(body, zero.list(schema.org_hook_decoder()))
+      json.parse_bits(body, decode.list(schema.org_hook_decoder()))
       |> result.map(Ok)
-    _ -> "API doesn't describe default response" |> Error |> Ok
+    _ ->
+      json.parse_bits(body, schema.basic_error_decoder()) |> result.map(Error)
   }
 }
 
@@ -23002,10 +23171,10 @@ pub fn apps_list_installations_for_authenticated_user_request(
 }
 
 pub fn apps_list_installations_for_authenticated_user_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, body:, ..) = response
   case status {
-    200 -> utils.decode_bits(body, zero.dynamic) |> result.map(Ok)
-    _ -> "API doesn't describe default response" |> Error |> Ok
+    200 -> json.parse_bits(body, decode.dynamic) |> result.map(Ok)
+    _ -> response |> Error |> Ok
   }
 }
 
@@ -23020,12 +23189,13 @@ pub fn security_advisories_get_global_advisory_request(base, ghsa_id) {
 }
 
 pub fn security_advisories_get_global_advisory_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, body:, ..) = response
   case status {
     200 ->
-      utils.decode_bits(body, schema.global_advisory_decoder())
+      json.parse_bits(body, schema.global_advisory_decoder())
       |> result.map(Ok)
-    _ -> "API doesn't describe default response" |> Error |> Ok
+    _ ->
+      json.parse_bits(body, schema.basic_error_decoder()) |> result.map(Error)
   }
 }
 
@@ -23042,10 +23212,10 @@ pub fn repos_create_release_request(base, owner, repo, data) {
 }
 
 pub fn repos_create_release_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, body:, ..) = response
   case status {
-    201 -> utils.decode_bits(body, schema.release_decoder()) |> result.map(Ok)
-    _ -> "API doesn't describe default response" |> Error |> Ok
+    201 -> json.parse_bits(body, schema.release_decoder()) |> result.map(Ok)
+    _ -> response |> Error |> Ok
   }
 }
 
@@ -23069,12 +23239,13 @@ pub fn repos_list_releases_request(
 }
 
 pub fn repos_list_releases_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, body:, ..) = response
   case status {
     200 ->
-      utils.decode_bits(body, zero.list(schema.release_decoder()))
+      json.parse_bits(body, decode.list(schema.release_decoder()))
       |> result.map(Ok)
-    _ -> "API doesn't describe default response" |> Error |> Ok
+    _ ->
+      json.parse_bits(body, schema.basic_error_decoder()) |> result.map(Error)
   }
 }
 
@@ -23089,10 +23260,10 @@ pub fn repos_list_languages_request(base, owner, repo) {
 }
 
 pub fn repos_list_languages_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, body:, ..) = response
   case status {
-    200 -> utils.decode_bits(body, schema.language_decoder()) |> result.map(Ok)
-    _ -> "API doesn't describe default response" |> Error |> Ok
+    200 -> json.parse_bits(body, schema.language_decoder()) |> result.map(Ok)
+    _ -> response |> Error |> Ok
   }
 }
 
@@ -23113,10 +23284,10 @@ pub fn codespaces_pre_flight_with_repo_for_authenticated_user_request(
 }
 
 pub fn codespaces_pre_flight_with_repo_for_authenticated_user_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, body:, ..) = response
   case status {
-    200 -> utils.decode_bits(body, zero.dynamic) |> result.map(Ok)
-    _ -> "API doesn't describe default response" |> Error |> Ok
+    200 -> json.parse_bits(body, decode.dynamic) |> result.map(Ok)
+    _ -> response |> Error |> Ok
   }
 }
 
@@ -23148,10 +23319,10 @@ pub fn reactions_delete_for_team_discussion_comment_request(
 }
 
 pub fn reactions_delete_for_team_discussion_comment_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, ..) = response
   case status {
     204 -> Ok(Nil) |> Ok
-    _ -> "API doesn't describe default response" |> Error |> Ok
+    _ -> response |> Error |> Ok
   }
 }
 
@@ -23168,12 +23339,12 @@ pub fn repos_transfer_request(base, owner, repo, data) {
 }
 
 pub fn repos_transfer_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, body:, ..) = response
   case status {
     202 ->
-      utils.decode_bits(body, schema.minimal_repository_decoder())
+      json.parse_bits(body, schema.minimal_repository_decoder())
       |> result.map(Ok)
-    _ -> "API doesn't describe default response" |> Error |> Ok
+    _ -> response |> Error |> Ok
   }
 }
 
@@ -23195,10 +23366,10 @@ pub fn codespaces_list_secrets_for_authenticated_user_request(
 }
 
 pub fn codespaces_list_secrets_for_authenticated_user_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, body:, ..) = response
   case status {
-    200 -> utils.decode_bits(body, zero.dynamic) |> result.map(Ok)
-    _ -> "API doesn't describe default response" |> Error |> Ok
+    200 -> json.parse_bits(body, decode.dynamic) |> result.map(Ok)
+    _ -> response |> Error |> Ok
   }
 }
 
@@ -23223,12 +23394,14 @@ pub fn gists_list_for_user_request(
 }
 
 pub fn gists_list_for_user_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, body:, ..) = response
   case status {
     200 ->
-      utils.decode_bits(body, zero.list(schema.base_gist_decoder()))
+      json.parse_bits(body, decode.list(schema.base_gist_decoder()))
       |> result.map(Ok)
-    _ -> "API doesn't describe default response" |> Error |> Ok
+    _ ->
+      json.parse_bits(body, schema.validation_error_decoder())
+      |> result.map(Error)
   }
 }
 
@@ -23245,12 +23418,12 @@ pub fn orgs_update_request(base, org, data) {
 }
 
 pub fn orgs_update_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, body:, ..) = response
   case status {
     200 ->
-      utils.decode_bits(body, schema.organization_full_decoder())
+      json.parse_bits(body, schema.organization_full_decoder())
       |> result.map(Ok)
-    _ -> "API doesn't describe default response" |> Error |> Ok
+    _ -> response |> Error |> Ok
   }
 }
 
@@ -23265,10 +23438,10 @@ pub fn orgs_delete_request(base, org) {
 }
 
 pub fn orgs_delete_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, body:, ..) = response
   case status {
-    202 -> utils.decode_bits(body, zero.dynamic) |> result.map(Ok)
-    _ -> "API doesn't describe default response" |> Error |> Ok
+    202 -> json.parse_bits(body, decode.dynamic) |> result.map(Ok)
+    _ -> response |> Error |> Ok
   }
 }
 
@@ -23283,12 +23456,13 @@ pub fn orgs_get_request(base, org) {
 }
 
 pub fn orgs_get_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, body:, ..) = response
   case status {
     200 ->
-      utils.decode_bits(body, schema.organization_full_decoder())
+      json.parse_bits(body, schema.organization_full_decoder())
       |> result.map(Ok)
-    _ -> "API doesn't describe default response" |> Error |> Ok
+    _ ->
+      json.parse_bits(body, schema.basic_error_decoder()) |> result.map(Error)
   }
 }
 
@@ -23312,12 +23486,12 @@ pub fn teams_list_projects_in_org_request(
 }
 
 pub fn teams_list_projects_in_org_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, body:, ..) = response
   case status {
     200 ->
-      utils.decode_bits(body, zero.list(schema.team_project_decoder()))
+      json.parse_bits(body, decode.list(schema.team_project_decoder()))
       |> result.map(Ok)
-    _ -> "API doesn't describe default response" |> Error |> Ok
+    _ -> response |> Error |> Ok
   }
 }
 
@@ -23347,15 +23521,17 @@ pub fn repos_update_pull_request_review_protection_request(
 }
 
 pub fn repos_update_pull_request_review_protection_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, body:, ..) = response
   case status {
     200 ->
-      utils.decode_bits(
+      json.parse_bits(
         body,
         schema.protected_branch_pull_request_review_decoder(),
       )
       |> result.map(Ok)
-    _ -> "API doesn't describe default response" |> Error |> Ok
+    _ ->
+      json.parse_bits(body, schema.validation_error_decoder())
+      |> result.map(Error)
   }
 }
 
@@ -23382,10 +23558,11 @@ pub fn repos_delete_pull_request_review_protection_request(
 }
 
 pub fn repos_delete_pull_request_review_protection_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, body:, ..) = response
   case status {
     204 -> Ok(Nil) |> Ok
-    _ -> "API doesn't describe default response" |> Error |> Ok
+    _ ->
+      json.parse_bits(body, schema.basic_error_decoder()) |> result.map(Error)
   }
 }
 
@@ -23412,15 +23589,15 @@ pub fn repos_get_pull_request_review_protection_request(
 }
 
 pub fn repos_get_pull_request_review_protection_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, body:, ..) = response
   case status {
     200 ->
-      utils.decode_bits(
+      json.parse_bits(
         body,
         schema.protected_branch_pull_request_review_decoder(),
       )
       |> result.map(Ok)
-    _ -> "API doesn't describe default response" |> Error |> Ok
+    _ -> response |> Error |> Ok
   }
 }
 
@@ -23443,10 +23620,10 @@ pub fn actions_set_selected_repos_for_org_secret_request(
 }
 
 pub fn actions_set_selected_repos_for_org_secret_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, ..) = response
   case status {
     204 -> Ok(Nil) |> Ok
-    _ -> "API doesn't describe default response" |> Error |> Ok
+    _ -> response |> Error |> Ok
   }
 }
 
@@ -23471,10 +23648,10 @@ pub fn actions_list_selected_repos_for_org_secret_request(
 }
 
 pub fn actions_list_selected_repos_for_org_secret_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, body:, ..) = response
   case status {
-    200 -> utils.decode_bits(body, zero.dynamic) |> result.map(Ok)
-    _ -> "API doesn't describe default response" |> Error |> Ok
+    200 -> json.parse_bits(body, decode.dynamic) |> result.map(Ok)
+    _ -> response |> Error |> Ok
   }
 }
 
@@ -23501,10 +23678,11 @@ pub fn migrations_unlock_repo_for_org_request(
 }
 
 pub fn migrations_unlock_repo_for_org_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, body:, ..) = response
   case status {
     204 -> Ok(Nil) |> Ok
-    _ -> "API doesn't describe default response" |> Error |> Ok
+    _ ->
+      json.parse_bits(body, schema.basic_error_decoder()) |> result.map(Error)
   }
 }
 
@@ -23536,10 +23714,10 @@ pub fn repos_list_custom_deployment_rule_integrations_request(
 }
 
 pub fn repos_list_custom_deployment_rule_integrations_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, body:, ..) = response
   case status {
-    200 -> utils.decode_bits(body, zero.dynamic) |> result.map(Ok)
-    _ -> "API doesn't describe default response" |> Error |> Ok
+    200 -> json.parse_bits(body, decode.dynamic) |> result.map(Ok)
+    _ -> response |> Error |> Ok
   }
 }
 
@@ -23565,10 +23743,10 @@ pub fn actions_remove_selected_repo_from_org_variable_request(
 }
 
 pub fn actions_remove_selected_repo_from_org_variable_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, ..) = response
   case status {
     204 -> Ok(Nil) |> Ok
-    _ -> "API doesn't describe default response" |> Error |> Ok
+    _ -> Error(Nil) |> Ok
   }
 }
 
@@ -23594,10 +23772,10 @@ pub fn actions_add_selected_repo_to_org_variable_request(
 }
 
 pub fn actions_add_selected_repo_to_org_variable_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, ..) = response
   case status {
     204 -> Ok(Nil) |> Ok
-    _ -> "API doesn't describe default response" |> Error |> Ok
+    _ -> Error(Nil) |> Ok
   }
 }
 
@@ -23626,12 +23804,13 @@ pub fn migrations_list_repos_for_org_request(
 }
 
 pub fn migrations_list_repos_for_org_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, body:, ..) = response
   case status {
     200 ->
-      utils.decode_bits(body, zero.list(schema.minimal_repository_decoder()))
+      json.parse_bits(body, decode.list(schema.minimal_repository_decoder()))
       |> result.map(Ok)
-    _ -> "API doesn't describe default response" |> Error |> Ok
+    _ ->
+      json.parse_bits(body, schema.basic_error_decoder()) |> result.map(Error)
   }
 }
 
@@ -23648,10 +23827,10 @@ pub fn users_delete_social_account_for_authenticated_user_request(base, data) {
 }
 
 pub fn users_delete_social_account_for_authenticated_user_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, ..) = response
   case status {
     204 -> Ok(Nil) |> Ok
-    _ -> "API doesn't describe default response" |> Error |> Ok
+    _ -> response |> Error |> Ok
   }
 }
 
@@ -23668,12 +23847,12 @@ pub fn users_add_social_account_for_authenticated_user_request(base, data) {
 }
 
 pub fn users_add_social_account_for_authenticated_user_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, body:, ..) = response
   case status {
     201 ->
-      utils.decode_bits(body, zero.list(schema.social_account_decoder()))
+      json.parse_bits(body, decode.list(schema.social_account_decoder()))
       |> result.map(Ok)
-    _ -> "API doesn't describe default response" |> Error |> Ok
+    _ -> response |> Error |> Ok
   }
 }
 
@@ -23695,12 +23874,12 @@ pub fn users_list_social_accounts_for_authenticated_user_request(
 }
 
 pub fn users_list_social_accounts_for_authenticated_user_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, body:, ..) = response
   case status {
     200 ->
-      utils.decode_bits(body, zero.list(schema.social_account_decoder()))
+      json.parse_bits(body, decode.list(schema.social_account_decoder()))
       |> result.map(Ok)
-    _ -> "API doesn't describe default response" |> Error |> Ok
+    _ -> response |> Error |> Ok
   }
 }
 
@@ -23729,10 +23908,10 @@ pub fn reactions_delete_for_issue_request(
 }
 
 pub fn reactions_delete_for_issue_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, ..) = response
   case status {
     204 -> Ok(Nil) |> Ok
-    _ -> "API doesn't describe default response" |> Error |> Ok
+    _ -> response |> Error |> Ok
   }
 }
 
@@ -23757,10 +23936,10 @@ pub fn apps_remove_repo_from_installation_for_authenticated_user_request(
 pub fn apps_remove_repo_from_installation_for_authenticated_user_response(
   response,
 ) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, ..) = response
   case status {
     204 -> Ok(Nil) |> Ok
-    _ -> "API doesn't describe default response" |> Error |> Ok
+    _ -> response |> Error |> Ok
   }
 }
 
@@ -23783,10 +23962,10 @@ pub fn apps_add_repo_to_installation_for_authenticated_user_request(
 }
 
 pub fn apps_add_repo_to_installation_for_authenticated_user_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, ..) = response
   case status {
     204 -> Ok(Nil) |> Ok
-    _ -> "API doesn't describe default response" |> Error |> Ok
+    _ -> response |> Error |> Ok
   }
 }
 
@@ -23809,12 +23988,12 @@ pub fn users_list_gpg_keys_for_user_request(
 }
 
 pub fn users_list_gpg_keys_for_user_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, body:, ..) = response
   case status {
     200 ->
-      utils.decode_bits(body, zero.list(schema.gpg_key_decoder()))
+      json.parse_bits(body, decode.list(schema.gpg_key_decoder()))
       |> result.map(Ok)
-    _ -> "API doesn't describe default response" |> Error |> Ok
+    _ -> response |> Error |> Ok
   }
 }
 
@@ -23840,12 +24019,12 @@ pub fn packages_list_packages_for_authenticated_user_request(
 }
 
 pub fn packages_list_packages_for_authenticated_user_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, body:, ..) = response
   case status {
     200 ->
-      utils.decode_bits(body, zero.list(schema.package_decoder()))
+      json.parse_bits(body, decode.list(schema.package_decoder()))
       |> result.map(Ok)
-    _ -> "API doesn't describe default response" |> Error |> Ok
+    _ -> Error(Nil) |> Ok
   }
 }
 
@@ -23862,12 +24041,12 @@ pub fn teams_create_discussion_in_org_request(base, org, team_slug, data) {
 }
 
 pub fn teams_create_discussion_in_org_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, body:, ..) = response
   case status {
     201 ->
-      utils.decode_bits(body, schema.team_discussion_decoder())
+      json.parse_bits(body, schema.team_discussion_decoder())
       |> result.map(Ok)
-    _ -> "API doesn't describe default response" |> Error |> Ok
+    _ -> response |> Error |> Ok
   }
 }
 
@@ -23895,12 +24074,12 @@ pub fn teams_list_discussions_in_org_request(
 }
 
 pub fn teams_list_discussions_in_org_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, body:, ..) = response
   case status {
     200 ->
-      utils.decode_bits(body, zero.list(schema.team_discussion_decoder()))
+      json.parse_bits(body, decode.list(schema.team_discussion_decoder()))
       |> result.map(Ok)
-    _ -> "API doesn't describe default response" |> Error |> Ok
+    _ -> response |> Error |> Ok
   }
 }
 
@@ -23934,10 +24113,10 @@ pub fn checks_list_for_ref_request(
 }
 
 pub fn checks_list_for_ref_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, body:, ..) = response
   case status {
-    200 -> utils.decode_bits(body, zero.dynamic) |> result.map(Ok)
-    _ -> "API doesn't describe default response" |> Error |> Ok
+    200 -> json.parse_bits(body, decode.dynamic) |> result.map(Ok)
+    _ -> response |> Error |> Ok
   }
 }
 
@@ -23953,10 +24132,10 @@ pub fn repos_delete_an_environment_request(base, owner, repo, environment_name) 
 }
 
 pub fn repos_delete_an_environment_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, ..) = response
   case status {
     204 -> Ok(Nil) |> Ok
-    _ -> "API doesn't describe default response" |> Error |> Ok
+    _ -> response |> Error |> Ok
   }
 }
 
@@ -23980,12 +24159,11 @@ pub fn repos_create_or_update_environment_request(
 }
 
 pub fn repos_create_or_update_environment_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, body:, ..) = response
   case status {
-    200 ->
-      utils.decode_bits(body, schema.environment_decoder())
-      |> result.map(Ok)
-    _ -> "API doesn't describe default response" |> Error |> Ok
+    200 -> json.parse_bits(body, schema.environment_decoder()) |> result.map(Ok)
+    _ ->
+      json.parse_bits(body, schema.basic_error_decoder()) |> result.map(Error)
   }
 }
 
@@ -24001,12 +24179,10 @@ pub fn repos_get_environment_request(base, owner, repo, environment_name) {
 }
 
 pub fn repos_get_environment_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, body:, ..) = response
   case status {
-    200 ->
-      utils.decode_bits(body, schema.environment_decoder())
-      |> result.map(Ok)
-    _ -> "API doesn't describe default response" |> Error |> Ok
+    200 -> json.parse_bits(body, schema.environment_decoder()) |> result.map(Ok)
+    _ -> response |> Error |> Ok
   }
 }
 
@@ -24021,9 +24197,9 @@ pub fn repos_download_tarball_archive_request(base, owner, repo, ref) {
 }
 
 pub fn repos_download_tarball_archive_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, ..) = response
   case status {
-    _ -> "API doesn't describe default response" |> Error |> Ok
+    _ -> response |> Error |> Ok
   }
 }
 
@@ -24040,10 +24216,10 @@ pub fn orgs_update_pat_accesses_request(base, org, data) {
 }
 
 pub fn orgs_update_pat_accesses_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, body:, ..) = response
   case status {
-    202 -> utils.decode_bits(body, zero.dynamic) |> result.map(Ok)
-    _ -> "API doesn't describe default response" |> Error |> Ok
+    202 -> json.parse_bits(body, decode.dynamic) |> result.map(Ok)
+    _ -> response |> Error |> Ok
   }
 }
 
@@ -24067,7 +24243,10 @@ pub fn orgs_list_pat_grants_request(
     #("page", option.map(page, int.to_string)),
     #("sort", sort),
     #("direction", direction),
-    #("owner", panic as "owner"),
+    #(
+      "owner",
+      option.map(owner, fn(_) { panic as "query parameter is not supported" }),
+    ),
     #("repository", repository),
     #("permission", permission),
     #("last_used_before", last_used_before),
@@ -24080,15 +24259,15 @@ pub fn orgs_list_pat_grants_request(
 }
 
 pub fn orgs_list_pat_grants_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, body:, ..) = response
   case status {
     200 ->
-      utils.decode_bits(
+      json.parse_bits(
         body,
-        zero.list(schema.organization_programmatic_access_grant_decoder()),
+        decode.list(schema.organization_programmatic_access_grant_decoder()),
       )
       |> result.map(Ok)
-    _ -> "API doesn't describe default response" |> Error |> Ok
+    _ -> response |> Error |> Ok
   }
 }
 
@@ -24106,10 +24285,10 @@ pub fn repos_accept_invitation_for_authenticated_user_request(
 }
 
 pub fn repos_accept_invitation_for_authenticated_user_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, ..) = response
   case status {
     204 -> Ok(Nil) |> Ok
-    _ -> "API doesn't describe default response" |> Error |> Ok
+    _ -> response |> Error |> Ok
   }
 }
 
@@ -24127,10 +24306,10 @@ pub fn repos_decline_invitation_for_authenticated_user_request(
 }
 
 pub fn repos_decline_invitation_for_authenticated_user_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, ..) = response
   case status {
     204 -> Ok(Nil) |> Ok
-    _ -> "API doesn't describe default response" |> Error |> Ok
+    _ -> response |> Error |> Ok
   }
 }
 
@@ -24163,15 +24342,15 @@ pub fn code_security_get_repositories_for_configuration_request(
 }
 
 pub fn code_security_get_repositories_for_configuration_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, body:, ..) = response
   case status {
     200 ->
-      utils.decode_bits(
+      json.parse_bits(
         body,
-        zero.list(schema.code_security_configuration_repositories_decoder()),
+        decode.list(schema.code_security_configuration_repositories_decoder()),
       )
       |> result.map(Ok)
-    _ -> "API doesn't describe default response" |> Error |> Ok
+    _ -> response |> Error |> Ok
   }
 }
 
@@ -24203,12 +24382,10 @@ pub fn repos_get_repo_rule_suites_request(
 }
 
 pub fn repos_get_repo_rule_suites_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, body:, ..) = response
   case status {
-    200 ->
-      utils.decode_bits(body, schema.rule_suites_decoder())
-      |> result.map(Ok)
-    _ -> "API doesn't describe default response" |> Error |> Ok
+    200 -> json.parse_bits(body, schema.rule_suites_decoder()) |> result.map(Ok)
+    _ -> response |> Error |> Ok
   }
 }
 
@@ -24232,12 +24409,12 @@ pub fn repos_list_invitations_request(
 }
 
 pub fn repos_list_invitations_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, body:, ..) = response
   case status {
     200 ->
-      utils.decode_bits(body, zero.list(schema.repository_invitation_decoder()))
+      json.parse_bits(body, decode.list(schema.repository_invitation_decoder()))
       |> result.map(Ok)
-    _ -> "API doesn't describe default response" |> Error |> Ok
+    _ -> response |> Error |> Ok
   }
 }
 
@@ -24252,12 +24429,13 @@ pub fn users_get_by_username_request(base, username) {
 }
 
 pub fn users_get_by_username_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, body:, ..) = response
   case status {
     200 ->
-      utils.decode_bits(body, zero.failure(Nil, "Unsupported schema"))
+      json.parse_bits(body, decode.failure(Nil, "Unsupported schema"))
       |> result.map(Ok)
-    _ -> "API doesn't describe default response" |> Error |> Ok
+    _ ->
+      json.parse_bits(body, schema.basic_error_decoder()) |> result.map(Error)
   }
 }
 
@@ -24291,10 +24469,10 @@ pub fn actions_list_workflow_run_artifacts_request(
 }
 
 pub fn actions_list_workflow_run_artifacts_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, body:, ..) = response
   case status {
-    200 -> utils.decode_bits(body, zero.dynamic) |> result.map(Ok)
-    _ -> "API doesn't describe default response" |> Error |> Ok
+    200 -> json.parse_bits(body, decode.dynamic) |> result.map(Ok)
+    _ -> response |> Error |> Ok
   }
 }
 
@@ -24330,12 +24508,12 @@ pub fn packages_get_all_package_versions_for_package_owned_by_org_request(
 pub fn packages_get_all_package_versions_for_package_owned_by_org_response(
   response,
 ) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, body:, ..) = response
   case status {
     200 ->
-      utils.decode_bits(body, zero.list(schema.package_version_decoder()))
+      json.parse_bits(body, decode.list(schema.package_version_decoder()))
       |> result.map(Ok)
-    _ -> "API doesn't describe default response" |> Error |> Ok
+    _ -> response |> Error |> Ok
   }
 }
 
@@ -24350,12 +24528,11 @@ pub fn repos_get_readme_in_directory_request(base, owner, repo, dir, ref ref) {
 }
 
 pub fn repos_get_readme_in_directory_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, body:, ..) = response
   case status {
     200 ->
-      utils.decode_bits(body, schema.content_file_decoder())
-      |> result.map(Ok)
-    _ -> "API doesn't describe default response" |> Error |> Ok
+      json.parse_bits(body, schema.content_file_decoder()) |> result.map(Ok)
+    _ -> response |> Error |> Ok
   }
 }
 
@@ -24377,12 +24554,12 @@ pub fn teams_list_for_authenticated_user_request(
 }
 
 pub fn teams_list_for_authenticated_user_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, body:, ..) = response
   case status {
     200 ->
-      utils.decode_bits(body, zero.list(schema.team_full_decoder()))
+      json.parse_bits(body, decode.list(schema.team_full_decoder()))
       |> result.map(Ok)
-    _ -> "API doesn't describe default response" |> Error |> Ok
+    _ -> response |> Error |> Ok
   }
 }
 
@@ -24409,12 +24586,12 @@ pub fn code_scanning_delete_analysis_request(
 }
 
 pub fn code_scanning_delete_analysis_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, body:, ..) = response
   case status {
     200 ->
-      utils.decode_bits(body, schema.code_scanning_analysis_deletion_decoder())
+      json.parse_bits(body, schema.code_scanning_analysis_deletion_decoder())
       |> result.map(Ok)
-    _ -> "API doesn't describe default response" |> Error |> Ok
+    _ -> response |> Error |> Ok
   }
 }
 
@@ -24435,12 +24612,12 @@ pub fn code_scanning_get_analysis_request(base, owner, repo, analysis_id) {
 }
 
 pub fn code_scanning_get_analysis_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, body:, ..) = response
   case status {
     200 ->
-      utils.decode_bits(body, schema.code_scanning_analysis_decoder())
+      json.parse_bits(body, schema.code_scanning_analysis_decoder())
       |> result.map(Ok)
-    _ -> "API doesn't describe default response" |> Error |> Ok
+    _ -> response |> Error |> Ok
   }
 }
 
@@ -24457,11 +24634,10 @@ pub fn git_create_blob_request(base, owner, repo, data) {
 }
 
 pub fn git_create_blob_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, body:, ..) = response
   case status {
-    201 ->
-      utils.decode_bits(body, schema.short_blob_decoder()) |> result.map(Ok)
-    _ -> "API doesn't describe default response" |> Error |> Ok
+    201 -> json.parse_bits(body, schema.short_blob_decoder()) |> result.map(Ok)
+    _ -> response |> Error |> Ok
   }
 }
 
@@ -24483,12 +24659,12 @@ pub fn actions_get_workflow_usage_request(base, owner, repo, workflow_id) {
 }
 
 pub fn actions_get_workflow_usage_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, body:, ..) = response
   case status {
     200 ->
-      utils.decode_bits(body, schema.workflow_usage_decoder())
+      json.parse_bits(body, schema.workflow_usage_decoder())
       |> result.map(Ok)
-    _ -> "API doesn't describe default response" |> Error |> Ok
+    _ -> response |> Error |> Ok
   }
 }
 
@@ -24510,12 +24686,12 @@ pub fn apps_list_webhook_deliveries_request(
 }
 
 pub fn apps_list_webhook_deliveries_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, body:, ..) = response
   case status {
     200 ->
-      utils.decode_bits(body, zero.list(schema.hook_delivery_item_decoder()))
+      json.parse_bits(body, decode.list(schema.hook_delivery_item_decoder()))
       |> result.map(Ok)
-    _ -> "API doesn't describe default response" |> Error |> Ok
+    _ -> response |> Error |> Ok
   }
 }
 
@@ -24532,12 +24708,12 @@ pub fn checks_set_suites_preferences_request(base, owner, repo, data) {
 }
 
 pub fn checks_set_suites_preferences_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, body:, ..) = response
   case status {
     200 ->
-      utils.decode_bits(body, schema.check_suite_preference_decoder())
+      json.parse_bits(body, schema.check_suite_preference_decoder())
       |> result.map(Ok)
-    _ -> "API doesn't describe default response" |> Error |> Ok
+    _ -> response |> Error |> Ok
   }
 }
 
@@ -24559,7 +24735,10 @@ pub fn api_insights_get_subject_stats_request(
     #("page", option.map(page, int.to_string)),
     #("per_page", option.map(per_page, int.to_string)),
     #("direction", direction),
-    #("sort", panic as "sort"),
+    #(
+      "sort",
+      option.map(sort, fn(_) { panic as "query parameter is not supported" }),
+    ),
   ]
   base
   |> utils.set_method(method)
@@ -24568,12 +24747,12 @@ pub fn api_insights_get_subject_stats_request(
 }
 
 pub fn api_insights_get_subject_stats_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, body:, ..) = response
   case status {
     200 ->
-      utils.decode_bits(body, schema.api_insights_subject_stats_decoder())
+      json.parse_bits(body, schema.api_insights_subject_stats_decoder())
       |> result.map(Ok)
-    _ -> "API doesn't describe default response" |> Error |> Ok
+    _ -> response |> Error |> Ok
   }
 }
 
@@ -24590,12 +24769,10 @@ pub fn gists_create_request(base, data) {
 }
 
 pub fn gists_create_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, body:, ..) = response
   case status {
-    201 ->
-      utils.decode_bits(body, schema.gist_simple_decoder())
-      |> result.map(Ok)
-    _ -> "API doesn't describe default response" |> Error |> Ok
+    201 -> json.parse_bits(body, schema.gist_simple_decoder()) |> result.map(Ok)
+    _ -> response |> Error |> Ok
   }
 }
 
@@ -24614,12 +24791,13 @@ pub fn gists_list_request(base, since since, per_page per_page, page page) {
 }
 
 pub fn gists_list_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, body:, ..) = response
   case status {
     200 ->
-      utils.decode_bits(body, zero.list(schema.base_gist_decoder()))
+      json.parse_bits(body, decode.list(schema.base_gist_decoder()))
       |> result.map(Ok)
-    _ -> "API doesn't describe default response" |> Error |> Ok
+    _ ->
+      json.parse_bits(body, schema.basic_error_decoder()) |> result.map(Error)
   }
 }
 
@@ -24642,12 +24820,12 @@ pub fn users_list_public_keys_for_user_request(
 }
 
 pub fn users_list_public_keys_for_user_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, body:, ..) = response
   case status {
     200 ->
-      utils.decode_bits(body, zero.list(schema.key_simple_decoder()))
+      json.parse_bits(body, decode.list(schema.key_simple_decoder()))
       |> result.map(Ok)
-    _ -> "API doesn't describe default response" |> Error |> Ok
+    _ -> response |> Error |> Ok
   }
 }
 
@@ -24663,10 +24841,11 @@ pub fn repos_delete_branch_protection_request(base, owner, repo, branch) {
 }
 
 pub fn repos_delete_branch_protection_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, body:, ..) = response
   case status {
     204 -> Ok(Nil) |> Ok
-    _ -> "API doesn't describe default response" |> Error |> Ok
+    _ ->
+      json.parse_bits(body, schema.basic_error_decoder()) |> result.map(Error)
   }
 }
 
@@ -24684,12 +24863,12 @@ pub fn repos_update_branch_protection_request(base, owner, repo, branch, data) {
 }
 
 pub fn repos_update_branch_protection_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, body:, ..) = response
   case status {
     200 ->
-      utils.decode_bits(body, schema.protected_branch_decoder())
+      json.parse_bits(body, schema.protected_branch_decoder())
       |> result.map(Ok)
-    _ -> "API doesn't describe default response" |> Error |> Ok
+    _ -> response |> Error |> Ok
   }
 }
 
@@ -24705,12 +24884,13 @@ pub fn repos_get_branch_protection_request(base, owner, repo, branch) {
 }
 
 pub fn repos_get_branch_protection_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, body:, ..) = response
   case status {
     200 ->
-      utils.decode_bits(body, schema.branch_protection_decoder())
+      json.parse_bits(body, schema.branch_protection_decoder())
       |> result.map(Ok)
-    _ -> "API doesn't describe default response" |> Error |> Ok
+    _ ->
+      json.parse_bits(body, schema.basic_error_decoder()) |> result.map(Error)
   }
 }
 
@@ -24725,12 +24905,13 @@ pub fn migrations_get_large_files_request(base, owner, repo) {
 }
 
 pub fn migrations_get_large_files_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, body:, ..) = response
   case status {
     200 ->
-      utils.decode_bits(body, zero.list(schema.porter_large_file_decoder()))
+      json.parse_bits(body, decode.list(schema.porter_large_file_decoder()))
       |> result.map(Ok)
-    _ -> "API doesn't describe default response" |> Error |> Ok
+    _ ->
+      json.parse_bits(body, schema.basic_error_decoder()) |> result.map(Error)
   }
 }
 
@@ -24752,12 +24933,12 @@ pub fn activity_list_watched_repos_for_authenticated_user_request(
 }
 
 pub fn activity_list_watched_repos_for_authenticated_user_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, body:, ..) = response
   case status {
     200 ->
-      utils.decode_bits(body, zero.list(schema.minimal_repository_decoder()))
+      json.parse_bits(body, decode.list(schema.minimal_repository_decoder()))
       |> result.map(Ok)
-    _ -> "API doesn't describe default response" |> Error |> Ok
+    _ -> response |> Error |> Ok
   }
 }
 
@@ -24779,12 +24960,12 @@ pub fn repos_create_using_template_request(
 }
 
 pub fn repos_create_using_template_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, body:, ..) = response
   case status {
     201 ->
-      utils.decode_bits(body, schema.full_repository_decoder())
+      json.parse_bits(body, schema.full_repository_decoder())
       |> result.map(Ok)
-    _ -> "API doesn't describe default response" |> Error |> Ok
+    _ -> response |> Error |> Ok
   }
 }
 
@@ -24799,12 +24980,12 @@ pub fn billing_get_github_packages_billing_org_request(base, org) {
 }
 
 pub fn billing_get_github_packages_billing_org_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, body:, ..) = response
   case status {
     200 ->
-      utils.decode_bits(body, schema.packages_billing_usage_decoder())
+      json.parse_bits(body, schema.packages_billing_usage_decoder())
       |> result.map(Ok)
-    _ -> "API doesn't describe default response" |> Error |> Ok
+    _ -> response |> Error |> Ok
   }
 }
 
@@ -24843,15 +25024,15 @@ pub fn code_scanning_list_alerts_for_org_request(
 }
 
 pub fn code_scanning_list_alerts_for_org_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, body:, ..) = response
   case status {
     200 ->
-      utils.decode_bits(
+      json.parse_bits(
         body,
-        zero.list(schema.code_scanning_organization_alert_items_decoder()),
+        decode.list(schema.code_scanning_organization_alert_items_decoder()),
       )
       |> result.map(Ok)
-    _ -> "API doesn't describe default response" |> Error |> Ok
+    _ -> response |> Error |> Ok
   }
 }
 
@@ -24866,10 +25047,10 @@ pub fn dependabot_delete_org_secret_request(base, org, secret_name) {
 }
 
 pub fn dependabot_delete_org_secret_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, ..) = response
   case status {
     204 -> Ok(Nil) |> Ok
-    _ -> "API doesn't describe default response" |> Error |> Ok
+    _ -> response |> Error |> Ok
   }
 }
 
@@ -24891,10 +25072,11 @@ pub fn dependabot_create_or_update_org_secret_request(
 }
 
 pub fn dependabot_create_or_update_org_secret_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, body:, ..) = response
   case status {
-    204 -> Ok(Nil) |> Ok
-    _ -> "API doesn't describe default response" |> Error |> Ok
+    201 ->
+      json.parse_bits(body, schema.empty_object_decoder()) |> result.map(Ok)
+    _ -> response |> Error |> Ok
   }
 }
 
@@ -24909,12 +25091,12 @@ pub fn dependabot_get_org_secret_request(base, org, secret_name) {
 }
 
 pub fn dependabot_get_org_secret_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, body:, ..) = response
   case status {
     200 ->
-      utils.decode_bits(body, schema.organization_dependabot_secret_decoder())
+      json.parse_bits(body, schema.organization_dependabot_secret_decoder())
       |> result.map(Ok)
-    _ -> "API doesn't describe default response" |> Error |> Ok
+    _ -> response |> Error |> Ok
   }
 }
 
@@ -24938,12 +25120,12 @@ pub fn licenses_get_all_commonly_used_request(
 }
 
 pub fn licenses_get_all_commonly_used_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, body:, ..) = response
   case status {
     200 ->
-      utils.decode_bits(body, zero.list(schema.license_simple_decoder()))
+      json.parse_bits(body, decode.list(schema.license_simple_decoder()))
       |> result.map(Ok)
-    _ -> "API doesn't describe default response" |> Error |> Ok
+    _ -> response |> Error |> Ok
   }
 }
 
@@ -24958,12 +25140,12 @@ pub fn codespaces_export_for_authenticated_user_request(base, codespace_name) {
 }
 
 pub fn codespaces_export_for_authenticated_user_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, body:, ..) = response
   case status {
     202 ->
-      utils.decode_bits(body, schema.codespace_export_details_decoder())
+      json.parse_bits(body, schema.codespace_export_details_decoder())
       |> result.map(Ok)
-    _ -> "API doesn't describe default response" |> Error |> Ok
+    _ -> response |> Error |> Ok
   }
 }
 
@@ -24991,12 +25173,12 @@ pub fn apps_list_accounts_for_plan_request(
 }
 
 pub fn apps_list_accounts_for_plan_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, body:, ..) = response
   case status {
     200 ->
-      utils.decode_bits(body, zero.list(schema.marketplace_purchase_decoder()))
+      json.parse_bits(body, decode.list(schema.marketplace_purchase_decoder()))
       |> result.map(Ok)
-    _ -> "API doesn't describe default response" |> Error |> Ok
+    _ -> response |> Error |> Ok
   }
 }
 
@@ -25025,12 +25207,12 @@ pub fn packages_get_all_package_versions_for_package_owned_by_user_request(
 pub fn packages_get_all_package_versions_for_package_owned_by_user_response(
   response,
 ) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, body:, ..) = response
   case status {
     200 ->
-      utils.decode_bits(body, zero.list(schema.package_version_decoder()))
+      json.parse_bits(body, decode.list(schema.package_version_decoder()))
       |> result.map(Ok)
-    _ -> "API doesn't describe default response" |> Error |> Ok
+    _ -> response |> Error |> Ok
   }
 }
 
@@ -25045,12 +25227,12 @@ pub fn actions_list_runner_applications_for_org_request(base, org) {
 }
 
 pub fn actions_list_runner_applications_for_org_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, body:, ..) = response
   case status {
     200 ->
-      utils.decode_bits(body, zero.list(schema.runner_application_decoder()))
+      json.parse_bits(body, decode.list(schema.runner_application_decoder()))
       |> result.map(Ok)
-    _ -> "API doesn't describe default response" |> Error |> Ok
+    _ -> response |> Error |> Ok
   }
 }
 
@@ -25066,10 +25248,10 @@ pub fn activity_delete_thread_subscription_request(base, thread_id) {
 }
 
 pub fn activity_delete_thread_subscription_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, ..) = response
   case status {
     204 -> Ok(Nil) |> Ok
-    _ -> "API doesn't describe default response" |> Error |> Ok
+    _ -> response |> Error |> Ok
   }
 }
 
@@ -25087,12 +25269,12 @@ pub fn activity_set_thread_subscription_request(base, thread_id, data) {
 }
 
 pub fn activity_set_thread_subscription_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, body:, ..) = response
   case status {
     200 ->
-      utils.decode_bits(body, schema.thread_subscription_decoder())
+      json.parse_bits(body, schema.thread_subscription_decoder())
       |> result.map(Ok)
-    _ -> "API doesn't describe default response" |> Error |> Ok
+    _ -> response |> Error |> Ok
   }
 }
 
@@ -25113,12 +25295,12 @@ pub fn activity_get_thread_subscription_for_authenticated_user_request(
 pub fn activity_get_thread_subscription_for_authenticated_user_response(
   response,
 ) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, body:, ..) = response
   case status {
     200 ->
-      utils.decode_bits(body, schema.thread_subscription_decoder())
+      json.parse_bits(body, schema.thread_subscription_decoder())
       |> result.map(Ok)
-    _ -> "API doesn't describe default response" |> Error |> Ok
+    _ -> response |> Error |> Ok
   }
 }
 
@@ -25135,10 +25317,10 @@ pub fn git_create_tree_request(base, owner, repo, data) {
 }
 
 pub fn git_create_tree_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, body:, ..) = response
   case status {
-    201 -> utils.decode_bits(body, schema.git_tree_decoder()) |> result.map(Ok)
-    _ -> "API doesn't describe default response" |> Error |> Ok
+    201 -> json.parse_bits(body, schema.git_tree_decoder()) |> result.map(Ok)
+    _ -> response |> Error |> Ok
   }
 }
 
@@ -25155,10 +25337,10 @@ pub fn repos_create_dispatch_event_request(base, owner, repo, data) {
 }
 
 pub fn repos_create_dispatch_event_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, ..) = response
   case status {
     204 -> Ok(Nil) |> Ok
-    _ -> "API doesn't describe default response" |> Error |> Ok
+    _ -> response |> Error |> Ok
   }
 }
 
@@ -25173,10 +25355,12 @@ pub fn repos_get_contributors_stats_request(base, owner, repo) {
 }
 
 pub fn repos_get_contributors_stats_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, body:, ..) = response
   case status {
-    204 -> Ok(Nil) |> Ok
-    _ -> "API doesn't describe default response" |> Error |> Ok
+    200 ->
+      json.parse_bits(body, decode.list(schema.contributor_activity_decoder()))
+      |> result.map(Ok)
+    _ -> response |> Error |> Ok
   }
 }
 
@@ -25194,12 +25378,12 @@ pub fn gists_list_commits_request(base, gist_id, per_page per_page, page page) {
 }
 
 pub fn gists_list_commits_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, body:, ..) = response
   case status {
     200 ->
-      utils.decode_bits(body, zero.list(schema.gist_commit_decoder()))
+      json.parse_bits(body, decode.list(schema.gist_commit_decoder()))
       |> result.map(Ok)
-    _ -> "API doesn't describe default response" |> Error |> Ok
+    _ -> response |> Error |> Ok
   }
 }
 
@@ -25214,12 +25398,12 @@ pub fn billing_get_github_packages_billing_user_request(base, username) {
 }
 
 pub fn billing_get_github_packages_billing_user_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, body:, ..) = response
   case status {
     200 ->
-      utils.decode_bits(body, schema.packages_billing_usage_decoder())
+      json.parse_bits(body, schema.packages_billing_usage_decoder())
       |> result.map(Ok)
-    _ -> "API doesn't describe default response" |> Error |> Ok
+    _ -> response |> Error |> Ok
   }
 }
 
@@ -25251,12 +25435,12 @@ pub fn issues_list_events_for_timeline_request(
 }
 
 pub fn issues_list_events_for_timeline_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, body:, ..) = response
   case status {
     200 ->
-      utils.decode_bits(body, zero.list(schema.timeline_issue_events_decoder()))
+      json.parse_bits(body, decode.list(schema.timeline_issue_events_decoder()))
       |> result.map(Ok)
-    _ -> "API doesn't describe default response" |> Error |> Ok
+    _ -> response |> Error |> Ok
   }
 }
 
@@ -25271,10 +25455,10 @@ pub fn users_unblock_request(base, username) {
 }
 
 pub fn users_unblock_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, ..) = response
   case status {
     204 -> Ok(Nil) |> Ok
-    _ -> "API doesn't describe default response" |> Error |> Ok
+    _ -> response |> Error |> Ok
   }
 }
 
@@ -25289,10 +25473,10 @@ pub fn users_block_request(base, username) {
 }
 
 pub fn users_block_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, ..) = response
   case status {
     204 -> Ok(Nil) |> Ok
-    _ -> "API doesn't describe default response" |> Error |> Ok
+    _ -> response |> Error |> Ok
   }
 }
 
@@ -25307,10 +25491,10 @@ pub fn users_check_blocked_request(base, username) {
 }
 
 pub fn users_check_blocked_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, ..) = response
   case status {
     204 -> Ok(Nil) |> Ok
-    _ -> "API doesn't describe default response" |> Error |> Ok
+    _ -> response |> Error |> Ok
   }
 }
 
@@ -25338,10 +25522,10 @@ pub fn search_repos_request(
 }
 
 pub fn search_repos_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, body:, ..) = response
   case status {
-    200 -> utils.decode_bits(body, zero.dynamic) |> result.map(Ok)
-    _ -> "API doesn't describe default response" |> Error |> Ok
+    200 -> json.parse_bits(body, decode.dynamic) |> result.map(Ok)
+    _ -> response |> Error |> Ok
   }
 }
 
@@ -25358,10 +25542,10 @@ pub fn orgs_review_pat_grant_requests_in_bulk_request(base, org, data) {
 }
 
 pub fn orgs_review_pat_grant_requests_in_bulk_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, body:, ..) = response
   case status {
-    202 -> utils.decode_bits(body, zero.dynamic) |> result.map(Ok)
-    _ -> "API doesn't describe default response" |> Error |> Ok
+    202 -> json.parse_bits(body, decode.dynamic) |> result.map(Ok)
+    _ -> response |> Error |> Ok
   }
 }
 
@@ -25385,7 +25569,10 @@ pub fn orgs_list_pat_grant_requests_request(
     #("page", option.map(page, int.to_string)),
     #("sort", sort),
     #("direction", direction),
-    #("owner", panic as "owner"),
+    #(
+      "owner",
+      option.map(owner, fn(_) { panic as "query parameter is not supported" }),
+    ),
     #("repository", repository),
     #("permission", permission),
     #("last_used_before", last_used_before),
@@ -25398,17 +25585,17 @@ pub fn orgs_list_pat_grant_requests_request(
 }
 
 pub fn orgs_list_pat_grant_requests_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, body:, ..) = response
   case status {
     200 ->
-      utils.decode_bits(
+      json.parse_bits(
         body,
-        zero.list(
+        decode.list(
           schema.organization_programmatic_access_grant_request_decoder(),
         ),
       )
       |> result.map(Ok)
-    _ -> "API doesn't describe default response" |> Error |> Ok
+    _ -> response |> Error |> Ok
   }
 }
 
@@ -25429,12 +25616,10 @@ pub fn checks_get_suite_request(base, owner, repo, check_suite_id) {
 }
 
 pub fn checks_get_suite_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, body:, ..) = response
   case status {
-    200 ->
-      utils.decode_bits(body, schema.check_suite_decoder())
-      |> result.map(Ok)
-    _ -> "API doesn't describe default response" |> Error |> Ok
+    200 -> json.parse_bits(body, schema.check_suite_decoder()) |> result.map(Ok)
+    _ -> response |> Error |> Ok
   }
 }
 
@@ -25457,7 +25642,7 @@ pub fn repos_create_deployment_branch_policy_request(
   let query = []
   let body =
     utils.json_to_bits(
-      schema.deployment_branch_policy_name_pattern_with_type_to_json(
+      schema.deployment_branch_policy_name_pattern_with_type_encode(
         deployment_branch_policy_name_pattern_with_type,
       ),
     )
@@ -25469,12 +25654,12 @@ pub fn repos_create_deployment_branch_policy_request(
 }
 
 pub fn repos_create_deployment_branch_policy_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, body:, ..) = response
   case status {
     200 ->
-      utils.decode_bits(body, schema.deployment_branch_policy_decoder())
+      json.parse_bits(body, schema.deployment_branch_policy_decoder())
       |> result.map(Ok)
-    _ -> "API doesn't describe default response" |> Error |> Ok
+    _ -> Error(Nil) |> Ok
   }
 }
 
@@ -25506,10 +25691,10 @@ pub fn repos_list_deployment_branch_policies_request(
 }
 
 pub fn repos_list_deployment_branch_policies_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, body:, ..) = response
   case status {
-    200 -> utils.decode_bits(body, zero.dynamic) |> result.map(Ok)
-    _ -> "API doesn't describe default response" |> Error |> Ok
+    200 -> json.parse_bits(body, decode.dynamic) |> result.map(Ok)
+    _ -> response |> Error |> Ok
   }
 }
 
@@ -25524,10 +25709,10 @@ pub fn codespaces_stop_for_authenticated_user_request(base, codespace_name) {
 }
 
 pub fn codespaces_stop_for_authenticated_user_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, body:, ..) = response
   case status {
-    200 -> utils.decode_bits(body, schema.codespace_decoder()) |> result.map(Ok)
-    _ -> "API doesn't describe default response" |> Error |> Ok
+    200 -> json.parse_bits(body, schema.codespace_decoder()) |> result.map(Ok)
+    _ -> response |> Error |> Ok
   }
 }
 
@@ -25557,10 +25742,12 @@ pub fn reactions_create_for_issue_comment_request(
 }
 
 pub fn reactions_create_for_issue_comment_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, body:, ..) = response
   case status {
-    200 -> utils.decode_bits(body, schema.reaction_decoder()) |> result.map(Ok)
-    _ -> "API doesn't describe default response" |> Error |> Ok
+    200 -> json.parse_bits(body, schema.reaction_decoder()) |> result.map(Ok)
+    _ ->
+      json.parse_bits(body, schema.validation_error_decoder())
+      |> result.map(Error)
   }
 }
 
@@ -25594,12 +25781,13 @@ pub fn reactions_list_for_issue_comment_request(
 }
 
 pub fn reactions_list_for_issue_comment_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, body:, ..) = response
   case status {
     200 ->
-      utils.decode_bits(body, zero.list(schema.reaction_decoder()))
+      json.parse_bits(body, decode.list(schema.reaction_decoder()))
       |> result.map(Ok)
-    _ -> "API doesn't describe default response" |> Error |> Ok
+    _ ->
+      json.parse_bits(body, schema.basic_error_decoder()) |> result.map(Error)
   }
 }
 
@@ -25614,7 +25802,7 @@ pub fn actions_set_allowed_actions_repository_request(
     "/repos/" <> owner <> "/" <> repo <> "/actions/permissions/selected-actions"
   let query = []
   let body =
-    utils.json_to_bits(schema.selected_actions_to_json(selected_actions))
+    utils.json_to_bits(schema.selected_actions_encode(selected_actions))
   base
   |> utils.set_method(method)
   |> utils.append_path(path)
@@ -25623,10 +25811,10 @@ pub fn actions_set_allowed_actions_repository_request(
 }
 
 pub fn actions_set_allowed_actions_repository_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, ..) = response
   case status {
     204 -> Ok(Nil) |> Ok
-    _ -> "API doesn't describe default response" |> Error |> Ok
+    _ -> response |> Error |> Ok
   }
 }
 
@@ -25642,12 +25830,12 @@ pub fn actions_get_allowed_actions_repository_request(base, owner, repo) {
 }
 
 pub fn actions_get_allowed_actions_repository_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, body:, ..) = response
   case status {
     200 ->
-      utils.decode_bits(body, schema.selected_actions_decoder())
+      json.parse_bits(body, schema.selected_actions_decoder())
       |> result.map(Ok)
-    _ -> "API doesn't describe default response" |> Error |> Ok
+    _ -> response |> Error |> Ok
   }
 }
 
@@ -25665,15 +25853,16 @@ pub fn apps_list_plans_stubbed_request(base, per_page per_page, page page) {
 }
 
 pub fn apps_list_plans_stubbed_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, body:, ..) = response
   case status {
     200 ->
-      utils.decode_bits(
+      json.parse_bits(
         body,
-        zero.list(schema.marketplace_listing_plan_decoder()),
+        decode.list(schema.marketplace_listing_plan_decoder()),
       )
       |> result.map(Ok)
-    _ -> "API doesn't describe default response" |> Error |> Ok
+    _ ->
+      json.parse_bits(body, schema.basic_error_decoder()) |> result.map(Error)
   }
 }
 
@@ -25695,12 +25884,12 @@ pub fn users_list_followers_for_authenticated_user_request(
 }
 
 pub fn users_list_followers_for_authenticated_user_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, body:, ..) = response
   case status {
     200 ->
-      utils.decode_bits(body, zero.list(schema.simple_user_decoder()))
+      json.parse_bits(body, decode.list(schema.simple_user_decoder()))
       |> result.map(Ok)
-    _ -> "API doesn't describe default response" |> Error |> Ok
+    _ -> response |> Error |> Ok
   }
 }
 
@@ -25715,12 +25904,13 @@ pub fn repos_get_clones_request(base, owner, repo, per per) {
 }
 
 pub fn repos_get_clones_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, body:, ..) = response
   case status {
     200 ->
-      utils.decode_bits(body, schema.clone_traffic_decoder())
+      json.parse_bits(body, schema.clone_traffic_decoder())
       |> result.map(Ok)
-    _ -> "API doesn't describe default response" |> Error |> Ok
+    _ ->
+      json.parse_bits(body, schema.basic_error_decoder()) |> result.map(Error)
   }
 }
 
@@ -25735,10 +25925,10 @@ pub fn repos_disable_vulnerability_alerts_request(base, owner, repo) {
 }
 
 pub fn repos_disable_vulnerability_alerts_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, ..) = response
   case status {
     204 -> Ok(Nil) |> Ok
-    _ -> "API doesn't describe default response" |> Error |> Ok
+    _ -> response |> Error |> Ok
   }
 }
 
@@ -25753,10 +25943,10 @@ pub fn repos_enable_vulnerability_alerts_request(base, owner, repo) {
 }
 
 pub fn repos_enable_vulnerability_alerts_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, ..) = response
   case status {
     204 -> Ok(Nil) |> Ok
-    _ -> "API doesn't describe default response" |> Error |> Ok
+    _ -> response |> Error |> Ok
   }
 }
 
@@ -25771,9 +25961,9 @@ pub fn repos_check_vulnerability_alerts_request(base, owner, repo) {
 }
 
 pub fn repos_check_vulnerability_alerts_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, ..) = response
   case status {
     204 -> Ok(Nil) |> Ok
-    _ -> "API doesn't describe default response" |> Error |> Ok
+    _ -> Error(Nil) |> Ok
   }
 }
