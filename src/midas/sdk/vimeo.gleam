@@ -1,10 +1,4 @@
-import gleam/bit_array
-import gleam/dynamic
-import gleam/http
-import gleam/http/request
-import gleam/http/response
 import gleam/int
-import gleam/json
 import gleam/list
 import gleam/option.{None, Some}
 import gleam/result.{try}
@@ -77,71 +71,8 @@ fn key_find(items, key) {
 }
 
 const api_host = "api.vimeo.com"
-
-fn base_request(token) {
-  request.new()
-  |> request.set_host(api_host)
-  |> request.prepend_header("Authorization", string.append("Bearer ", token))
-}
-
-fn get(token, path) {
-  base_request(token)
-  |> request.set_path(path)
-  |> request.set_body(<<>>)
-}
-
-fn post(token, path, mime, content) {
-  base_request(token)
-  |> request.set_method(http.Post)
-  |> request.set_path(path)
-  |> request.prepend_header("content-type", mime)
-  |> request.set_body(content)
-}
-
-pub fn my_videos(token) {
-  let request = my_videos_request(token)
-  use response <- t.do(t.fetch(request))
-  use response <- t.try(my_videos_response(response))
-  t.Done(response)
-}
-
-pub fn my_videos_request(token) {
-  let path = "/me/videos"
-  get(token, path)
-}
-
-pub fn my_videos_response(response: response.Response(BitArray)) {
-  use json <- try(
-    bit_array.to_string(response.body)
-    |> result.replace_error(snag.new("not utf8 encoded")),
-  )
-  let decoder = dynamic.field("data", dynamic.list(video_decoder))
-  use videos <- try(
-    json.decode_bits(response.body, decoder)
-    |> result.replace_error(snag.new("failed to decode vieos")),
-  )
-  Ok(videos)
-}
-
-pub type Video {
-  Video(
-    name: String,
-    link: String,
-    duration: Int,
-    created_time: String,
-    plays: Int,
-    has_audio: Bool,
-  )
-}
-
-pub fn video_decoder(data) {
-  dynamic.decode6(
-    Video,
-    dynamic.field("name", dynamic.string),
-    dynamic.field("link", dynamic.string),
-    dynamic.field("duration", dynamic.int),
-    dynamic.field("created_time", dynamic.string),
-    dynamic.field("stats", dynamic.field("plays", dynamic.int)),
-    dynamic.field("has_audio", dynamic.bool),
-  )(data)
-}
+// fn base_request(token) {
+//   request.new()
+//   |> request.set_host(api_host)
+//   |> request.prepend_header("Authorization", string.append("Bearer ", token))
+// }
