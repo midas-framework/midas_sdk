@@ -16,7 +16,8 @@ target = "javascript"
 [dependencies]
 gleam_stdlib = ">= 0.44.0 and < 2.0.0"
 snag = ">= 1.1.0 and < 2.0.0"
-oas_generator = { git = "git@github.com:crowdhailer/oas_generator", ref = "main" }
+# oas_generator = { git = "git@github.com:crowdhailer/oas_generator", ref = "main" }
+oas_generator = {path = "../../../../oas_generator"}
 gleam_http = ">= 3.7.2 and < 4.0.0"
 midas = ">= 1.4.1 and < 2.0.0"
 gleam_json = ">= 2.3.0 and < 3.0.0"

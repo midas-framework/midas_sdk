@@ -26,7 +26,7 @@ packages = [
   { name = "midas", version = "1.4.1", build_tools = ["gleam"], requirements = ["filepath", "gleam_http", "gleam_json", "gleam_stdlib", "snag"], otp_app = "midas", source = "hex", outer_checksum = "5D0C9F924D527DCA35D818A2D87A1ED0923FA3CAF59976F1A2D1C970A30C9C07" },
   { name = "midas_node", version = "1.2.6", build_tools = ["gleam"], requirements = ["filepath", "gleam_fetch", "gleam_http", "gleam_javascript", "gleam_json", "gleam_package_interface", "gleam_stdlib", "glen", "glen_node", "javascript_mutable_reference", "midas", "plinth", "shellout", "simplifile", "snag"], otp_app = "midas_node", source = "hex", outer_checksum = "B81500DEE4094612BC89D257CAF517AEE433B79D930EC9AF5381BE1B664F546B" },
   { name = "oas", version = "2.0.0", build_tools = ["gleam"], requirements = ["gleam_http", "gleam_stdlib"], otp_app = "oas", source = "hex", outer_checksum = "FD3B052F48FA9470005E5A1A1F281D495FF25274DB4A38FA38C36B4BF72A189E" },
-  { name = "oas_generator", version = "1.0.0", build_tools = ["gleam"], requirements = ["glance", "glance_printer", "gleam_http", "gleam_stdlib", "justin", "midas_node", "oas", "snag"], source = "git", repo = "git@github.com:crowdhailer/oas_generator", commit = "697725e0bd052396bdeab3ecf080423b8db015c9" },
+  { name = "oas_generator", version = "1.0.0", build_tools = ["gleam"], requirements = ["glance", "glance_printer", "gleam_http", "gleam_stdlib", "justin", "midas_node", "oas", "snag"], source = "local", path = "../../../../oas_generator" },
   { name = "plinth", version = "0.5.9", build_tools = ["gleam"], requirements = ["conversation", "gleam_javascript", "gleam_json", "gleam_stdlib"], otp_app = "plinth", source = "hex", outer_checksum = "9684C5D768F99B34537B48B100509389C45D2E7C045426E93ACB250993611724" },
   { name = "shellout", version = "1.7.0", build_tools = ["gleam"], requirements = ["gleam_stdlib"], otp_app = "shellout", source = "hex", outer_checksum = "1BDC03438FEB97A6AF3E396F4ABEB32BECF20DF2452EC9A8C0ACEB7BDDF70B14" },
   { name = "simplifile", version = "2.2.1", build_tools = ["gleam"], requirements = ["filepath", "gleam_stdlib"], otp_app = "simplifile", source = "hex", outer_checksum = "C88E0EE2D509F6D86EB55161D631657675AA7684DAB83822F7E59EB93D9A60E3" },
@@ -39,5 +39,5 @@ gleam_json = { version = ">= 2.3.0 and < 3.0.0" }
 gleam_stdlib = { version = ">= 0.44.0 and < 2.0.0" }
 gleeunit = { version = ">= 1.0.0 and < 2.0.0" }
 midas = { version = ">= 1.4.1 and < 2.0.0" }
-oas_generator = { git = "git@github.com:crowdhailer/oas_generator", ref = "main" }
+oas_generator = { path = "../../../../oas_generator" }
 snag = { version = ">= 1.1.0 and < 2.0.0" }
