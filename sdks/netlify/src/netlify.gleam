@@ -1,5 +1,5 @@
 import gleam/bit_array
-import gleam/dynamic
+import gleam/dynamic/decode
 import gleam/http
 import gleam/http/request
 import gleam/int
@@ -9,9 +9,8 @@ import gleam/option.{None, Some}
 import gleam/result.{try}
 import gleam/string
 import gleam/uri.{Uri}
-import midas/sdk/netlify/operations
-import midas/sdk/netlify/schema
 import midas/task as t
+import netlify/operations
 import snag
 
 pub type App {
@@ -91,14 +90,15 @@ pub fn deploy_site(token, site_id, files) {
   })
   let assert Ok(body) = bit_array.to_string(body)
   let assert Ok(data) =
-    json.decode(body, dynamic.field("state", dynamic.string))
+    json.parse(body, decode.field("state", decode.string, decode.success))
   t.Done(data)
 }
 
-fn base_request(token) {
+pub fn base_request(token) {
   request.new()
   |> request.set_host(api_host)
   |> request.prepend_header("Authorization", string.append("Bearer ", token))
+  |> request.set_path("/api/v1")
   |> request.set_body(<<>>)
 }
 
@@ -112,14 +112,10 @@ fn post(token, path, mime, content) {
 
 fn handle_errors(response) {
   case response {
-    Ok(Ok(data)) -> Ok(data)
-    Ok(Error(schema.Error(message: message, ..))) ->
-      snag.new(option.unwrap(message, "no error message"))
-      |> snag.layer("error from api")
-      |> Error
+    Ok(response) -> Ok(response)
     Error(reason) ->
       snag.new(string.inspect(reason))
-      |> snag.layer("failed to decode sites")
+      |> snag.layer("failed to decode")
       |> Error
   }
 }
@@ -397,13 +393,13 @@ pub fn get_site_dev_server_hook(token, site_id, id) {
   t.Done(data)
 }
 
-// pub fn purge_cache(token, purge) {
-//   let request = base_request(token)
-//   let request = operations.purge_cache_request(request, purge)
-//   use response <- t.do(t.fetch(request))
-//   use data <- t.try(handle_errors(operations.purge_cache_response(response)))
-//   t.Done(data)
-// }
+pub fn purge_cache(token, purge) {
+  let request = base_request(token)
+  let request = operations.purge_cache_request(request, purge)
+  use response <- t.do(t.fetch(request))
+  use data <- t.try(handle_errors(operations.purge_cache_response(response)))
+  t.Done(data)
+}
 
 pub fn list_site_deployed_branches(token, site_id) {
   let request = base_request(token)
@@ -727,13 +723,13 @@ pub fn list_form_submission(
   t.Done(data)
 }
 
-// pub fn delete_hook(token, hook_id) {
-//   let request = base_request(token)
-//   let request = operations.delete_hook_request(request, hook_id)
-//   use response <- t.do(t.fetch(request))
-//   use data <- t.try(handle_errors(operations.delete_hook_response(response)))
-//   t.Done(data)
-// }
+pub fn delete_hook(token, hook_id) {
+  let request = base_request(token)
+  let request = operations.delete_hook_request(request, hook_id)
+  use response <- t.do(t.fetch(request))
+  use data <- t.try(handle_errors(operations.delete_hook_response(response)))
+  t.Done(data)
+}
 
 pub fn update_hook(token, hook_id, hook) {
   let request = base_request(token)
@@ -941,10 +937,10 @@ pub fn list_sites_for_account(
   t.Done(data)
 }
 
-pub fn upload_deploy_file(token, deploy_id, path, size size) {
+pub fn upload_deploy_file(token, deploy_id, path_, size size) {
   let request = base_request(token)
   let request =
-    operations.upload_deploy_file_request(request, deploy_id, path, size)
+    operations.upload_deploy_file_request(request, deploy_id, path_, size)
   use response <- t.do(t.fetch(request))
   use data <- t.try(
     handle_errors(operations.upload_deploy_file_response(response)),
@@ -1109,9 +1105,10 @@ pub fn get_account(token, account_id) {
   t.Done(data)
 }
 
-pub fn create_env_vars(token, account_id, site_id site_id) {
+pub fn create_env_vars(token, account_id, data, site_id site_id) {
   let request = base_request(token)
-  let request = operations.create_env_vars_request(request, account_id, site_id)
+  let request =
+    operations.create_env_vars_request(request, account_id, data, site_id)
   use response <- t.do(t.fetch(request))
   use data <- t.try(
     handle_errors(operations.create_env_vars_response(response)),
@@ -1437,16 +1434,16 @@ pub fn update_site_build_log(token, build_id) {
   t.Done(data)
 }
 
-// pub fn get_site_dev_server(token, site_id, dev_server_id) {
-//   let request = base_request(token)
-//   let request =
-//     operations.get_site_dev_server_request(request, site_id, dev_server_id)
-//   use response <- t.do(t.fetch(request))
-//   use data <- t.try(
-//     handle_errors(operations.get_site_dev_server_response(response)),
-//   )
-//   t.Done(data)
-// }
+pub fn get_site_dev_server(token, site_id, dev_server_id) {
+  let request = base_request(token)
+  let request =
+    operations.get_site_dev_server_request(request, site_id, dev_server_id)
+  use response <- t.do(t.fetch(request))
+  use data <- t.try(
+    handle_errors(operations.get_site_dev_server_response(response)),
+  )
+  t.Done(data)
+}
 
 pub fn delete_site_form(token, site_id, form_id) {
   let request = base_request(token)
@@ -1564,15 +1561,15 @@ pub fn get_site_snippet(token, site_id, snippet_id) {
   t.Done(data)
 }
 
-// pub fn unlink_site_repo(token, site_id) {
-//   let request = base_request(token)
-//   let request = operations.unlink_site_repo_request(request, site_id)
-//   use response <- t.do(t.fetch(request))
-//   use data <- t.try(
-//     handle_errors(operations.unlink_site_repo_response(response)),
-//   )
-//   t.Done(data)
-// }
+pub fn unlink_site_repo(token, site_id) {
+  let request = base_request(token)
+  let request = operations.unlink_site_repo_request(request, site_id)
+  use response <- t.do(t.fetch(request))
+  use data <- t.try(
+    handle_errors(operations.unlink_site_repo_response(response)),
+  )
+  t.Done(data)
+}
 
 pub fn create_dns_zone(token, dns_zone_setup) {
   let request = base_request(token)

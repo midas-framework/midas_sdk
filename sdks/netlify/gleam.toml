@@ -1,0 +1,19 @@
+name = "netlify"
+version = "1.0.0"
+target = "javascript"
+description = "Gleam client for the netlify API"
+licences = ["Apache-2.0"]
+repository = { type = "github", user = "midas-framework", repo = "midas_sdk", path = "sdks/netlify" }
+links = []
+
+
+[dependencies]
+gleam_stdlib = ">= 0.44.0 and < 2.0.0"
+snag = ">= 1.1.0 and < 2.0.0"
+gleam_http = ">= 3.7.2 and < 4.0.0"
+midas = ">= 1.4.1 and < 2.0.0"
+gleam_json = ">= 2.3.0 and < 3.0.0"
+
+[dev-dependencies]
+gleeunit = ">= 1.0.0 and < 2.0.0"
+oas_generator = ">= 1.0.0 and < 2.0.0"

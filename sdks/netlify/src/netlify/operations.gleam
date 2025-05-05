@@ -1,13 +1,13 @@
-import decode/zero
 import gleam/bool
+import gleam/dynamic/decode
 import gleam/http
 import gleam/http/response
 import gleam/int
+import gleam/json
 import gleam/option
 import gleam/result
-import midas/sdk/netlify/schema
-import midas/sdk/utils
-import midas/task
+import netlify/schema
+import netlify/utils
 
 pub fn enable_hook_request(base, hook_id) {
   let method = http.Post
@@ -20,10 +20,10 @@ pub fn enable_hook_request(base, hook_id) {
 }
 
 pub fn enable_hook_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, body:, ..) = response
   case status {
-    200 -> utils.decode_bits(body, schema.hook_decoder()) |> result.map(Ok)
-    _ -> utils.decode_bits(body, schema.error_decoder()) |> result.map(Error)
+    200 -> json.parse_bits(body, schema.hook_decoder()) |> result.map(Ok)
+    _ -> json.parse_bits(body, schema.error_decoder()) |> result.map(Error)
   }
 }
 
@@ -38,12 +38,12 @@ pub fn search_site_functions_request(base, site_id, filter filter) {
 }
 
 pub fn search_site_functions_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, body:, ..) = response
   case status {
     200 ->
-      utils.decode_bits(body, zero.list(schema.site_function_decoder()))
+      json.parse_bits(body, decode.list(schema.site_function_decoder()))
       |> result.map(Ok)
-    _ -> utils.decode_bits(body, schema.error_decoder()) |> result.map(Error)
+    _ -> json.parse_bits(body, schema.error_decoder()) |> result.map(Error)
   }
 }
 
@@ -58,12 +58,12 @@ pub fn list_account_types_for_user_request(base) {
 }
 
 pub fn list_account_types_for_user_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, body:, ..) = response
   case status {
     200 ->
-      utils.decode_bits(body, zero.list(schema.account_type_decoder()))
+      json.parse_bits(body, decode.list(schema.account_type_decoder()))
       |> result.map(Ok)
-    _ -> utils.decode_bits(body, schema.error_decoder()) |> result.map(Error)
+    _ -> json.parse_bits(body, schema.error_decoder()) |> result.map(Error)
   }
 }
 
@@ -90,12 +90,12 @@ pub fn create_site_asset_request(
 }
 
 pub fn create_site_asset_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, body:, ..) = response
   case status {
     201 ->
-      utils.decode_bits(body, schema.asset_signature_decoder())
+      json.parse_bits(body, schema.asset_signature_decoder())
       |> result.map(Ok)
-    _ -> utils.decode_bits(body, schema.error_decoder()) |> result.map(Error)
+    _ -> json.parse_bits(body, schema.error_decoder()) |> result.map(Error)
   }
 }
 
@@ -110,12 +110,12 @@ pub fn list_site_assets_request(base, site_id) {
 }
 
 pub fn list_site_assets_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, body:, ..) = response
   case status {
     200 ->
-      utils.decode_bits(body, zero.list(schema.asset_decoder()))
+      json.parse_bits(body, decode.list(schema.asset_decoder()))
       |> result.map(Ok)
-    _ -> utils.decode_bits(body, schema.error_decoder()) |> result.map(Error)
+    _ -> json.parse_bits(body, schema.error_decoder()) |> result.map(Error)
   }
 }
 
@@ -128,7 +128,7 @@ pub fn add_member_to_account_request(
   let path = "/" <> account_slug <> "/members"
   let query = []
   let body =
-    utils.json_to_bits(schema.account_add_member_setup_to_json(
+    utils.json_to_bits(schema.account_add_member_setup_encode(
       account_add_member_setup,
     ))
   base
@@ -139,12 +139,12 @@ pub fn add_member_to_account_request(
 }
 
 pub fn add_member_to_account_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, body:, ..) = response
   case status {
     200 ->
-      utils.decode_bits(body, zero.list(schema.member_decoder()))
+      json.parse_bits(body, decode.list(schema.member_decoder()))
       |> result.map(Ok)
-    _ -> utils.decode_bits(body, schema.error_decoder()) |> result.map(Error)
+    _ -> json.parse_bits(body, schema.error_decoder()) |> result.map(Error)
   }
 }
 
@@ -159,12 +159,12 @@ pub fn list_members_for_account_request(base, account_slug) {
 }
 
 pub fn list_members_for_account_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, body:, ..) = response
   case status {
     200 ->
-      utils.decode_bits(body, zero.list(schema.member_decoder()))
+      json.parse_bits(body, decode.list(schema.member_decoder()))
       |> result.map(Ok)
-    _ -> utils.decode_bits(body, schema.error_decoder()) |> result.map(Error)
+    _ -> json.parse_bits(body, schema.error_decoder()) |> result.map(Error)
   }
 }
 
@@ -173,7 +173,7 @@ pub fn update_split_test_request(base, site_id, split_test_id, split_test_setup)
   let path = "/sites/" <> site_id <> "/traffic_splits/" <> split_test_id
   let query = []
   let body =
-    utils.json_to_bits(schema.split_test_setup_to_json(split_test_setup))
+    utils.json_to_bits(schema.split_test_setup_encode(split_test_setup))
   base
   |> utils.set_method(method)
   |> utils.append_path(path)
@@ -182,11 +182,10 @@ pub fn update_split_test_request(base, site_id, split_test_id, split_test_setup)
 }
 
 pub fn update_split_test_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, body:, ..) = response
   case status {
-    201 ->
-      utils.decode_bits(body, schema.split_test_decoder()) |> result.map(Ok)
-    _ -> utils.decode_bits(body, schema.error_decoder()) |> result.map(Error)
+    201 -> json.parse_bits(body, schema.split_test_decoder()) |> result.map(Ok)
+    _ -> json.parse_bits(body, schema.error_decoder()) |> result.map(Error)
   }
 }
 
@@ -201,11 +200,10 @@ pub fn get_split_test_request(base, site_id, split_test_id) {
 }
 
 pub fn get_split_test_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, body:, ..) = response
   case status {
-    200 ->
-      utils.decode_bits(body, schema.split_test_decoder()) |> result.map(Ok)
-    _ -> utils.decode_bits(body, schema.error_decoder()) |> result.map(Error)
+    200 -> json.parse_bits(body, schema.split_test_decoder()) |> result.map(Ok)
+    _ -> json.parse_bits(body, schema.error_decoder()) |> result.map(Error)
   }
 }
 
@@ -220,10 +218,10 @@ pub fn delete_dns_zone_request(base, zone_id) {
 }
 
 pub fn delete_dns_zone_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, body:, ..) = response
   case status {
     204 -> Ok(Nil) |> Ok
-    _ -> utils.decode_bits(body, schema.error_decoder()) |> result.map(Error)
+    _ -> json.parse_bits(body, schema.error_decoder()) |> result.map(Error)
   }
 }
 
@@ -238,10 +236,10 @@ pub fn get_dns_zone_request(base, zone_id) {
 }
 
 pub fn get_dns_zone_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, body:, ..) = response
   case status {
-    200 -> utils.decode_bits(body, schema.dns_zone_decoder()) |> result.map(Ok)
-    _ -> utils.decode_bits(body, schema.error_decoder()) |> result.map(Error)
+    200 -> json.parse_bits(body, schema.dns_zone_decoder()) |> result.map(Ok)
+    _ -> json.parse_bits(body, schema.error_decoder()) |> result.map(Error)
   }
 }
 
@@ -249,7 +247,7 @@ pub fn create_site_request(base, site_setup, configure_dns configure_dns) {
   let method = http.Post
   let path = "/sites"
   let query = [#("configure_dns", option.map(configure_dns, bool.to_string))]
-  let body = utils.json_to_bits(schema.site_setup_to_json(site_setup))
+  let body = utils.json_to_bits(schema.site_setup_encode(site_setup))
   base
   |> utils.set_method(method)
   |> utils.append_path(path)
@@ -258,10 +256,10 @@ pub fn create_site_request(base, site_setup, configure_dns configure_dns) {
 }
 
 pub fn create_site_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, body:, ..) = response
   case status {
-    201 -> utils.decode_bits(body, schema.site_decoder()) |> result.map(Ok)
-    _ -> utils.decode_bits(body, schema.error_decoder()) |> result.map(Error)
+    201 -> json.parse_bits(body, schema.site_decoder()) |> result.map(Ok)
+    _ -> json.parse_bits(body, schema.error_decoder()) |> result.map(Error)
   }
 }
 
@@ -287,12 +285,12 @@ pub fn list_sites_request(
 }
 
 pub fn list_sites_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, body:, ..) = response
   case status {
     200 ->
-      utils.decode_bits(body, zero.list(schema.site_decoder()))
+      json.parse_bits(body, decode.list(schema.site_decoder()))
       |> result.map(Ok)
-    _ -> utils.decode_bits(body, schema.error_decoder()) |> result.map(Error)
+    _ -> json.parse_bits(body, schema.error_decoder()) |> result.map(Error)
   }
 }
 
@@ -307,10 +305,10 @@ pub fn delete_env_var_value_request(base, account_id, key, id, site_id site_id) 
 }
 
 pub fn delete_env_var_value_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, body:, ..) = response
   case status {
     204 -> Ok(Nil) |> Ok
-    _ -> utils.decode_bits(body, schema.error_decoder()) |> result.map(Error)
+    _ -> json.parse_bits(body, schema.error_decoder()) |> result.map(Error)
   }
 }
 
@@ -325,11 +323,10 @@ pub fn create_deploy_key_request(base) {
 }
 
 pub fn create_deploy_key_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, body:, ..) = response
   case status {
-    201 ->
-      utils.decode_bits(body, schema.deploy_key_decoder()) |> result.map(Ok)
-    _ -> utils.decode_bits(body, schema.error_decoder()) |> result.map(Error)
+    201 -> json.parse_bits(body, schema.deploy_key_decoder()) |> result.map(Ok)
+    _ -> json.parse_bits(body, schema.error_decoder()) |> result.map(Error)
   }
 }
 
@@ -344,12 +341,12 @@ pub fn list_deploy_keys_request(base) {
 }
 
 pub fn list_deploy_keys_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, body:, ..) = response
   case status {
     200 ->
-      utils.decode_bits(body, zero.list(schema.deploy_key_decoder()))
+      json.parse_bits(body, decode.list(schema.deploy_key_decoder()))
       |> result.map(Ok)
-    _ -> utils.decode_bits(body, schema.error_decoder()) |> result.map(Error)
+    _ -> json.parse_bits(body, schema.error_decoder()) |> result.map(Error)
   }
 }
 
@@ -374,10 +371,10 @@ pub fn transfer_dns_zone_request(
 }
 
 pub fn transfer_dns_zone_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, body:, ..) = response
   case status {
-    200 -> utils.decode_bits(body, schema.dns_zone_decoder()) |> result.map(Ok)
-    _ -> utils.decode_bits(body, schema.error_decoder()) |> result.map(Error)
+    200 -> json.parse_bits(body, schema.dns_zone_decoder()) |> result.map(Ok)
+    _ -> json.parse_bits(body, schema.error_decoder()) |> result.map(Error)
   }
 }
 
@@ -393,10 +390,10 @@ pub fn enable_split_test_request(base, site_id, split_test_id) {
 }
 
 pub fn enable_split_test_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, body:, ..) = response
   case status {
     204 -> Ok(Nil) |> Ok
-    _ -> utils.decode_bits(body, schema.error_decoder()) |> result.map(Error)
+    _ -> json.parse_bits(body, schema.error_decoder()) |> result.map(Error)
   }
 }
 
@@ -411,10 +408,10 @@ pub fn get_site_file_by_path_name_request(base, site_id, file_path) {
 }
 
 pub fn get_site_file_by_path_name_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, body:, ..) = response
   case status {
-    200 -> utils.decode_bits(body, schema.file_decoder()) |> result.map(Ok)
-    _ -> utils.decode_bits(body, schema.error_decoder()) |> result.map(Error)
+    200 -> json.parse_bits(body, schema.file_decoder()) |> result.map(Ok)
+    _ -> json.parse_bits(body, schema.error_decoder()) |> result.map(Error)
   }
 }
 
@@ -429,10 +426,10 @@ pub fn delete_site_dev_server_hook_request(base, site_id, id) {
 }
 
 pub fn delete_site_dev_server_hook_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, body:, ..) = response
   case status {
     204 -> Ok(Nil) |> Ok
-    _ -> utils.decode_bits(body, schema.error_decoder()) |> result.map(Error)
+    _ -> json.parse_bits(body, schema.error_decoder()) |> result.map(Error)
   }
 }
 
@@ -446,7 +443,7 @@ pub fn update_site_dev_server_hook_request(
   let path = "/sites/" <> site_id <> "/dev_server_hooks/" <> id
   let query = []
   let body =
-    utils.json_to_bits(schema.dev_server_hook_setup_to_json(
+    utils.json_to_bits(schema.dev_server_hook_setup_encode(
       dev_server_hook_setup,
     ))
   base
@@ -457,10 +454,10 @@ pub fn update_site_dev_server_hook_request(
 }
 
 pub fn update_site_dev_server_hook_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, body:, ..) = response
   case status {
     204 -> Ok(Nil) |> Ok
-    _ -> utils.decode_bits(body, schema.error_decoder()) |> result.map(Error)
+    _ -> json.parse_bits(body, schema.error_decoder()) |> result.map(Error)
   }
 }
 
@@ -475,12 +472,12 @@ pub fn get_site_dev_server_hook_request(base, site_id, id) {
 }
 
 pub fn get_site_dev_server_hook_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, body:, ..) = response
   case status {
     200 ->
-      utils.decode_bits(body, schema.dev_server_hook_decoder())
+      json.parse_bits(body, schema.dev_server_hook_decoder())
       |> result.map(Ok)
-    _ -> utils.decode_bits(body, schema.error_decoder()) |> result.map(Error)
+    _ -> json.parse_bits(body, schema.error_decoder()) |> result.map(Error)
   }
 }
 
@@ -488,7 +485,7 @@ pub fn purge_cache_request(base, purge) {
   let method = http.Post
   let path = "/purge"
   let query = []
-  let body = utils.json_to_bits(schema.purge_to_json(purge))
+  let body = utils.json_to_bits(schema.purge_encode(purge))
   base
   |> utils.set_method(method)
   |> utils.append_path(path)
@@ -497,10 +494,10 @@ pub fn purge_cache_request(base, purge) {
 }
 
 pub fn purge_cache_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, ..) = response
   case status {
     202 -> Ok(Nil) |> Ok
-    _ -> "API doesn't describe default response" |> Error |> Ok
+    _ -> Error(Nil) |> Ok
   }
 }
 
@@ -515,12 +512,12 @@ pub fn list_site_deployed_branches_request(base, site_id) {
 }
 
 pub fn list_site_deployed_branches_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, body:, ..) = response
   case status {
     200 ->
-      utils.decode_bits(body, zero.list(schema.deployed_branch_decoder()))
+      json.parse_bits(body, decode.list(schema.deployed_branch_decoder()))
       |> result.map(Ok)
-    _ -> utils.decode_bits(body, schema.error_decoder()) |> result.map(Error)
+    _ -> json.parse_bits(body, schema.error_decoder()) |> result.map(Error)
   }
 }
 
@@ -547,12 +544,12 @@ pub fn list_account_audit_events_request(
 }
 
 pub fn list_account_audit_events_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, body:, ..) = response
   case status {
     200 ->
-      utils.decode_bits(body, zero.list(schema.audit_log_decoder()))
+      json.parse_bits(body, decode.list(schema.audit_log_decoder()))
       |> result.map(Ok)
-    _ -> utils.decode_bits(body, schema.error_decoder()) |> result.map(Error)
+    _ -> json.parse_bits(body, schema.error_decoder()) |> result.map(Error)
   }
 }
 
@@ -567,10 +564,10 @@ pub fn show_ticket_request(base, ticket_id) {
 }
 
 pub fn show_ticket_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, body:, ..) = response
   case status {
-    200 -> utils.decode_bits(body, schema.ticket_decoder()) |> result.map(Ok)
-    _ -> utils.decode_bits(body, schema.error_decoder()) |> result.map(Error)
+    200 -> json.parse_bits(body, schema.ticket_decoder()) |> result.map(Ok)
+    _ -> json.parse_bits(body, schema.error_decoder()) |> result.map(Error)
   }
 }
 
@@ -585,12 +582,12 @@ pub fn list_site_files_request(base, site_id) {
 }
 
 pub fn list_site_files_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, body:, ..) = response
   case status {
     200 ->
-      utils.decode_bits(body, zero.list(schema.file_decoder()))
+      json.parse_bits(body, decode.list(schema.file_decoder()))
       |> result.map(Ok)
-    _ -> utils.decode_bits(body, schema.error_decoder()) |> result.map(Error)
+    _ -> json.parse_bits(body, schema.error_decoder()) |> result.map(Error)
   }
 }
 
@@ -599,7 +596,7 @@ pub fn create_site_dev_server_hook_request(base, site_id, dev_server_hook_setup)
   let path = "/sites/" <> site_id <> "/dev_server_hooks"
   let query = []
   let body =
-    utils.json_to_bits(schema.dev_server_hook_setup_to_json(
+    utils.json_to_bits(schema.dev_server_hook_setup_encode(
       dev_server_hook_setup,
     ))
   base
@@ -610,12 +607,12 @@ pub fn create_site_dev_server_hook_request(base, site_id, dev_server_hook_setup)
 }
 
 pub fn create_site_dev_server_hook_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, body:, ..) = response
   case status {
     201 ->
-      utils.decode_bits(body, schema.dev_server_hook_decoder())
+      json.parse_bits(body, schema.dev_server_hook_decoder())
       |> result.map(Ok)
-    _ -> utils.decode_bits(body, schema.error_decoder()) |> result.map(Error)
+    _ -> json.parse_bits(body, schema.error_decoder()) |> result.map(Error)
   }
 }
 
@@ -630,12 +627,12 @@ pub fn list_site_dev_server_hooks_request(base, site_id) {
 }
 
 pub fn list_site_dev_server_hooks_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, body:, ..) = response
   case status {
     200 ->
-      utils.decode_bits(body, zero.list(schema.dev_server_hook_decoder()))
+      json.parse_bits(body, decode.list(schema.dev_server_hook_decoder()))
       |> result.map(Ok)
-    _ -> utils.decode_bits(body, schema.error_decoder()) |> result.map(Error)
+    _ -> json.parse_bits(body, schema.error_decoder()) |> result.map(Error)
   }
 }
 
@@ -644,7 +641,7 @@ pub fn create_dns_record_request(base, zone_id, dns_record_create) {
   let path = "/dns_zones/" <> zone_id <> "/dns_records"
   let query = []
   let body =
-    utils.json_to_bits(schema.dns_record_create_to_json(dns_record_create))
+    utils.json_to_bits(schema.dns_record_create_encode(dns_record_create))
   base
   |> utils.set_method(method)
   |> utils.append_path(path)
@@ -653,11 +650,10 @@ pub fn create_dns_record_request(base, zone_id, dns_record_create) {
 }
 
 pub fn create_dns_record_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, body:, ..) = response
   case status {
-    201 ->
-      utils.decode_bits(body, schema.dns_record_decoder()) |> result.map(Ok)
-    _ -> utils.decode_bits(body, schema.error_decoder()) |> result.map(Error)
+    201 -> json.parse_bits(body, schema.dns_record_decoder()) |> result.map(Ok)
+    _ -> json.parse_bits(body, schema.error_decoder()) |> result.map(Error)
   }
 }
 
@@ -672,12 +668,10 @@ pub fn get_dns_records_request(base, zone_id) {
 }
 
 pub fn get_dns_records_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, body:, ..) = response
   case status {
-    200 ->
-      utils.decode_bits(body, schema.dns_records_decoder())
-      |> result.map(Ok)
-    _ -> utils.decode_bits(body, schema.error_decoder()) |> result.map(Error)
+    200 -> json.parse_bits(body, schema.dns_records_decoder()) |> result.map(Ok)
+    _ -> json.parse_bits(body, schema.error_decoder()) |> result.map(Error)
   }
 }
 
@@ -692,12 +686,12 @@ pub fn get_current_user_request(base) {
 }
 
 pub fn get_current_user_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, body:, ..) = response
   case status {
     200 ->
-      utils.decode_bits(body, zero.list(schema.user_decoder()))
+      json.parse_bits(body, decode.list(schema.user_decoder()))
       |> result.map(Ok)
-    _ -> utils.decode_bits(body, schema.error_decoder()) |> result.map(Error)
+    _ -> json.parse_bits(body, schema.error_decoder()) |> result.map(Error)
   }
 }
 
@@ -712,10 +706,10 @@ pub fn delete_deploy_key_request(base, key_id) {
 }
 
 pub fn delete_deploy_key_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, body:, ..) = response
   case status {
     204 -> Ok(Nil) |> Ok
-    _ -> utils.decode_bits(body, schema.error_decoder()) |> result.map(Error)
+    _ -> json.parse_bits(body, schema.error_decoder()) |> result.map(Error)
   }
 }
 
@@ -730,11 +724,10 @@ pub fn get_deploy_key_request(base, key_id) {
 }
 
 pub fn get_deploy_key_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, body:, ..) = response
   case status {
-    200 ->
-      utils.decode_bits(body, schema.deploy_key_decoder()) |> result.map(Ok)
-    _ -> utils.decode_bits(body, schema.error_decoder()) |> result.map(Error)
+    200 -> json.parse_bits(body, schema.deploy_key_decoder()) |> result.map(Ok)
+    _ -> json.parse_bits(body, schema.error_decoder()) |> result.map(Error)
   }
 }
 
@@ -749,12 +742,11 @@ pub fn exchange_ticket_request(base, ticket_id) {
 }
 
 pub fn exchange_ticket_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, body:, ..) = response
   case status {
     201 ->
-      utils.decode_bits(body, schema.access_token_decoder())
-      |> result.map(Ok)
-    _ -> utils.decode_bits(body, schema.error_decoder()) |> result.map(Error)
+      json.parse_bits(body, schema.access_token_decoder()) |> result.map(Ok)
+    _ -> json.parse_bits(body, schema.error_decoder()) |> result.map(Error)
   }
 }
 
@@ -763,7 +755,7 @@ pub fn create_split_test_request(base, site_id, split_test_setup) {
   let path = "/sites/" <> site_id <> "/traffic_splits"
   let query = []
   let body =
-    utils.json_to_bits(schema.split_test_setup_to_json(split_test_setup))
+    utils.json_to_bits(schema.split_test_setup_encode(split_test_setup))
   base
   |> utils.set_method(method)
   |> utils.append_path(path)
@@ -772,11 +764,10 @@ pub fn create_split_test_request(base, site_id, split_test_setup) {
 }
 
 pub fn create_split_test_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, body:, ..) = response
   case status {
-    201 ->
-      utils.decode_bits(body, schema.split_test_decoder()) |> result.map(Ok)
-    _ -> utils.decode_bits(body, schema.error_decoder()) |> result.map(Error)
+    201 -> json.parse_bits(body, schema.split_test_decoder()) |> result.map(Ok)
+    _ -> json.parse_bits(body, schema.error_decoder()) |> result.map(Error)
   }
 }
 
@@ -791,12 +782,10 @@ pub fn get_split_tests_request(base, site_id) {
 }
 
 pub fn get_split_tests_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, body:, ..) = response
   case status {
-    200 ->
-      utils.decode_bits(body, schema.split_tests_decoder())
-      |> result.map(Ok)
-    _ -> utils.decode_bits(body, schema.error_decoder()) |> result.map(Error)
+    200 -> json.parse_bits(body, schema.split_tests_decoder()) |> result.map(Ok)
+    _ -> json.parse_bits(body, schema.error_decoder()) |> result.map(Error)
   }
 }
 
@@ -813,10 +802,10 @@ pub fn set_env_var_value_request(base, account_id, key, data, site_id site_id) {
 }
 
 pub fn set_env_var_value_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, body:, ..) = response
   case status {
-    201 -> utils.decode_bits(body, schema.env_var_decoder()) |> result.map(Ok)
-    _ -> utils.decode_bits(body, schema.error_decoder()) |> result.map(Error)
+    201 -> json.parse_bits(body, schema.env_var_decoder()) |> result.map(Ok)
+    _ -> json.parse_bits(body, schema.error_decoder()) |> result.map(Error)
   }
 }
 
@@ -831,10 +820,10 @@ pub fn delete_env_var_request(base, account_id, key, site_id site_id) {
 }
 
 pub fn delete_env_var_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, body:, ..) = response
   case status {
     204 -> Ok(Nil) |> Ok
-    _ -> utils.decode_bits(body, schema.error_decoder()) |> result.map(Error)
+    _ -> json.parse_bits(body, schema.error_decoder()) |> result.map(Error)
   }
 }
 
@@ -851,10 +840,10 @@ pub fn update_env_var_request(base, account_id, key, data, site_id site_id) {
 }
 
 pub fn update_env_var_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, body:, ..) = response
   case status {
-    200 -> utils.decode_bits(body, schema.env_var_decoder()) |> result.map(Ok)
-    _ -> utils.decode_bits(body, schema.error_decoder()) |> result.map(Error)
+    200 -> json.parse_bits(body, schema.env_var_decoder()) |> result.map(Ok)
+    _ -> json.parse_bits(body, schema.error_decoder()) |> result.map(Error)
   }
 }
 
@@ -869,10 +858,10 @@ pub fn get_env_var_request(base, account_id, key, site_id site_id) {
 }
 
 pub fn get_env_var_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, body:, ..) = response
   case status {
-    200 -> utils.decode_bits(body, schema.env_var_decoder()) |> result.map(Ok)
-    _ -> utils.decode_bits(body, schema.error_decoder()) |> result.map(Error)
+    200 -> json.parse_bits(body, schema.env_var_decoder()) |> result.map(Ok)
+    _ -> json.parse_bits(body, schema.error_decoder()) |> result.map(Error)
   }
 }
 
@@ -887,10 +876,10 @@ pub fn cancel_site_deploy_request(base, deploy_id) {
 }
 
 pub fn cancel_site_deploy_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, body:, ..) = response
   case status {
-    201 -> utils.decode_bits(body, schema.deploy_decoder()) |> result.map(Ok)
-    _ -> utils.decode_bits(body, schema.error_decoder()) |> result.map(Error)
+    201 -> json.parse_bits(body, schema.deploy_decoder()) |> result.map(Ok)
+    _ -> json.parse_bits(body, schema.error_decoder()) |> result.map(Error)
   }
 }
 
@@ -905,12 +894,12 @@ pub fn list_payment_methods_for_user_request(base) {
 }
 
 pub fn list_payment_methods_for_user_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, body:, ..) = response
   case status {
     200 ->
-      utils.decode_bits(body, zero.list(schema.payment_method_decoder()))
+      json.parse_bits(body, decode.list(schema.payment_method_decoder()))
       |> result.map(Ok)
-    _ -> utils.decode_bits(body, schema.error_decoder()) |> result.map(Error)
+    _ -> json.parse_bits(body, schema.error_decoder()) |> result.map(Error)
   }
 }
 
@@ -931,10 +920,10 @@ pub fn delete_service_instance_request(base, site_id, addon, instance_id) {
 }
 
 pub fn delete_service_instance_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, body:, ..) = response
   case status {
     204 -> Ok(Nil) |> Ok
-    _ -> utils.decode_bits(body, schema.error_decoder()) |> result.map(Error)
+    _ -> json.parse_bits(body, schema.error_decoder()) |> result.map(Error)
   }
 }
 
@@ -957,10 +946,10 @@ pub fn update_service_instance_request(base, site_id, addon, instance_id, data) 
 }
 
 pub fn update_service_instance_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, body:, ..) = response
   case status {
     204 -> Ok(Nil) |> Ok
-    _ -> utils.decode_bits(body, schema.error_decoder()) |> result.map(Error)
+    _ -> json.parse_bits(body, schema.error_decoder()) |> result.map(Error)
   }
 }
 
@@ -981,12 +970,12 @@ pub fn show_service_instance_request(base, site_id, addon, instance_id) {
 }
 
 pub fn show_service_instance_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, body:, ..) = response
   case status {
     200 ->
-      utils.decode_bits(body, schema.service_instance_decoder())
+      json.parse_bits(body, schema.service_instance_decoder())
       |> result.map(Ok)
-    _ -> utils.decode_bits(body, schema.error_decoder()) |> result.map(Error)
+    _ -> json.parse_bits(body, schema.error_decoder()) |> result.map(Error)
   }
 }
 
@@ -994,7 +983,7 @@ pub fn create_account_request(base, account_setup) {
   let method = http.Post
   let path = "/accounts"
   let query = []
-  let body = utils.json_to_bits(schema.account_setup_to_json(account_setup))
+  let body = utils.json_to_bits(schema.account_setup_encode(account_setup))
   base
   |> utils.set_method(method)
   |> utils.append_path(path)
@@ -1003,12 +992,12 @@ pub fn create_account_request(base, account_setup) {
 }
 
 pub fn create_account_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, body:, ..) = response
   case status {
     201 ->
-      utils.decode_bits(body, schema.account_membership_decoder())
+      json.parse_bits(body, schema.account_membership_decoder())
       |> result.map(Ok)
-    _ -> utils.decode_bits(body, schema.error_decoder()) |> result.map(Error)
+    _ -> json.parse_bits(body, schema.error_decoder()) |> result.map(Error)
   }
 }
 
@@ -1023,12 +1012,12 @@ pub fn list_accounts_for_user_request(base) {
 }
 
 pub fn list_accounts_for_user_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, body:, ..) = response
   case status {
     200 ->
-      utils.decode_bits(body, zero.list(schema.account_membership_decoder()))
+      json.parse_bits(body, decode.list(schema.account_membership_decoder()))
       |> result.map(Ok)
-    _ -> utils.decode_bits(body, schema.error_decoder()) |> result.map(Error)
+    _ -> json.parse_bits(body, schema.error_decoder()) |> result.map(Error)
   }
 }
 
@@ -1043,10 +1032,10 @@ pub fn delete_submission_request(base, submission_id) {
 }
 
 pub fn delete_submission_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, body:, ..) = response
   case status {
     204 -> Ok(Nil) |> Ok
-    _ -> utils.decode_bits(body, schema.error_decoder()) |> result.map(Error)
+    _ -> json.parse_bits(body, schema.error_decoder()) |> result.map(Error)
   }
 }
 
@@ -1071,12 +1060,12 @@ pub fn list_form_submission_request(
 }
 
 pub fn list_form_submission_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, body:, ..) = response
   case status {
     200 ->
-      utils.decode_bits(body, zero.list(schema.submission_decoder()))
+      json.parse_bits(body, decode.list(schema.submission_decoder()))
       |> result.map(Ok)
-    _ -> utils.decode_bits(body, schema.error_decoder()) |> result.map(Error)
+    _ -> json.parse_bits(body, schema.error_decoder()) |> result.map(Error)
   }
 }
 
@@ -1091,10 +1080,10 @@ pub fn delete_hook_request(base, hook_id) {
 }
 
 pub fn delete_hook_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, ..) = response
   case status {
     204 -> Ok(Nil) |> Ok
-    _ -> "API doesn't describe default response" |> Error |> Ok
+    _ -> response |> Error |> Ok
   }
 }
 
@@ -1102,7 +1091,7 @@ pub fn update_hook_request(base, hook_id, hook) {
   let method = http.Put
   let path = "/hooks/" <> hook_id
   let query = []
-  let body = utils.json_to_bits(schema.hook_to_json(hook))
+  let body = utils.json_to_bits(schema.hook_encode(hook))
   base
   |> utils.set_method(method)
   |> utils.append_path(path)
@@ -1111,10 +1100,10 @@ pub fn update_hook_request(base, hook_id, hook) {
 }
 
 pub fn update_hook_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, body:, ..) = response
   case status {
-    200 -> utils.decode_bits(body, schema.hook_decoder()) |> result.map(Ok)
-    _ -> utils.decode_bits(body, schema.error_decoder()) |> result.map(Error)
+    200 -> json.parse_bits(body, schema.hook_decoder()) |> result.map(Ok)
+    _ -> json.parse_bits(body, schema.error_decoder()) |> result.map(Error)
   }
 }
 
@@ -1129,10 +1118,10 @@ pub fn get_hook_request(base, hook_id) {
 }
 
 pub fn get_hook_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, body:, ..) = response
   case status {
-    200 -> utils.decode_bits(body, schema.hook_decoder()) |> result.map(Ok)
-    _ -> utils.decode_bits(body, schema.error_decoder()) |> result.map(Error)
+    200 -> json.parse_bits(body, schema.hook_decoder()) |> result.map(Ok)
+    _ -> json.parse_bits(body, schema.error_decoder()) |> result.map(Error)
   }
 }
 
@@ -1140,7 +1129,7 @@ pub fn update_site_request(base, site_id, site_setup) {
   let method = http.Patch
   let path = "/sites/" <> site_id
   let query = []
-  let body = utils.json_to_bits(schema.site_setup_to_json(site_setup))
+  let body = utils.json_to_bits(schema.site_setup_encode(site_setup))
   base
   |> utils.set_method(method)
   |> utils.append_path(path)
@@ -1149,10 +1138,10 @@ pub fn update_site_request(base, site_id, site_setup) {
 }
 
 pub fn update_site_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, body:, ..) = response
   case status {
-    200 -> utils.decode_bits(body, schema.site_decoder()) |> result.map(Ok)
-    _ -> utils.decode_bits(body, schema.error_decoder()) |> result.map(Error)
+    200 -> json.parse_bits(body, schema.site_decoder()) |> result.map(Ok)
+    _ -> json.parse_bits(body, schema.error_decoder()) |> result.map(Error)
   }
 }
 
@@ -1167,10 +1156,10 @@ pub fn delete_site_request(base, site_id) {
 }
 
 pub fn delete_site_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, body:, ..) = response
   case status {
     204 -> Ok(Nil) |> Ok
-    _ -> utils.decode_bits(body, schema.error_decoder()) |> result.map(Error)
+    _ -> json.parse_bits(body, schema.error_decoder()) |> result.map(Error)
   }
 }
 
@@ -1185,10 +1174,10 @@ pub fn get_site_request(base, site_id) {
 }
 
 pub fn get_site_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, body:, ..) = response
   case status {
-    200 -> utils.decode_bits(body, schema.site_decoder()) |> result.map(Ok)
-    _ -> utils.decode_bits(body, schema.error_decoder()) |> result.map(Error)
+    200 -> json.parse_bits(body, schema.site_decoder()) |> result.map(Ok)
+    _ -> json.parse_bits(body, schema.error_decoder()) |> result.map(Error)
   }
 }
 
@@ -1203,12 +1192,12 @@ pub fn list_site_forms_request(base, site_id) {
 }
 
 pub fn list_site_forms_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, body:, ..) = response
   case status {
     200 ->
-      utils.decode_bits(body, zero.list(schema.form_decoder()))
+      json.parse_bits(body, decode.list(schema.form_decoder()))
       |> result.map(Ok)
-    _ -> utils.decode_bits(body, schema.error_decoder()) |> result.map(Error)
+    _ -> json.parse_bits(body, schema.error_decoder()) |> result.map(Error)
   }
 }
 
@@ -1223,10 +1212,10 @@ pub fn show_service_manifest_request(base, addon_name) {
 }
 
 pub fn show_service_manifest_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, body:, ..) = response
   case status {
-    201 -> utils.decode_bits(body, zero.dynamic) |> result.map(Ok)
-    _ -> utils.decode_bits(body, schema.error_decoder()) |> result.map(Error)
+    201 -> json.parse_bits(body, decode.dynamic) |> result.map(Ok)
+    _ -> json.parse_bits(body, schema.error_decoder()) |> result.map(Error)
   }
 }
 
@@ -1241,10 +1230,10 @@ pub fn delete_site_build_hook_request(base, site_id, id) {
 }
 
 pub fn delete_site_build_hook_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, body:, ..) = response
   case status {
     204 -> Ok(Nil) |> Ok
-    _ -> utils.decode_bits(body, schema.error_decoder()) |> result.map(Error)
+    _ -> json.parse_bits(body, schema.error_decoder()) |> result.map(Error)
   }
 }
 
@@ -1253,7 +1242,7 @@ pub fn update_site_build_hook_request(base, site_id, id, build_hook_setup) {
   let path = "/sites/" <> site_id <> "/build_hooks/" <> id
   let query = []
   let body =
-    utils.json_to_bits(schema.build_hook_setup_to_json(build_hook_setup))
+    utils.json_to_bits(schema.build_hook_setup_encode(build_hook_setup))
   base
   |> utils.set_method(method)
   |> utils.append_path(path)
@@ -1262,10 +1251,10 @@ pub fn update_site_build_hook_request(base, site_id, id, build_hook_setup) {
 }
 
 pub fn update_site_build_hook_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, body:, ..) = response
   case status {
     204 -> Ok(Nil) |> Ok
-    _ -> utils.decode_bits(body, schema.error_decoder()) |> result.map(Error)
+    _ -> json.parse_bits(body, schema.error_decoder()) |> result.map(Error)
   }
 }
 
@@ -1280,11 +1269,10 @@ pub fn get_site_build_hook_request(base, site_id, id) {
 }
 
 pub fn get_site_build_hook_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, body:, ..) = response
   case status {
-    200 ->
-      utils.decode_bits(body, schema.build_hook_decoder()) |> result.map(Ok)
-    _ -> utils.decode_bits(body, schema.error_decoder()) |> result.map(Error)
+    200 -> json.parse_bits(body, schema.build_hook_decoder()) |> result.map(Ok)
+    _ -> json.parse_bits(body, schema.error_decoder()) |> result.map(Error)
   }
 }
 
@@ -1299,10 +1287,10 @@ pub fn delete_deploy_request(base, deploy_id) {
 }
 
 pub fn delete_deploy_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, body:, ..) = response
   case status {
     204 -> Ok(Nil) |> Ok
-    _ -> utils.decode_bits(body, schema.error_decoder()) |> result.map(Error)
+    _ -> json.parse_bits(body, schema.error_decoder()) |> result.map(Error)
   }
 }
 
@@ -1317,10 +1305,10 @@ pub fn get_deploy_request(base, deploy_id) {
 }
 
 pub fn get_deploy_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, body:, ..) = response
   case status {
-    200 -> utils.decode_bits(body, schema.deploy_decoder()) |> result.map(Ok)
-    _ -> utils.decode_bits(body, schema.error_decoder()) |> result.map(Error)
+    200 -> json.parse_bits(body, schema.deploy_decoder()) |> result.map(Ok)
+    _ -> json.parse_bits(body, schema.error_decoder()) |> result.map(Error)
   }
 }
 
@@ -1328,7 +1316,7 @@ pub fn create_site_snippet_request(base, site_id, snippet) {
   let method = http.Post
   let path = "/sites/" <> site_id <> "/snippets"
   let query = []
-  let body = utils.json_to_bits(schema.snippet_to_json(snippet))
+  let body = utils.json_to_bits(schema.snippet_encode(snippet))
   base
   |> utils.set_method(method)
   |> utils.append_path(path)
@@ -1337,10 +1325,10 @@ pub fn create_site_snippet_request(base, site_id, snippet) {
 }
 
 pub fn create_site_snippet_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, body:, ..) = response
   case status {
-    201 -> utils.decode_bits(body, schema.snippet_decoder()) |> result.map(Ok)
-    _ -> utils.decode_bits(body, schema.error_decoder()) |> result.map(Error)
+    201 -> json.parse_bits(body, schema.snippet_decoder()) |> result.map(Ok)
+    _ -> json.parse_bits(body, schema.error_decoder()) |> result.map(Error)
   }
 }
 
@@ -1355,12 +1343,12 @@ pub fn list_site_snippets_request(base, site_id) {
 }
 
 pub fn list_site_snippets_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, body:, ..) = response
   case status {
     200 ->
-      utils.decode_bits(body, zero.list(schema.snippet_decoder()))
+      json.parse_bits(body, decode.list(schema.snippet_decoder()))
       |> result.map(Ok)
-    _ -> utils.decode_bits(body, schema.error_decoder()) |> result.map(Error)
+    _ -> json.parse_bits(body, schema.error_decoder()) |> result.map(Error)
   }
 }
 
@@ -1377,12 +1365,12 @@ pub fn create_service_instance_request(base, site_id, addon, data) {
 }
 
 pub fn create_service_instance_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, body:, ..) = response
   case status {
     201 ->
-      utils.decode_bits(body, schema.service_instance_decoder())
+      json.parse_bits(body, schema.service_instance_decoder())
       |> result.map(Ok)
-    _ -> utils.decode_bits(body, schema.error_decoder()) |> result.map(Error)
+    _ -> json.parse_bits(body, schema.error_decoder()) |> result.map(Error)
   }
 }
 
@@ -1397,10 +1385,10 @@ pub fn get_site_build_request(base, build_id) {
 }
 
 pub fn get_site_build_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, body:, ..) = response
   case status {
-    200 -> utils.decode_bits(body, schema.build_decoder()) |> result.map(Ok)
-    _ -> utils.decode_bits(body, schema.error_decoder()) |> result.map(Error)
+    200 -> json.parse_bits(body, schema.build_decoder()) |> result.map(Ok)
+    _ -> json.parse_bits(body, schema.error_decoder()) |> result.map(Error)
   }
 }
 
@@ -1415,12 +1403,12 @@ pub fn get_account_build_status_request(base, account_id) {
 }
 
 pub fn get_account_build_status_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, body:, ..) = response
   case status {
     200 ->
-      utils.decode_bits(body, zero.list(schema.build_status_decoder()))
+      json.parse_bits(body, decode.list(schema.build_status_decoder()))
       |> result.map(Ok)
-    _ -> utils.decode_bits(body, schema.error_decoder()) |> result.map(Error)
+    _ -> json.parse_bits(body, schema.error_decoder()) |> result.map(Error)
   }
 }
 
@@ -1433,7 +1421,7 @@ pub fn create_site_in_team_request(
   let method = http.Post
   let path = "/" <> account_slug <> "/sites"
   let query = [#("configure_dns", option.map(configure_dns, bool.to_string))]
-  let body = utils.json_to_bits(schema.site_setup_to_json(site_setup))
+  let body = utils.json_to_bits(schema.site_setup_encode(site_setup))
   base
   |> utils.set_method(method)
   |> utils.append_path(path)
@@ -1442,10 +1430,10 @@ pub fn create_site_in_team_request(
 }
 
 pub fn create_site_in_team_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, body:, ..) = response
   case status {
-    201 -> utils.decode_bits(body, schema.site_decoder()) |> result.map(Ok)
-    _ -> utils.decode_bits(body, schema.error_decoder()) |> result.map(Error)
+    201 -> json.parse_bits(body, schema.site_decoder()) |> result.map(Ok)
+    _ -> json.parse_bits(body, schema.error_decoder()) |> result.map(Error)
   }
 }
 
@@ -1470,18 +1458,18 @@ pub fn list_sites_for_account_request(
 }
 
 pub fn list_sites_for_account_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, body:, ..) = response
   case status {
     200 ->
-      utils.decode_bits(body, zero.list(schema.site_decoder()))
+      json.parse_bits(body, decode.list(schema.site_decoder()))
       |> result.map(Ok)
-    _ -> utils.decode_bits(body, schema.error_decoder()) |> result.map(Error)
+    _ -> json.parse_bits(body, schema.error_decoder()) |> result.map(Error)
   }
 }
 
-pub fn upload_deploy_file_request(base, deploy_id, path, size size) {
+pub fn upload_deploy_file_request(base, deploy_id, path_, size size) {
   let method = http.Put
-  let path = "/deploys/" <> deploy_id <> "/files/" <> path
+  let path = "/deploys/" <> deploy_id <> "/files/" <> path_
   let query = [#("size", option.map(size, int.to_string))]
   base
   |> utils.set_method(method)
@@ -1490,10 +1478,10 @@ pub fn upload_deploy_file_request(base, deploy_id, path, size size) {
 }
 
 pub fn upload_deploy_file_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, body:, ..) = response
   case status {
-    200 -> utils.decode_bits(body, schema.file_decoder()) |> result.map(Ok)
-    _ -> utils.decode_bits(body, schema.error_decoder()) |> result.map(Error)
+    200 -> json.parse_bits(body, schema.file_decoder()) |> result.map(Ok)
+    _ -> json.parse_bits(body, schema.error_decoder()) |> result.map(Error)
   }
 }
 
@@ -1513,12 +1501,12 @@ pub fn get_site_env_vars_request(
 }
 
 pub fn get_site_env_vars_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, body:, ..) = response
   case status {
     200 ->
-      utils.decode_bits(body, zero.list(schema.env_var_decoder()))
+      json.parse_bits(body, decode.list(schema.env_var_decoder()))
       |> result.map(Ok)
-    _ -> utils.decode_bits(body, schema.error_decoder()) |> result.map(Error)
+    _ -> json.parse_bits(body, schema.error_decoder()) |> result.map(Error)
   }
 }
 
@@ -1533,10 +1521,10 @@ pub fn delete_dns_record_request(base, zone_id, dns_record_id) {
 }
 
 pub fn delete_dns_record_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, body:, ..) = response
   case status {
     204 -> Ok(Nil) |> Ok
-    _ -> utils.decode_bits(body, schema.error_decoder()) |> result.map(Error)
+    _ -> json.parse_bits(body, schema.error_decoder()) |> result.map(Error)
   }
 }
 
@@ -1551,11 +1539,10 @@ pub fn get_individual_dns_record_request(base, zone_id, dns_record_id) {
 }
 
 pub fn get_individual_dns_record_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, body:, ..) = response
   case status {
-    200 ->
-      utils.decode_bits(body, schema.dns_record_decoder()) |> result.map(Ok)
-    _ -> utils.decode_bits(body, schema.error_decoder()) |> result.map(Error)
+    200 -> json.parse_bits(body, schema.dns_record_decoder()) |> result.map(Ok)
+    _ -> json.parse_bits(body, schema.error_decoder()) |> result.map(Error)
   }
 }
 
@@ -1580,7 +1567,7 @@ pub fn create_site_deploy_request(
     #("branch", branch),
     #("latest_published", option.map(latest_published, bool.to_string)),
   ]
-  let body = utils.json_to_bits(schema.deploy_files_to_json(deploy_files))
+  let body = utils.json_to_bits(schema.deploy_files_encode(deploy_files))
   base
   |> utils.set_method(method)
   |> utils.append_path(path)
@@ -1589,10 +1576,10 @@ pub fn create_site_deploy_request(
 }
 
 pub fn create_site_deploy_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, body:, ..) = response
   case status {
-    200 -> utils.decode_bits(body, schema.deploy_decoder()) |> result.map(Ok)
-    _ -> utils.decode_bits(body, schema.error_decoder()) |> result.map(Error)
+    200 -> json.parse_bits(body, schema.deploy_decoder()) |> result.map(Ok)
+    _ -> json.parse_bits(body, schema.error_decoder()) |> result.map(Error)
   }
 }
 
@@ -1625,12 +1612,12 @@ pub fn list_site_deploys_request(
 }
 
 pub fn list_site_deploys_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, body:, ..) = response
   case status {
     200 ->
-      utils.decode_bits(body, zero.list(schema.deploy_decoder()))
+      json.parse_bits(body, decode.list(schema.deploy_decoder()))
       |> result.map(Ok)
-    _ -> utils.decode_bits(body, schema.error_decoder()) |> result.map(Error)
+    _ -> json.parse_bits(body, schema.error_decoder()) |> result.map(Error)
   }
 }
 
@@ -1655,12 +1642,12 @@ pub fn provision_site_tlscertificate_request(
 }
 
 pub fn provision_site_tlscertificate_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, body:, ..) = response
   case status {
     200 ->
-      utils.decode_bits(body, schema.sni_certificate_decoder())
+      json.parse_bits(body, schema.sni_certificate_decoder())
       |> result.map(Ok)
-    _ -> utils.decode_bits(body, schema.error_decoder()) |> result.map(Error)
+    _ -> json.parse_bits(body, schema.error_decoder()) |> result.map(Error)
   }
 }
 
@@ -1675,12 +1662,12 @@ pub fn show_site_tlscertificate_request(base, site_id) {
 }
 
 pub fn show_site_tlscertificate_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, body:, ..) = response
   case status {
     200 ->
-      utils.decode_bits(body, schema.sni_certificate_decoder())
+      json.parse_bits(body, schema.sni_certificate_decoder())
       |> result.map(Ok)
-    _ -> utils.decode_bits(body, schema.error_decoder()) |> result.map(Error)
+    _ -> json.parse_bits(body, schema.error_decoder()) |> result.map(Error)
   }
 }
 
@@ -1695,10 +1682,10 @@ pub fn cancel_account_request(base, account_id) {
 }
 
 pub fn cancel_account_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, body:, ..) = response
   case status {
     204 -> Ok(Nil) |> Ok
-    _ -> utils.decode_bits(body, schema.error_decoder()) |> result.map(Error)
+    _ -> json.parse_bits(body, schema.error_decoder()) |> result.map(Error)
   }
 }
 
@@ -1707,7 +1694,7 @@ pub fn update_account_request(base, account_id, account_update_setup) {
   let path = "/accounts/" <> account_id
   let query = []
   let body =
-    utils.json_to_bits(schema.account_update_setup_to_json(account_update_setup))
+    utils.json_to_bits(schema.account_update_setup_encode(account_update_setup))
   base
   |> utils.set_method(method)
   |> utils.append_path(path)
@@ -1716,12 +1703,12 @@ pub fn update_account_request(base, account_id, account_update_setup) {
 }
 
 pub fn update_account_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, body:, ..) = response
   case status {
     200 ->
-      utils.decode_bits(body, schema.account_membership_decoder())
+      json.parse_bits(body, schema.account_membership_decoder())
       |> result.map(Ok)
-    _ -> utils.decode_bits(body, schema.error_decoder()) |> result.map(Error)
+    _ -> json.parse_bits(body, schema.error_decoder()) |> result.map(Error)
   }
 }
 
@@ -1736,32 +1723,34 @@ pub fn get_account_request(base, account_id) {
 }
 
 pub fn get_account_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, body:, ..) = response
   case status {
     200 ->
-      utils.decode_bits(body, zero.list(schema.account_membership_decoder()))
+      json.parse_bits(body, decode.list(schema.account_membership_decoder()))
       |> result.map(Ok)
-    _ -> utils.decode_bits(body, schema.error_decoder()) |> result.map(Error)
+    _ -> json.parse_bits(body, schema.error_decoder()) |> result.map(Error)
   }
 }
 
-pub fn create_env_vars_request(base, account_id, site_id site_id) {
+pub fn create_env_vars_request(base, account_id, data, site_id site_id) {
   let method = http.Post
   let path = "/accounts/" <> account_id <> "/env"
   let query = [#("site_id", site_id)]
+  let body = data
   base
   |> utils.set_method(method)
   |> utils.append_path(path)
   |> utils.set_query(query)
+  |> utils.set_body("application/json", body)
 }
 
 pub fn create_env_vars_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, body:, ..) = response
   case status {
     201 ->
-      utils.decode_bits(body, zero.list(schema.env_var_decoder()))
+      json.parse_bits(body, decode.list(schema.env_var_decoder()))
       |> result.map(Ok)
-    _ -> utils.decode_bits(body, schema.error_decoder()) |> result.map(Error)
+    _ -> json.parse_bits(body, schema.error_decoder()) |> result.map(Error)
   }
 }
 
@@ -1786,12 +1775,12 @@ pub fn get_env_vars_request(
 }
 
 pub fn get_env_vars_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, body:, ..) = response
   case status {
     200 ->
-      utils.decode_bits(body, zero.list(schema.env_var_decoder()))
+      json.parse_bits(body, decode.list(schema.env_var_decoder()))
       |> result.map(Ok)
-    _ -> utils.decode_bits(body, schema.error_decoder()) |> result.map(Error)
+    _ -> json.parse_bits(body, schema.error_decoder()) |> result.map(Error)
   }
 }
 
@@ -1806,12 +1795,12 @@ pub fn configure_dnsfor_site_request(base, site_id) {
 }
 
 pub fn configure_dnsfor_site_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, body:, ..) = response
   case status {
     200 ->
-      utils.decode_bits(body, zero.list(schema.dns_zone_decoder()))
+      json.parse_bits(body, decode.list(schema.dns_zone_decoder()))
       |> result.map(Ok)
-    _ -> utils.decode_bits(body, schema.error_decoder()) |> result.map(Error)
+    _ -> json.parse_bits(body, schema.error_decoder()) |> result.map(Error)
   }
 }
 
@@ -1826,12 +1815,12 @@ pub fn get_dnsfor_site_request(base, site_id) {
 }
 
 pub fn get_dnsfor_site_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, body:, ..) = response
   case status {
     200 ->
-      utils.decode_bits(body, zero.list(schema.dns_zone_decoder()))
+      json.parse_bits(body, decode.list(schema.dns_zone_decoder()))
       |> result.map(Ok)
-    _ -> utils.decode_bits(body, schema.error_decoder()) |> result.map(Error)
+    _ -> json.parse_bits(body, schema.error_decoder()) |> result.map(Error)
   }
 }
 
@@ -1854,12 +1843,12 @@ pub fn list_form_submissions_request(
 }
 
 pub fn list_form_submissions_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, body:, ..) = response
   case status {
     200 ->
-      utils.decode_bits(body, zero.list(schema.submission_decoder()))
+      json.parse_bits(body, decode.list(schema.submission_decoder()))
       |> result.map(Ok)
-    _ -> utils.decode_bits(body, schema.error_decoder()) |> result.map(Error)
+    _ -> json.parse_bits(body, schema.error_decoder()) |> result.map(Error)
   }
 }
 
@@ -1867,7 +1856,7 @@ pub fn update_site_metadata_request(base, site_id, metadata) {
   let method = http.Put
   let path = "/sites/" <> site_id <> "/metadata"
   let query = []
-  let body = utils.json_to_bits(schema.metadata_to_json(metadata))
+  let body = utils.json_to_bits(schema.metadata_encode(metadata))
   base
   |> utils.set_method(method)
   |> utils.append_path(path)
@@ -1876,10 +1865,10 @@ pub fn update_site_metadata_request(base, site_id, metadata) {
 }
 
 pub fn update_site_metadata_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, body:, ..) = response
   case status {
     204 -> Ok(Nil) |> Ok
-    _ -> utils.decode_bits(body, schema.error_decoder()) |> result.map(Error)
+    _ -> json.parse_bits(body, schema.error_decoder()) |> result.map(Error)
   }
 }
 
@@ -1894,10 +1883,10 @@ pub fn get_site_metadata_request(base, site_id) {
 }
 
 pub fn get_site_metadata_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, body:, ..) = response
   case status {
-    200 -> utils.decode_bits(body, schema.metadata_decoder()) |> result.map(Ok)
-    _ -> utils.decode_bits(body, schema.error_decoder()) |> result.map(Error)
+    200 -> json.parse_bits(body, schema.metadata_decoder()) |> result.map(Ok)
+    _ -> json.parse_bits(body, schema.error_decoder()) |> result.map(Error)
   }
 }
 
@@ -1912,10 +1901,10 @@ pub fn show_service_request(base, addon_name) {
 }
 
 pub fn show_service_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, body:, ..) = response
   case status {
-    200 -> utils.decode_bits(body, schema.service_decoder()) |> result.map(Ok)
-    _ -> utils.decode_bits(body, schema.error_decoder()) |> result.map(Error)
+    200 -> json.parse_bits(body, schema.service_decoder()) |> result.map(Ok)
+    _ -> json.parse_bits(body, schema.error_decoder()) |> result.map(Error)
   }
 }
 
@@ -1930,12 +1919,12 @@ pub fn list_hook_types_request(base) {
 }
 
 pub fn list_hook_types_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, body:, ..) = response
   case status {
     200 ->
-      utils.decode_bits(body, zero.list(schema.hook_type_decoder()))
+      json.parse_bits(body, decode.list(schema.hook_type_decoder()))
       |> result.map(Ok)
-    _ -> utils.decode_bits(body, schema.error_decoder()) |> result.map(Error)
+    _ -> json.parse_bits(body, schema.error_decoder()) |> result.map(Error)
   }
 }
 
@@ -1958,12 +1947,12 @@ pub fn list_site_submissions_request(
 }
 
 pub fn list_site_submissions_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, body:, ..) = response
   case status {
     200 ->
-      utils.decode_bits(body, zero.list(schema.submission_decoder()))
+      json.parse_bits(body, decode.list(schema.submission_decoder()))
       |> result.map(Ok)
-    _ -> utils.decode_bits(body, schema.error_decoder()) |> result.map(Error)
+    _ -> json.parse_bits(body, schema.error_decoder()) |> result.map(Error)
   }
 }
 
@@ -1978,10 +1967,10 @@ pub fn delete_site_dev_servers_request(base, site_id, branch branch) {
 }
 
 pub fn delete_site_dev_servers_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, body:, ..) = response
   case status {
     202 -> Ok(Nil) |> Ok
-    _ -> utils.decode_bits(body, schema.error_decoder()) |> result.map(Error)
+    _ -> json.parse_bits(body, schema.error_decoder()) |> result.map(Error)
   }
 }
 
@@ -1996,12 +1985,12 @@ pub fn create_site_dev_server_request(base, site_id, branch branch) {
 }
 
 pub fn create_site_dev_server_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, body:, ..) = response
   case status {
     200 ->
-      utils.decode_bits(body, zero.list(schema.dev_server_decoder()))
+      json.parse_bits(body, decode.list(schema.dev_server_decoder()))
       |> result.map(Ok)
-    _ -> utils.decode_bits(body, schema.error_decoder()) |> result.map(Error)
+    _ -> json.parse_bits(body, schema.error_decoder()) |> result.map(Error)
   }
 }
 
@@ -2024,12 +2013,12 @@ pub fn list_site_dev_servers_request(
 }
 
 pub fn list_site_dev_servers_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, body:, ..) = response
   case status {
     200 ->
-      utils.decode_bits(body, zero.list(schema.dev_server_decoder()))
+      json.parse_bits(body, decode.list(schema.dev_server_decoder()))
       |> result.map(Ok)
-    _ -> utils.decode_bits(body, schema.error_decoder()) |> result.map(Error)
+    _ -> json.parse_bits(body, schema.error_decoder()) |> result.map(Error)
   }
 }
 
@@ -2044,12 +2033,12 @@ pub fn list_service_instances_for_site_request(base, site_id) {
 }
 
 pub fn list_service_instances_for_site_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, body:, ..) = response
   case status {
     200 ->
-      utils.decode_bits(body, zero.list(schema.service_instance_decoder()))
+      json.parse_bits(body, decode.list(schema.service_instance_decoder()))
       |> result.map(Ok)
-    _ -> utils.decode_bits(body, schema.error_decoder()) |> result.map(Error)
+    _ -> json.parse_bits(body, schema.error_decoder()) |> result.map(Error)
   }
 }
 
@@ -2065,12 +2054,12 @@ pub fn get_site_asset_public_signature_request(base, site_id, asset_id) {
 }
 
 pub fn get_site_asset_public_signature_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, body:, ..) = response
   case status {
     200 ->
-      utils.decode_bits(body, schema.asset_public_signature_decoder())
+      json.parse_bits(body, schema.asset_public_signature_decoder())
       |> result.map(Ok)
-    _ -> utils.decode_bits(body, schema.error_decoder()) |> result.map(Error)
+    _ -> json.parse_bits(body, schema.error_decoder()) |> result.map(Error)
   }
 }
 
@@ -2085,10 +2074,10 @@ pub fn delete_site_asset_request(base, site_id, asset_id) {
 }
 
 pub fn delete_site_asset_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, body:, ..) = response
   case status {
     204 -> Ok(Nil) |> Ok
-    _ -> utils.decode_bits(body, schema.error_decoder()) |> result.map(Error)
+    _ -> json.parse_bits(body, schema.error_decoder()) |> result.map(Error)
   }
 }
 
@@ -2103,10 +2092,10 @@ pub fn update_site_asset_request(base, site_id, asset_id, state state) {
 }
 
 pub fn update_site_asset_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, body:, ..) = response
   case status {
-    200 -> utils.decode_bits(body, schema.asset_decoder()) |> result.map(Ok)
-    _ -> utils.decode_bits(body, schema.error_decoder()) |> result.map(Error)
+    200 -> json.parse_bits(body, schema.asset_decoder()) |> result.map(Ok)
+    _ -> json.parse_bits(body, schema.error_decoder()) |> result.map(Error)
   }
 }
 
@@ -2121,10 +2110,10 @@ pub fn get_site_asset_info_request(base, site_id, asset_id) {
 }
 
 pub fn get_site_asset_info_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, body:, ..) = response
   case status {
-    200 -> utils.decode_bits(body, schema.asset_decoder()) |> result.map(Ok)
-    _ -> utils.decode_bits(body, schema.error_decoder()) |> result.map(Error)
+    200 -> json.parse_bits(body, schema.asset_decoder()) |> result.map(Ok)
+    _ -> json.parse_bits(body, schema.error_decoder()) |> result.map(Error)
   }
 }
 
@@ -2139,10 +2128,10 @@ pub fn remove_account_member_request(base, account_slug, member_id) {
 }
 
 pub fn remove_account_member_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, body:, ..) = response
   case status {
     204 -> Ok(Nil) |> Ok
-    _ -> utils.decode_bits(body, schema.error_decoder()) |> result.map(Error)
+    _ -> json.parse_bits(body, schema.error_decoder()) |> result.map(Error)
   }
 }
 
@@ -2156,7 +2145,7 @@ pub fn update_account_member_request(
   let path = "/" <> account_slug <> "/members/" <> member_id
   let query = []
   let body =
-    utils.json_to_bits(schema.account_update_member_setup_to_json(
+    utils.json_to_bits(schema.account_update_member_setup_encode(
       account_update_member_setup,
     ))
   base
@@ -2167,10 +2156,10 @@ pub fn update_account_member_request(
 }
 
 pub fn update_account_member_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, body:, ..) = response
   case status {
-    200 -> utils.decode_bits(body, schema.member_decoder()) |> result.map(Ok)
-    _ -> utils.decode_bits(body, schema.error_decoder()) |> result.map(Error)
+    200 -> json.parse_bits(body, schema.member_decoder()) |> result.map(Ok)
+    _ -> json.parse_bits(body, schema.error_decoder()) |> result.map(Error)
   }
 }
 
@@ -2185,10 +2174,10 @@ pub fn get_account_member_request(base, account_slug, member_id) {
 }
 
 pub fn get_account_member_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, body:, ..) = response
   case status {
-    200 -> utils.decode_bits(body, schema.member_decoder()) |> result.map(Ok)
-    _ -> utils.decode_bits(body, schema.error_decoder()) |> result.map(Error)
+    200 -> json.parse_bits(body, schema.member_decoder()) |> result.map(Ok)
+    _ -> json.parse_bits(body, schema.error_decoder()) |> result.map(Error)
   }
 }
 
@@ -2216,10 +2205,10 @@ pub fn upload_deploy_function_request(
 }
 
 pub fn upload_deploy_function_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, body:, ..) = response
   case status {
-    200 -> utils.decode_bits(body, schema.function_decoder()) |> result.map(Ok)
-    _ -> utils.decode_bits(body, schema.error_decoder()) |> result.map(Error)
+    200 -> json.parse_bits(body, schema.function_decoder()) |> result.map(Ok)
+    _ -> json.parse_bits(body, schema.error_decoder()) |> result.map(Error)
   }
 }
 
@@ -2234,10 +2223,10 @@ pub fn lock_deploy_request(base, deploy_id) {
 }
 
 pub fn lock_deploy_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, body:, ..) = response
   case status {
-    200 -> utils.decode_bits(body, schema.deploy_decoder()) |> result.map(Ok)
-    _ -> utils.decode_bits(body, schema.error_decoder()) |> result.map(Error)
+    200 -> json.parse_bits(body, schema.deploy_decoder()) |> result.map(Ok)
+    _ -> json.parse_bits(body, schema.error_decoder()) |> result.map(Error)
   }
 }
 
@@ -2252,10 +2241,10 @@ pub fn delete_site_deploy_request(base, site_id, deploy_id) {
 }
 
 pub fn delete_site_deploy_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, body:, ..) = response
   case status {
     204 -> Ok(Nil) |> Ok
-    _ -> utils.decode_bits(body, schema.error_decoder()) |> result.map(Error)
+    _ -> json.parse_bits(body, schema.error_decoder()) |> result.map(Error)
   }
 }
 
@@ -2263,7 +2252,7 @@ pub fn update_site_deploy_request(base, site_id, deploy_id, deploy_files) {
   let method = http.Put
   let path = "/sites/" <> site_id <> "/deploys/" <> deploy_id
   let query = []
-  let body = utils.json_to_bits(schema.deploy_files_to_json(deploy_files))
+  let body = utils.json_to_bits(schema.deploy_files_encode(deploy_files))
   base
   |> utils.set_method(method)
   |> utils.append_path(path)
@@ -2272,10 +2261,10 @@ pub fn update_site_deploy_request(base, site_id, deploy_id, deploy_files) {
 }
 
 pub fn update_site_deploy_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, body:, ..) = response
   case status {
-    200 -> utils.decode_bits(body, schema.deploy_decoder()) |> result.map(Ok)
-    _ -> utils.decode_bits(body, schema.error_decoder()) |> result.map(Error)
+    200 -> json.parse_bits(body, schema.deploy_decoder()) |> result.map(Ok)
+    _ -> json.parse_bits(body, schema.error_decoder()) |> result.map(Error)
   }
 }
 
@@ -2290,10 +2279,10 @@ pub fn get_site_deploy_request(base, site_id, deploy_id) {
 }
 
 pub fn get_site_deploy_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, body:, ..) = response
   case status {
-    200 -> utils.decode_bits(body, schema.deploy_decoder()) |> result.map(Ok)
-    _ -> utils.decode_bits(body, schema.error_decoder()) |> result.map(Error)
+    200 -> json.parse_bits(body, schema.deploy_decoder()) |> result.map(Ok)
+    _ -> json.parse_bits(body, schema.error_decoder()) |> result.map(Error)
   }
 }
 
@@ -2308,10 +2297,10 @@ pub fn update_site_build_log_request(base, build_id) {
 }
 
 pub fn update_site_build_log_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, body:, ..) = response
   case status {
     204 -> Ok(Nil) |> Ok
-    _ -> utils.decode_bits(body, schema.error_decoder()) |> result.map(Error)
+    _ -> json.parse_bits(body, schema.error_decoder()) |> result.map(Error)
   }
 }
 
@@ -2326,11 +2315,10 @@ pub fn get_site_dev_server_request(base, site_id, dev_server_id) {
 }
 
 pub fn get_site_dev_server_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, body:, ..) = response
   case status {
-    200 ->
-      utils.decode_bits(body, schema.dev_server_decoder()) |> result.map(Ok)
-    _ -> "API doesn't describe default response" |> Error |> Ok
+    200 -> json.parse_bits(body, schema.dev_server_decoder()) |> result.map(Ok)
+    _ -> response |> Error |> Ok
   }
 }
 
@@ -2345,10 +2333,10 @@ pub fn delete_site_form_request(base, site_id, form_id) {
 }
 
 pub fn delete_site_form_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, body:, ..) = response
   case status {
     204 -> Ok(Nil) |> Ok
-    _ -> utils.decode_bits(body, schema.error_decoder()) |> result.map(Error)
+    _ -> json.parse_bits(body, schema.error_decoder()) |> result.map(Error)
   }
 }
 
@@ -2363,10 +2351,10 @@ pub fn restore_site_deploy_request(base, site_id, deploy_id) {
 }
 
 pub fn restore_site_deploy_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, body:, ..) = response
   case status {
-    201 -> utils.decode_bits(body, schema.deploy_decoder()) |> result.map(Ok)
-    _ -> utils.decode_bits(body, schema.error_decoder()) |> result.map(Error)
+    201 -> json.parse_bits(body, schema.deploy_decoder()) |> result.map(Ok)
+    _ -> json.parse_bits(body, schema.error_decoder()) |> result.map(Error)
   }
 }
 
@@ -2382,10 +2370,10 @@ pub fn disable_split_test_request(base, site_id, split_test_id) {
 }
 
 pub fn disable_split_test_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, body:, ..) = response
   case status {
     204 -> Ok(Nil) |> Ok
-    _ -> utils.decode_bits(body, schema.error_decoder()) |> result.map(Error)
+    _ -> json.parse_bits(body, schema.error_decoder()) |> result.map(Error)
   }
 }
 
@@ -2408,10 +2396,10 @@ pub fn notify_build_start_request(
 }
 
 pub fn notify_build_start_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, body:, ..) = response
   case status {
     204 -> Ok(Nil) |> Ok
-    _ -> utils.decode_bits(body, schema.error_decoder()) |> result.map(Error)
+    _ -> json.parse_bits(body, schema.error_decoder()) |> result.map(Error)
   }
 }
 
@@ -2420,7 +2408,7 @@ pub fn create_site_build_hook_request(base, site_id, build_hook_setup) {
   let path = "/sites/" <> site_id <> "/build_hooks"
   let query = []
   let body =
-    utils.json_to_bits(schema.build_hook_setup_to_json(build_hook_setup))
+    utils.json_to_bits(schema.build_hook_setup_encode(build_hook_setup))
   base
   |> utils.set_method(method)
   |> utils.append_path(path)
@@ -2429,11 +2417,10 @@ pub fn create_site_build_hook_request(base, site_id, build_hook_setup) {
 }
 
 pub fn create_site_build_hook_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, body:, ..) = response
   case status {
-    201 ->
-      utils.decode_bits(body, schema.build_hook_decoder()) |> result.map(Ok)
-    _ -> utils.decode_bits(body, schema.error_decoder()) |> result.map(Error)
+    201 -> json.parse_bits(body, schema.build_hook_decoder()) |> result.map(Ok)
+    _ -> json.parse_bits(body, schema.error_decoder()) |> result.map(Error)
   }
 }
 
@@ -2448,12 +2435,12 @@ pub fn list_site_build_hooks_request(base, site_id) {
 }
 
 pub fn list_site_build_hooks_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, body:, ..) = response
   case status {
     200 ->
-      utils.decode_bits(body, zero.list(schema.build_hook_decoder()))
+      json.parse_bits(body, decode.list(schema.build_hook_decoder()))
       |> result.map(Ok)
-    _ -> utils.decode_bits(body, schema.error_decoder()) |> result.map(Error)
+    _ -> json.parse_bits(body, schema.error_decoder()) |> result.map(Error)
   }
 }
 
@@ -2468,10 +2455,10 @@ pub fn delete_site_snippet_request(base, site_id, snippet_id) {
 }
 
 pub fn delete_site_snippet_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, body:, ..) = response
   case status {
     204 -> Ok(Nil) |> Ok
-    _ -> utils.decode_bits(body, schema.error_decoder()) |> result.map(Error)
+    _ -> json.parse_bits(body, schema.error_decoder()) |> result.map(Error)
   }
 }
 
@@ -2479,7 +2466,7 @@ pub fn update_site_snippet_request(base, site_id, snippet_id, snippet) {
   let method = http.Put
   let path = "/sites/" <> site_id <> "/snippets/" <> snippet_id
   let query = []
-  let body = utils.json_to_bits(schema.snippet_to_json(snippet))
+  let body = utils.json_to_bits(schema.snippet_encode(snippet))
   base
   |> utils.set_method(method)
   |> utils.append_path(path)
@@ -2488,10 +2475,10 @@ pub fn update_site_snippet_request(base, site_id, snippet_id, snippet) {
 }
 
 pub fn update_site_snippet_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, body:, ..) = response
   case status {
     204 -> Ok(Nil) |> Ok
-    _ -> utils.decode_bits(body, schema.error_decoder()) |> result.map(Error)
+    _ -> json.parse_bits(body, schema.error_decoder()) |> result.map(Error)
   }
 }
 
@@ -2506,10 +2493,10 @@ pub fn get_site_snippet_request(base, site_id, snippet_id) {
 }
 
 pub fn get_site_snippet_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, body:, ..) = response
   case status {
-    200 -> utils.decode_bits(body, schema.snippet_decoder()) |> result.map(Ok)
-    _ -> utils.decode_bits(body, schema.error_decoder()) |> result.map(Error)
+    200 -> json.parse_bits(body, schema.snippet_decoder()) |> result.map(Ok)
+    _ -> json.parse_bits(body, schema.error_decoder()) |> result.map(Error)
   }
 }
 
@@ -2524,10 +2511,10 @@ pub fn unlink_site_repo_request(base, site_id) {
 }
 
 pub fn unlink_site_repo_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, body:, ..) = response
   case status {
-    200 -> utils.decode_bits(body, schema.site_decoder()) |> result.map(Ok)
-    _ -> "API doesn't describe default response" |> Error |> Ok
+    200 -> json.parse_bits(body, schema.site_decoder()) |> result.map(Ok)
+    _ -> Error(Nil) |> Ok
   }
 }
 
@@ -2535,7 +2522,7 @@ pub fn create_dns_zone_request(base, dns_zone_setup) {
   let method = http.Post
   let path = "/dns_zones"
   let query = []
-  let body = utils.json_to_bits(schema.dns_zone_setup_to_json(dns_zone_setup))
+  let body = utils.json_to_bits(schema.dns_zone_setup_encode(dns_zone_setup))
   base
   |> utils.set_method(method)
   |> utils.append_path(path)
@@ -2544,10 +2531,10 @@ pub fn create_dns_zone_request(base, dns_zone_setup) {
 }
 
 pub fn create_dns_zone_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, body:, ..) = response
   case status {
-    201 -> utils.decode_bits(body, schema.dns_zone_decoder()) |> result.map(Ok)
-    _ -> utils.decode_bits(body, schema.error_decoder()) |> result.map(Error)
+    201 -> json.parse_bits(body, schema.dns_zone_decoder()) |> result.map(Ok)
+    _ -> json.parse_bits(body, schema.error_decoder()) |> result.map(Error)
   }
 }
 
@@ -2562,10 +2549,10 @@ pub fn get_dns_zones_request(base, account_slug account_slug) {
 }
 
 pub fn get_dns_zones_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, body:, ..) = response
   case status {
-    200 -> utils.decode_bits(body, schema.dns_zones_decoder()) |> result.map(Ok)
-    _ -> utils.decode_bits(body, schema.error_decoder()) |> result.map(Error)
+    200 -> json.parse_bits(body, schema.dns_zones_decoder()) |> result.map(Ok)
+    _ -> json.parse_bits(body, schema.error_decoder()) |> result.map(Error)
   }
 }
 
@@ -2580,12 +2567,12 @@ pub fn get_services_request(base, search search) {
 }
 
 pub fn get_services_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, body:, ..) = response
   case status {
     200 ->
-      utils.decode_bits(body, zero.list(schema.service_decoder()))
+      json.parse_bits(body, decode.list(schema.service_decoder()))
       |> result.map(Ok)
-    _ -> utils.decode_bits(body, schema.error_decoder()) |> result.map(Error)
+    _ -> json.parse_bits(body, schema.error_decoder()) |> result.map(Error)
   }
 }
 
@@ -2593,7 +2580,7 @@ pub fn create_site_build_request(base, site_id, build_setup) {
   let method = http.Post
   let path = "/sites/" <> site_id <> "/builds"
   let query = []
-  let body = utils.json_to_bits(schema.build_setup_to_json(build_setup))
+  let body = utils.json_to_bits(schema.build_setup_encode(build_setup))
   base
   |> utils.set_method(method)
   |> utils.append_path(path)
@@ -2602,10 +2589,10 @@ pub fn create_site_build_request(base, site_id, build_setup) {
 }
 
 pub fn create_site_build_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, body:, ..) = response
   case status {
-    200 -> utils.decode_bits(body, schema.build_decoder()) |> result.map(Ok)
-    _ -> utils.decode_bits(body, schema.error_decoder()) |> result.map(Error)
+    200 -> json.parse_bits(body, schema.build_decoder()) |> result.map(Ok)
+    _ -> json.parse_bits(body, schema.error_decoder()) |> result.map(Error)
   }
 }
 
@@ -2623,12 +2610,12 @@ pub fn list_site_builds_request(base, site_id, page page, per_page per_page) {
 }
 
 pub fn list_site_builds_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, body:, ..) = response
   case status {
     200 ->
-      utils.decode_bits(body, zero.list(schema.build_decoder()))
+      json.parse_bits(body, decode.list(schema.build_decoder()))
       |> result.map(Ok)
-    _ -> utils.decode_bits(body, schema.error_decoder()) |> result.map(Error)
+    _ -> json.parse_bits(body, schema.error_decoder()) |> result.map(Error)
   }
 }
 
@@ -2636,7 +2623,7 @@ pub fn create_hook_by_site_id_request(base, hook, site_id site_id) {
   let method = http.Post
   let path = "/hooks"
   let query = [#("site_id", option.Some(site_id))]
-  let body = utils.json_to_bits(schema.hook_to_json(hook))
+  let body = utils.json_to_bits(schema.hook_encode(hook))
   base
   |> utils.set_method(method)
   |> utils.append_path(path)
@@ -2645,10 +2632,10 @@ pub fn create_hook_by_site_id_request(base, hook, site_id site_id) {
 }
 
 pub fn create_hook_by_site_id_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, body:, ..) = response
   case status {
-    201 -> utils.decode_bits(body, schema.hook_decoder()) |> result.map(Ok)
-    _ -> utils.decode_bits(body, schema.error_decoder()) |> result.map(Error)
+    201 -> json.parse_bits(body, schema.hook_decoder()) |> result.map(Ok)
+    _ -> json.parse_bits(body, schema.error_decoder()) |> result.map(Error)
   }
 }
 
@@ -2663,12 +2650,12 @@ pub fn list_hooks_by_site_id_request(base, site_id site_id) {
 }
 
 pub fn list_hooks_by_site_id_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, body:, ..) = response
   case status {
     200 ->
-      utils.decode_bits(body, zero.list(schema.hook_decoder()))
+      json.parse_bits(body, decode.list(schema.hook_decoder()))
       |> result.map(Ok)
-    _ -> utils.decode_bits(body, schema.error_decoder()) |> result.map(Error)
+    _ -> json.parse_bits(body, schema.error_decoder()) |> result.map(Error)
   }
 }
 
@@ -2683,10 +2670,10 @@ pub fn create_ticket_request(base, client_id client_id) {
 }
 
 pub fn create_ticket_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, body:, ..) = response
   case status {
-    201 -> utils.decode_bits(body, schema.ticket_decoder()) |> result.map(Ok)
-    _ -> utils.decode_bits(body, schema.error_decoder()) |> result.map(Error)
+    201 -> json.parse_bits(body, schema.ticket_decoder()) |> result.map(Ok)
+    _ -> json.parse_bits(body, schema.error_decoder()) |> result.map(Error)
   }
 }
 
@@ -2701,10 +2688,10 @@ pub fn rollback_site_deploy_request(base, site_id) {
 }
 
 pub fn rollback_site_deploy_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, body:, ..) = response
   case status {
     204 -> Ok(Nil) |> Ok
-    _ -> utils.decode_bits(body, schema.error_decoder()) |> result.map(Error)
+    _ -> json.parse_bits(body, schema.error_decoder()) |> result.map(Error)
   }
 }
 
@@ -2719,9 +2706,9 @@ pub fn unlock_deploy_request(base, deploy_id) {
 }
 
 pub fn unlock_deploy_response(response) {
-  let response.Response(status: status, body: body, ..) = response
+  let response.Response(status:, body:, ..) = response
   case status {
-    200 -> utils.decode_bits(body, schema.deploy_decoder()) |> result.map(Ok)
-    _ -> utils.decode_bits(body, schema.error_decoder()) |> result.map(Error)
+    200 -> json.parse_bits(body, schema.deploy_decoder()) |> result.map(Ok)
+    _ -> json.parse_bits(body, schema.error_decoder()) |> result.map(Error)
   }
 }
