@@ -17,7 +17,11 @@ pub fn main() -> Nil {
 Further documentation can be found at <https://hexdocs.pm/netlify>.
 
 ## Development
-
+The API is generated from githubs published Open API spec.
+To generate the code run
+```
+gleam run -m netlify/dev
+```
 ```sh
 gleam run   # Run the project
 gleam test  # Run the tests
