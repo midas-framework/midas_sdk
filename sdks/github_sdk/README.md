@@ -8,13 +8,6 @@ Gleam client for the github API
 ```sh
 gleam add github_sdk@1
 ```
-```gleam
-import github_sdk
-
-pub fn main() -> Nil {
-  // TODO: An example of the project in use
-}
-```
 
 Further documentation can be found at <https://hexdocs.pm/github_sdk>.
 

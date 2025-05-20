@@ -6,8 +6,652 @@ import gleam/http
 import gleam/http/response
 import gleam/int
 import gleam/json
-import gleam/option
+import gleam/option.{type Option, None}
 import gleam/result
+
+pub type CodeSecurityAttachConfigurationResponse {
+  CodeSecurityAttachConfigurationResponse
+}
+
+pub type ReposListAttestationsResponse {
+  ReposListAttestationsResponse(attestations: Option(List(Nil)))
+}
+
+pub type ActionsListWorkflowRunsResponse {
+  ActionsListWorkflowRunsResponse(
+    workflow_runs: List(schema.WorkflowRun),
+    total_count: Int,
+  )
+}
+
+pub type DependabotListRepoSecretsResponse {
+  DependabotListRepoSecretsResponse(
+    secrets: List(schema.DependabotSecret),
+    total_count: Int,
+  )
+}
+
+pub type ReposGetAllDeploymentProtectionRulesResponse {
+  ReposGetAllDeploymentProtectionRulesResponse(
+    total_count: Option(Int),
+    custom_deployment_protection_rules: Option(
+      List(schema.DeploymentProtectionRule),
+    ),
+  )
+}
+
+pub type ProjectsMoveCardResponse {
+  ProjectsMoveCardResponse
+}
+
+pub type SearchTopicsResponse {
+  SearchTopicsResponse(
+    items: List(schema.TopicSearchResultItem),
+    total_count: Int,
+    incomplete_results: Bool,
+  )
+}
+
+pub type ActionsRemoveCustomLabelFromSelfHostedRunnerForOrgResponse {
+  ActionsRemoveCustomLabelFromSelfHostedRunnerForOrgResponse(
+    total_count: Int,
+    labels: List(schema.RunnerLabel),
+  )
+}
+
+pub type EmojisGetResponse {
+  EmojisGetResponse
+}
+
+pub type ChecksListForSuiteResponse {
+  ChecksListForSuiteResponse(
+    total_count: Int,
+    check_runs: List(schema.CheckRun),
+  )
+}
+
+pub type CodespacesGetCodespacesForUserInOrgResponse {
+  CodespacesGetCodespacesForUserInOrgResponse(
+    total_count: Int,
+    codespaces: List(schema.Codespace),
+  )
+}
+
+pub type ReposCreateAttestationResponse {
+  ReposCreateAttestationResponse(id: Option(Int))
+}
+
+pub type ReposCheckPrivateVulnerabilityReportingResponse {
+  ReposCheckPrivateVulnerabilityReportingResponse(enabled: Bool)
+}
+
+pub type ReposRedeliverWebhookDeliveryResponse {
+  ReposRedeliverWebhookDeliveryResponse
+}
+
+pub type CodespacesListOrgSecretsResponse {
+  CodespacesListOrgSecretsResponse(
+    secrets: List(schema.CodespacesOrgSecret),
+    total_count: Int,
+  )
+}
+
+pub type ActionsListRepoSecretsResponse {
+  ActionsListRepoSecretsResponse(
+    secrets: List(schema.ActionsSecret),
+    total_count: Int,
+  )
+}
+
+pub type ActionsListOrgVariablesResponse {
+  ActionsListOrgVariablesResponse(
+    total_count: Int,
+    variables: List(schema.OrganizationActionsVariable),
+  )
+}
+
+pub type ActionsListSelfHostedRunnersForRepoResponse {
+  ActionsListSelfHostedRunnersForRepoResponse(
+    runners: List(schema.Runner),
+    total_count: Int,
+  )
+}
+
+pub type ActivityMarkNotificationsAsReadResponse {
+  ActivityMarkNotificationsAsReadResponse(message: Option(String))
+}
+
+pub type ReposGetAllEnvironmentsResponse {
+  ReposGetAllEnvironmentsResponse(
+    environments: Option(List(schema.Environment)),
+    total_count: Option(Int),
+  )
+}
+
+pub type SearchLabelsResponse {
+  SearchLabelsResponse(
+    items: List(schema.LabelSearchResultItem),
+    total_count: Int,
+    incomplete_results: Bool,
+  )
+}
+
+pub type ActionsListArtifactsForRepoResponse {
+  ActionsListArtifactsForRepoResponse(
+    artifacts: List(schema.Artifact),
+    total_count: Int,
+  )
+}
+
+pub type DependabotListSelectedReposForOrgSecretResponse {
+  DependabotListSelectedReposForOrgSecretResponse(
+    repositories: List(schema.MinimalRepository),
+    total_count: Int,
+  )
+}
+
+pub type ActionsListEnvironmentSecretsResponse {
+  ActionsListEnvironmentSecretsResponse(
+    secrets: List(schema.ActionsSecret),
+    total_count: Int,
+  )
+}
+
+pub type ActionsRemoveAllCustomLabelsFromSelfHostedRunnerForRepoResponse {
+  ActionsRemoveAllCustomLabelsFromSelfHostedRunnerForRepoResponse(
+    total_count: Int,
+    labels: List(schema.RunnerLabel),
+  )
+}
+
+pub type ActionsAddCustomLabelsToSelfHostedRunnerForRepoResponse {
+  ActionsAddCustomLabelsToSelfHostedRunnerForRepoResponse(
+    total_count: Int,
+    labels: List(schema.RunnerLabel),
+  )
+}
+
+pub type ActionsSetCustomLabelsForSelfHostedRunnerForRepoResponse {
+  ActionsSetCustomLabelsForSelfHostedRunnerForRepoResponse(
+    total_count: Int,
+    labels: List(schema.RunnerLabel),
+  )
+}
+
+pub type ActionsListLabelsForSelfHostedRunnerForRepoResponse {
+  ActionsListLabelsForSelfHostedRunnerForRepoResponse(
+    total_count: Int,
+    labels: List(schema.RunnerLabel),
+  )
+}
+
+pub type ActionsListJobsForWorkflowRunResponse {
+  ActionsListJobsForWorkflowRunResponse(
+    total_count: Int,
+    jobs: List(schema.Job),
+  )
+}
+
+pub type CopilotCancelCopilotSeatAssignmentForTeamsResponse {
+  CopilotCancelCopilotSeatAssignmentForTeamsResponse(seats_cancelled: Int)
+}
+
+pub type CopilotAddCopilotSeatsForTeamsResponse {
+  CopilotAddCopilotSeatsForTeamsResponse(seats_created: Int)
+}
+
+pub type CopilotListCopilotSeatsForEnterpriseResponse {
+  CopilotListCopilotSeatsForEnterpriseResponse(
+    seats: Option(List(schema.CopilotSeatDetails)),
+    total_seats: Option(Int),
+  )
+}
+
+pub type ChecksListSuitesForRefResponse {
+  ChecksListSuitesForRefResponse(
+    check_suites: List(schema.CheckSuite),
+    total_count: Int,
+  )
+}
+
+pub type ActionsGenerateRunnerJitconfigForRepoResponse {
+  ActionsGenerateRunnerJitconfigForRepoResponse(
+    runner: schema.Runner,
+    encoded_jit_config: String,
+  )
+}
+
+pub type OrgsConvertMemberToOutsideCollaboratorResponse {
+  OrgsConvertMemberToOutsideCollaboratorResponse
+}
+
+pub type ActionsListJobsForWorkflowRunAttemptResponse {
+  ActionsListJobsForWorkflowRunAttemptResponse(
+    total_count: Int,
+    jobs: List(schema.Job),
+  )
+}
+
+pub type ActionsListSelfHostedRunnerGroupsForOrgResponse {
+  ActionsListSelfHostedRunnerGroupsForOrgResponse(
+    runner_groups: List(schema.RunnerGroupsOrg),
+    total_count: Float,
+  )
+}
+
+pub type ActionsListRepoOrganizationSecretsResponse {
+  ActionsListRepoOrganizationSecretsResponse(
+    secrets: List(schema.ActionsSecret),
+    total_count: Int,
+  )
+}
+
+pub type PullsUpdateBranchResponse {
+  PullsUpdateBranchResponse(message: Option(String), url: Option(String))
+}
+
+pub type DependabotListOrgSecretsResponse {
+  DependabotListOrgSecretsResponse(
+    secrets: List(schema.OrganizationDependabotSecret),
+    total_count: Int,
+  )
+}
+
+pub type CodespacesListInRepositoryForAuthenticatedUserResponse {
+  CodespacesListInRepositoryForAuthenticatedUserResponse(
+    total_count: Int,
+    codespaces: List(schema.Codespace),
+  )
+}
+
+pub type SearchIssuesAndPullRequestsResponse {
+  SearchIssuesAndPullRequestsResponse(
+    items: List(schema.IssueSearchResultItem),
+    total_count: Int,
+    incomplete_results: Bool,
+  )
+}
+
+pub type ActionsListWorkflowRunsForRepoResponse {
+  ActionsListWorkflowRunsForRepoResponse(
+    workflow_runs: List(schema.WorkflowRun),
+    total_count: Int,
+  )
+}
+
+pub type ActionsListSelectedRepositoriesEnabledGithubActionsOrganizationResponse {
+  ActionsListSelectedRepositoriesEnabledGithubActionsOrganizationResponse(
+    repositories: List(schema.Repository),
+    total_count: Float,
+  )
+}
+
+pub type AppsRedeliverWebhookDeliveryResponse {
+  AppsRedeliverWebhookDeliveryResponse
+}
+
+pub type CodespacesDeleteForAuthenticatedUserResponse {
+  CodespacesDeleteForAuthenticatedUserResponse
+}
+
+pub type ActionsRemoveCustomLabelFromSelfHostedRunnerForRepoResponse {
+  ActionsRemoveCustomLabelFromSelfHostedRunnerForRepoResponse(
+    total_count: Int,
+    labels: List(schema.RunnerLabel),
+  )
+}
+
+pub type ActivityMarkRepoNotificationsAsReadResponse {
+  ActivityMarkRepoNotificationsAsReadResponse(
+    message: Option(String),
+    url: Option(String),
+  )
+}
+
+pub type SearchUsersResponse {
+  SearchUsersResponse(
+    items: List(schema.UserSearchResultItem),
+    total_count: Int,
+    incomplete_results: Bool,
+  )
+}
+
+pub type ProjectsMoveColumnResponse {
+  ProjectsMoveColumnResponse
+}
+
+pub type CodespacesListForAuthenticatedUserResponse {
+  CodespacesListForAuthenticatedUserResponse(
+    total_count: Int,
+    codespaces: List(schema.Codespace),
+  )
+}
+
+pub type OrgsListOrgRolesResponse {
+  OrgsListOrgRolesResponse(
+    total_count: Option(Int),
+    roles: Option(List(schema.OrganizationRole)),
+  )
+}
+
+pub type CodespacesListSelectedReposForOrgSecretResponse {
+  CodespacesListSelectedReposForOrgSecretResponse(
+    repositories: List(schema.MinimalRepository),
+    total_count: Int,
+  )
+}
+
+pub type AppsListReposAccessibleToInstallationResponse {
+  AppsListReposAccessibleToInstallationResponse(
+    repositories: List(schema.Repository),
+    total_count: Int,
+    repository_selection: Option(String),
+  )
+}
+
+pub type OrgsListAppInstallationsResponse {
+  OrgsListAppInstallationsResponse(
+    total_count: Int,
+    installations: List(schema.Installation),
+  )
+}
+
+pub type ActionsListRepoVariablesResponse {
+  ActionsListRepoVariablesResponse(
+    total_count: Int,
+    variables: List(schema.ActionsVariable),
+  )
+}
+
+pub type SecurityAdvisoriesCreateRepositoryAdvisoryCveRequestResponse {
+  SecurityAdvisoriesCreateRepositoryAdvisoryCveRequestResponse
+}
+
+pub type CodeSecuritySetConfigurationAsDefaultResponse {
+  CodeSecuritySetConfigurationAsDefaultResponse(
+    default_for_new_repos: Option(String),
+    configuration: Option(schema.CodeSecurityConfiguration),
+  )
+}
+
+pub type OrgsListAttestationsResponse {
+  OrgsListAttestationsResponse(attestations: Option(List(Nil)))
+}
+
+pub type CopilotListCopilotSeatsResponse {
+  CopilotListCopilotSeatsResponse(
+    seats: Option(List(schema.CopilotSeatDetails)),
+    total_seats: Option(Int),
+  )
+}
+
+pub type CodespacesCodespaceMachinesForAuthenticatedUserResponse {
+  CodespacesCodespaceMachinesForAuthenticatedUserResponse(
+    machines: List(schema.CodespaceMachine),
+    total_count: Int,
+  )
+}
+
+pub type AppsListInstallationReposForAuthenticatedUserResponse {
+  AppsListInstallationReposForAuthenticatedUserResponse(
+    repositories: List(schema.Repository),
+    total_count: Int,
+    repository_selection: Option(String),
+  )
+}
+
+pub type ActionsRemoveAllCustomLabelsFromSelfHostedRunnerForOrgResponse {
+  ActionsRemoveAllCustomLabelsFromSelfHostedRunnerForOrgResponse(
+    total_count: Int,
+    labels: List(schema.RunnerLabel),
+  )
+}
+
+pub type ActionsAddCustomLabelsToSelfHostedRunnerForOrgResponse {
+  ActionsAddCustomLabelsToSelfHostedRunnerForOrgResponse(
+    total_count: Int,
+    labels: List(schema.RunnerLabel),
+  )
+}
+
+pub type ActionsSetCustomLabelsForSelfHostedRunnerForOrgResponse {
+  ActionsSetCustomLabelsForSelfHostedRunnerForOrgResponse(
+    total_count: Int,
+    labels: List(schema.RunnerLabel),
+  )
+}
+
+pub type ActionsListLabelsForSelfHostedRunnerForOrgResponse {
+  ActionsListLabelsForSelfHostedRunnerForOrgResponse(
+    total_count: Int,
+    labels: List(schema.RunnerLabel),
+  )
+}
+
+pub type ActionsListEnvironmentVariablesResponse {
+  ActionsListEnvironmentVariablesResponse(
+    total_count: Int,
+    variables: List(schema.ActionsVariable),
+  )
+}
+
+pub type UsersListAttestationsResponse {
+  UsersListAttestationsResponse(attestations: Option(List(Nil)))
+}
+
+pub type ActionsListRepoWorkflowsResponse {
+  ActionsListRepoWorkflowsResponse(
+    total_count: Int,
+    workflows: List(schema.Workflow),
+  )
+}
+
+pub type CodespacesListDevcontainersInRepositoryForAuthenticatedUserResponse {
+  CodespacesListDevcontainersInRepositoryForAuthenticatedUserResponse(
+    devcontainers: List(Nil),
+    total_count: Int,
+  )
+}
+
+pub type ActionsListSelectedReposForOrgVariableResponse {
+  ActionsListSelectedReposForOrgVariableResponse(
+    repositories: List(schema.MinimalRepository),
+    total_count: Int,
+  )
+}
+
+pub type ActionsGetActionsCacheUsageByRepoForOrgResponse {
+  ActionsGetActionsCacheUsageByRepoForOrgResponse(
+    repository_cache_usages: List(schema.ActionsCacheUsageByRepository),
+    total_count: Int,
+  )
+}
+
+pub type ActionsGenerateRunnerJitconfigForOrgResponse {
+  ActionsGenerateRunnerJitconfigForOrgResponse(
+    runner: schema.Runner,
+    encoded_jit_config: String,
+  )
+}
+
+pub type CodespacesRepoMachinesForAuthenticatedUserResponse {
+  CodespacesRepoMachinesForAuthenticatedUserResponse(
+    machines: List(schema.CodespaceMachine),
+    total_count: Int,
+  )
+}
+
+pub type ActionsListRepoOrganizationVariablesResponse {
+  ActionsListRepoOrganizationVariablesResponse(
+    total_count: Int,
+    variables: List(schema.ActionsVariable),
+  )
+}
+
+pub type CopilotCancelCopilotSeatAssignmentForUsersResponse {
+  CopilotCancelCopilotSeatAssignmentForUsersResponse(seats_cancelled: Int)
+}
+
+pub type CopilotAddCopilotSeatsForUsersResponse {
+  CopilotAddCopilotSeatsForUsersResponse(seats_created: Int)
+}
+
+pub type OrgsRedeliverWebhookDeliveryResponse {
+  OrgsRedeliverWebhookDeliveryResponse
+}
+
+pub type CodespacesListInOrganizationResponse {
+  CodespacesListInOrganizationResponse(
+    total_count: Int,
+    codespaces: List(schema.Codespace),
+  )
+}
+
+pub type ActionsListSelfHostedRunnersInGroupForOrgResponse {
+  ActionsListSelfHostedRunnersInGroupForOrgResponse(
+    runners: List(schema.Runner),
+    total_count: Float,
+  )
+}
+
+pub type CodespacesListRepoSecretsResponse {
+  CodespacesListRepoSecretsResponse(
+    secrets: List(schema.RepoCodespacesSecret),
+    total_count: Int,
+  )
+}
+
+pub type ActionsListRepoAccessToSelfHostedRunnerGroupInOrgResponse {
+  ActionsListRepoAccessToSelfHostedRunnerGroupInOrgResponse(
+    repositories: List(schema.MinimalRepository),
+    total_count: Float,
+  )
+}
+
+pub type SearchCodeResponse {
+  SearchCodeResponse(
+    items: List(schema.CodeSearchResultItem),
+    total_count: Int,
+    incomplete_results: Bool,
+  )
+}
+
+pub type CodespacesListRepositoriesForSecretForAuthenticatedUserResponse {
+  CodespacesListRepositoriesForSecretForAuthenticatedUserResponse(
+    repositories: List(schema.MinimalRepository),
+    total_count: Int,
+  )
+}
+
+pub type CodespacesDeleteFromOrganizationResponse {
+  CodespacesDeleteFromOrganizationResponse
+}
+
+pub type ActionsListOrgSecretsResponse {
+  ActionsListOrgSecretsResponse(
+    secrets: List(schema.OrganizationActionsSecret),
+    total_count: Int,
+  )
+}
+
+pub type ActionsListSelfHostedRunnersForOrgResponse {
+  ActionsListSelfHostedRunnersForOrgResponse(
+    runners: List(schema.Runner),
+    total_count: Int,
+  )
+}
+
+pub type SearchCommitsResponse {
+  SearchCommitsResponse(
+    items: List(schema.CommitSearchResultItem),
+    total_count: Int,
+    incomplete_results: Bool,
+  )
+}
+
+pub type DependencyGraphCreateRepositorySnapshotResponse {
+  DependencyGraphCreateRepositorySnapshotResponse(
+    message: String,
+    created_at: String,
+    id: Int,
+    result: String,
+  )
+}
+
+pub type AppsListInstallationsForAuthenticatedUserResponse {
+  AppsListInstallationsForAuthenticatedUserResponse(
+    total_count: Int,
+    installations: List(schema.Installation),
+  )
+}
+
+pub type CodespacesPreFlightWithRepoForAuthenticatedUserResponse {
+  CodespacesPreFlightWithRepoForAuthenticatedUserResponse(
+    defaults: Option(Nil),
+    billable_owner: Option(schema.SimpleUser),
+  )
+}
+
+pub type CodespacesListSecretsForAuthenticatedUserResponse {
+  CodespacesListSecretsForAuthenticatedUserResponse(
+    secrets: List(schema.CodespacesSecret),
+    total_count: Int,
+  )
+}
+
+pub type OrgsDeleteResponse {
+  OrgsDeleteResponse
+}
+
+pub type ActionsListSelectedReposForOrgSecretResponse {
+  ActionsListSelectedReposForOrgSecretResponse(
+    repositories: List(schema.MinimalRepository),
+    total_count: Int,
+  )
+}
+
+pub type ReposListCustomDeploymentRuleIntegrationsResponse {
+  ReposListCustomDeploymentRuleIntegrationsResponse(
+    total_count: Option(Int),
+    available_custom_deployment_protection_rule_integrations: Option(
+      List(schema.CustomDeploymentRuleApp),
+    ),
+  )
+}
+
+pub type ChecksListForRefResponse {
+  ChecksListForRefResponse(total_count: Int, check_runs: List(schema.CheckRun))
+}
+
+pub type OrgsUpdatePatAccessesResponse {
+  OrgsUpdatePatAccessesResponse
+}
+
+pub type ActionsListWorkflowRunArtifactsResponse {
+  ActionsListWorkflowRunArtifactsResponse(
+    artifacts: List(schema.Artifact),
+    total_count: Int,
+  )
+}
+
+pub type SearchReposResponse {
+  SearchReposResponse(
+    items: List(schema.RepoSearchResultItem),
+    total_count: Int,
+    incomplete_results: Bool,
+  )
+}
+
+pub type OrgsReviewPatGrantRequestsInBulkResponse {
+  OrgsReviewPatGrantRequestsInBulkResponse
+}
+
+pub type ReposListDeploymentBranchPoliciesResponse {
+  ReposListDeploymentBranchPoliciesResponse(
+    branch_policies: List(schema.DeploymentBranchPolicy),
+    total_count: Int,
+  )
+}
 
 pub fn packages_list_docker_migration_conflicting_packages_for_user_request(
   base,
@@ -179,7 +823,11 @@ pub fn code_security_attach_configuration_request(
 pub fn code_security_attach_configuration_response(response) {
   let response.Response(status:, body:, ..) = response
   case status {
-    202 -> json.parse_bits(body, decode.dynamic) |> result.map(Ok)
+    202 ->
+      json.parse_bits(body, {
+        decode.success(CodeSecurityAttachConfigurationResponse)
+      })
+      |> result.map(Ok)
     _ -> response |> Error |> Ok
   }
 }
@@ -270,7 +918,18 @@ pub fn repos_list_attestations_request(
 pub fn repos_list_attestations_response(response) {
   let response.Response(status:, body:, ..) = response
   case status {
-    200 -> json.parse_bits(body, decode.dynamic) |> result.map(Ok)
+    200 ->
+      json.parse_bits(body, {
+        use attestations <- decode.optional_field(
+          "attestations",
+          None,
+          decode.optional(
+            decode.list(decode.new_primitive_decoder("Nil", fn(_) { Ok(Nil) })),
+          ),
+        )
+        decode.success(ReposListAttestationsResponse(attestations: attestations))
+      })
+      |> result.map(Ok)
     _ -> response |> Error |> Ok
   }
 }
@@ -493,7 +1152,19 @@ pub fn actions_list_workflow_runs_request(
 pub fn actions_list_workflow_runs_response(response) {
   let response.Response(status:, body:, ..) = response
   case status {
-    200 -> json.parse_bits(body, decode.dynamic) |> result.map(Ok)
+    200 ->
+      json.parse_bits(body, {
+        use workflow_runs <- decode.field(
+          "workflow_runs",
+          decode.list(schema.workflow_run_decoder()),
+        )
+        use total_count <- decode.field("total_count", decode.int)
+        decode.success(ActionsListWorkflowRunsResponse(
+          workflow_runs: workflow_runs,
+          total_count: total_count,
+        ))
+      })
+      |> result.map(Ok)
     _ -> response |> Error |> Ok
   }
 }
@@ -647,7 +1318,7 @@ pub fn issues_remove_all_labels_response(response) {
   }
 }
 
-pub fn issues_add_labels_request(base, owner, repo, issue_number) {
+pub fn issues_add_labels_request(base, owner, repo, issue_number, data) {
   let method = http.Post
   let path =
     "/repos/"
@@ -658,10 +1329,12 @@ pub fn issues_add_labels_request(base, owner, repo, issue_number) {
     <> int.to_string(issue_number)
     <> "/labels"
   let query = []
+  let body = data
   base
   |> utils.set_method(method)
   |> utils.append_path(path)
   |> utils.set_query(query)
+  |> utils.set_body("application/json", body)
 }
 
 pub fn issues_add_labels_response(response) {
@@ -674,7 +1347,7 @@ pub fn issues_add_labels_response(response) {
   }
 }
 
-pub fn issues_set_labels_request(base, owner, repo, issue_number) {
+pub fn issues_set_labels_request(base, owner, repo, issue_number, data) {
   let method = http.Put
   let path =
     "/repos/"
@@ -685,10 +1358,12 @@ pub fn issues_set_labels_request(base, owner, repo, issue_number) {
     <> int.to_string(issue_number)
     <> "/labels"
   let query = []
+  let body = data
   base
   |> utils.set_method(method)
   |> utils.append_path(path)
   |> utils.set_query(query)
+  |> utils.set_body("application/json", body)
 }
 
 pub fn issues_set_labels_response(response) {
@@ -873,7 +1548,19 @@ pub fn dependabot_list_repo_secrets_request(
 pub fn dependabot_list_repo_secrets_response(response) {
   let response.Response(status:, body:, ..) = response
   case status {
-    200 -> json.parse_bits(body, decode.dynamic) |> result.map(Ok)
+    200 ->
+      json.parse_bits(body, {
+        use secrets <- decode.field(
+          "secrets",
+          decode.list(schema.dependabot_secret_decoder()),
+        )
+        use total_count <- decode.field("total_count", decode.int)
+        decode.success(DependabotListRepoSecretsResponse(
+          secrets: secrets,
+          total_count: total_count,
+        ))
+      })
+      |> result.map(Ok)
     _ -> response |> Error |> Ok
   }
 }
@@ -1204,7 +1891,26 @@ pub fn repos_get_all_deployment_protection_rules_request(
 pub fn repos_get_all_deployment_protection_rules_response(response) {
   let response.Response(status:, body:, ..) = response
   case status {
-    200 -> json.parse_bits(body, decode.dynamic) |> result.map(Ok)
+    200 ->
+      json.parse_bits(body, {
+        use total_count <- decode.optional_field(
+          "total_count",
+          None,
+          decode.optional(decode.int),
+        )
+        use custom_deployment_protection_rules <- decode.optional_field(
+          "custom_deployment_protection_rules",
+          None,
+          decode.optional(
+            decode.list(schema.deployment_protection_rule_decoder()),
+          ),
+        )
+        decode.success(ReposGetAllDeploymentProtectionRulesResponse(
+          total_count: total_count,
+          custom_deployment_protection_rules: custom_deployment_protection_rules,
+        ))
+      })
+      |> result.map(Ok)
     _ -> response |> Error |> Ok
   }
 }
@@ -1418,7 +2124,9 @@ pub fn projects_move_card_request(base, card_id, data) {
 pub fn projects_move_card_response(response) {
   let response.Response(status:, body:, ..) = response
   case status {
-    201 -> json.parse_bits(body, decode.dynamic) |> result.map(Ok)
+    201 ->
+      json.parse_bits(body, { decode.success(ProjectsMoveCardResponse) })
+      |> result.map(Ok)
     _ -> response |> Error |> Ok
   }
 }
@@ -1502,7 +2210,7 @@ pub fn migrations_update_import_request(base, owner, repo, data) {
 pub fn migrations_update_import_response(response) {
   let response.Response(status:, body:, ..) = response
   case status {
-    200 -> json.parse_bits(body, schema.import__decoder()) |> result.map(Ok)
+    200 -> json.parse_bits(body, schema.import_decoder()) |> result.map(Ok)
     _ ->
       json.parse_bits(body, schema.basic_error_decoder()) |> result.map(Error)
   }
@@ -1542,7 +2250,7 @@ pub fn migrations_start_import_request(base, owner, repo, data) {
 pub fn migrations_start_import_response(response) {
   let response.Response(status:, body:, ..) = response
   case status {
-    201 -> json.parse_bits(body, schema.import__decoder()) |> result.map(Ok)
+    201 -> json.parse_bits(body, schema.import_decoder()) |> result.map(Ok)
     _ -> response |> Error |> Ok
   }
 }
@@ -1560,7 +2268,7 @@ pub fn migrations_get_import_status_request(base, owner, repo) {
 pub fn migrations_get_import_status_response(response) {
   let response.Response(status:, body:, ..) = response
   case status {
-    200 -> json.parse_bits(body, schema.import__decoder()) |> result.map(Ok)
+    200 -> json.parse_bits(body, schema.import_decoder()) |> result.map(Ok)
     _ -> response |> Error |> Ok
   }
 }
@@ -1879,7 +2587,24 @@ pub fn search_topics_request(base, q q, per_page per_page, page page) {
 pub fn search_topics_response(response) {
   let response.Response(status:, body:, ..) = response
   case status {
-    200 -> json.parse_bits(body, decode.dynamic) |> result.map(Ok)
+    200 ->
+      json.parse_bits(body, {
+        use items <- decode.field(
+          "items",
+          decode.list(schema.topic_search_result_item_decoder()),
+        )
+        use total_count <- decode.field("total_count", decode.int)
+        use incomplete_results <- decode.field(
+          "incomplete_results",
+          decode.bool,
+        )
+        decode.success(SearchTopicsResponse(
+          items: items,
+          total_count: total_count,
+          incomplete_results: incomplete_results,
+        ))
+      })
+      |> result.map(Ok)
     _ -> response |> Error |> Ok
   }
 }
@@ -2129,7 +2854,21 @@ pub fn actions_remove_custom_label_from_self_hosted_runner_for_org_response(
 ) {
   let response.Response(status:, body:, ..) = response
   case status {
-    200 -> json.parse_bits(body, decode.dynamic) |> result.map(Ok)
+    200 ->
+      json.parse_bits(body, {
+        use total_count <- decode.field("total_count", decode.int)
+        use labels <- decode.field(
+          "labels",
+          decode.list(schema.runner_label_decoder()),
+        )
+        decode.success(
+          ActionsRemoveCustomLabelFromSelfHostedRunnerForOrgResponse(
+            total_count: total_count,
+            labels: labels,
+          ),
+        )
+      })
+      |> result.map(Ok)
     _ -> response |> Error |> Ok
   }
 }
@@ -2214,7 +2953,13 @@ pub fn repos_get_all_topics_response(response) {
   }
 }
 
-pub fn repos_remove_team_access_restrictions_request(base, owner, repo, branch) {
+pub fn repos_remove_team_access_restrictions_request(
+  base,
+  owner,
+  repo,
+  branch,
+  data,
+) {
   let method = http.Delete
   let path =
     "/repos/"
@@ -2225,10 +2970,12 @@ pub fn repos_remove_team_access_restrictions_request(base, owner, repo, branch) 
     <> branch
     <> "/protection/restrictions/teams"
   let query = []
+  let body = data
   base
   |> utils.set_method(method)
   |> utils.append_path(path)
   |> utils.set_query(query)
+  |> utils.set_body("application/json", body)
 }
 
 pub fn repos_remove_team_access_restrictions_response(response) {
@@ -2243,7 +2990,13 @@ pub fn repos_remove_team_access_restrictions_response(response) {
   }
 }
 
-pub fn repos_add_team_access_restrictions_request(base, owner, repo, branch) {
+pub fn repos_add_team_access_restrictions_request(
+  base,
+  owner,
+  repo,
+  branch,
+  data,
+) {
   let method = http.Post
   let path =
     "/repos/"
@@ -2254,10 +3007,12 @@ pub fn repos_add_team_access_restrictions_request(base, owner, repo, branch) {
     <> branch
     <> "/protection/restrictions/teams"
   let query = []
+  let body = data
   base
   |> utils.set_method(method)
   |> utils.append_path(path)
   |> utils.set_query(query)
+  |> utils.set_body("application/json", body)
 }
 
 pub fn repos_add_team_access_restrictions_response(response) {
@@ -2272,7 +3027,13 @@ pub fn repos_add_team_access_restrictions_response(response) {
   }
 }
 
-pub fn repos_set_team_access_restrictions_request(base, owner, repo, branch) {
+pub fn repos_set_team_access_restrictions_request(
+  base,
+  owner,
+  repo,
+  branch,
+  data,
+) {
   let method = http.Put
   let path =
     "/repos/"
@@ -2283,10 +3044,12 @@ pub fn repos_set_team_access_restrictions_request(base, owner, repo, branch) {
     <> branch
     <> "/protection/restrictions/teams"
   let query = []
+  let body = data
   base
   |> utils.set_method(method)
   |> utils.append_path(path)
   |> utils.set_query(query)
+  |> utils.set_body("application/json", body)
 }
 
 pub fn repos_set_team_access_restrictions_response(response) {
@@ -2347,7 +3110,9 @@ pub fn emojis_get_request(base) {
 pub fn emojis_get_response(response) {
   let response.Response(status:, body:, ..) = response
   case status {
-    200 -> json.parse_bits(body, decode.dynamic) |> result.map(Ok)
+    200 ->
+      json.parse_bits(body, { decode.success(EmojisGetResponse) })
+      |> result.map(Ok)
     _ -> response |> Error |> Ok
   }
 }
@@ -2618,7 +3383,19 @@ pub fn checks_list_for_suite_request(
 pub fn checks_list_for_suite_response(response) {
   let response.Response(status:, body:, ..) = response
   case status {
-    200 -> json.parse_bits(body, decode.dynamic) |> result.map(Ok)
+    200 ->
+      json.parse_bits(body, {
+        use total_count <- decode.field("total_count", decode.int)
+        use check_runs <- decode.field(
+          "check_runs",
+          decode.list(schema.check_run_decoder()),
+        )
+        decode.success(ChecksListForSuiteResponse(
+          total_count: total_count,
+          check_runs: check_runs,
+        ))
+      })
+      |> result.map(Ok)
     _ -> response |> Error |> Ok
   }
 }
@@ -2974,7 +3751,19 @@ pub fn codespaces_get_codespaces_for_user_in_org_request(
 pub fn codespaces_get_codespaces_for_user_in_org_response(response) {
   let response.Response(status:, body:, ..) = response
   case status {
-    200 -> json.parse_bits(body, decode.dynamic) |> result.map(Ok)
+    200 ->
+      json.parse_bits(body, {
+        use total_count <- decode.field("total_count", decode.int)
+        use codespaces <- decode.field(
+          "codespaces",
+          decode.list(schema.codespace_decoder()),
+        )
+        decode.success(CodespacesGetCodespacesForUserInOrgResponse(
+          total_count: total_count,
+          codespaces: codespaces,
+        ))
+      })
+      |> result.map(Ok)
     _ -> response |> Error |> Ok
   }
 }
@@ -2994,7 +3783,12 @@ pub fn repos_create_attestation_request(base, owner, repo, data) {
 pub fn repos_create_attestation_response(response) {
   let response.Response(status:, body:, ..) = response
   case status {
-    201 -> json.parse_bits(body, decode.dynamic) |> result.map(Ok)
+    201 ->
+      json.parse_bits(body, {
+        use id <- decode.optional_field("id", None, decode.optional(decode.int))
+        decode.success(ReposCreateAttestationResponse(id: id))
+      })
+      |> result.map(Ok)
     _ -> response |> Error |> Ok
   }
 }
@@ -3217,11 +4011,10 @@ pub fn repos_disable_private_vulnerability_reporting_request(base, owner, repo) 
 }
 
 pub fn repos_disable_private_vulnerability_reporting_response(response) {
-  let response.Response(status:, body:, ..) = response
+  let response.Response(status:, ..) = response
   case status {
     204 -> Ok(Nil) |> Ok
-    _ ->
-      json.parse_bits(body, schema.basic_error_decoder()) |> result.map(Error)
+    _ -> Error(Nil) |> Ok
   }
 }
 
@@ -3237,11 +4030,10 @@ pub fn repos_enable_private_vulnerability_reporting_request(base, owner, repo) {
 }
 
 pub fn repos_enable_private_vulnerability_reporting_response(response) {
-  let response.Response(status:, body:, ..) = response
+  let response.Response(status:, ..) = response
   case status {
     204 -> Ok(Nil) |> Ok
-    _ ->
-      json.parse_bits(body, schema.basic_error_decoder()) |> result.map(Error)
+    _ -> Error(Nil) |> Ok
   }
 }
 
@@ -3259,9 +4051,15 @@ pub fn repos_check_private_vulnerability_reporting_request(base, owner, repo) {
 pub fn repos_check_private_vulnerability_reporting_response(response) {
   let response.Response(status:, body:, ..) = response
   case status {
-    200 -> json.parse_bits(body, decode.dynamic) |> result.map(Ok)
-    _ ->
-      json.parse_bits(body, schema.basic_error_decoder()) |> result.map(Error)
+    200 ->
+      json.parse_bits(body, {
+        use enabled <- decode.field("enabled", decode.bool)
+        decode.success(ReposCheckPrivateVulnerabilityReportingResponse(
+          enabled: enabled,
+        ))
+      })
+      |> result.map(Ok)
+    _ -> Error(Nil) |> Ok
   }
 }
 
@@ -3407,7 +4205,11 @@ pub fn repos_redeliver_webhook_delivery_request(
 pub fn repos_redeliver_webhook_delivery_response(response) {
   let response.Response(status:, body:, ..) = response
   case status {
-    202 -> json.parse_bits(body, decode.dynamic) |> result.map(Ok)
+    202 ->
+      json.parse_bits(body, {
+        decode.success(ReposRedeliverWebhookDeliveryResponse)
+      })
+      |> result.map(Ok)
     _ -> response |> Error |> Ok
   }
 }
@@ -3945,7 +4747,19 @@ pub fn codespaces_list_org_secrets_request(
 pub fn codespaces_list_org_secrets_response(response) {
   let response.Response(status:, body:, ..) = response
   case status {
-    200 -> json.parse_bits(body, decode.dynamic) |> result.map(Ok)
+    200 ->
+      json.parse_bits(body, {
+        use secrets <- decode.field(
+          "secrets",
+          decode.list(schema.codespaces_org_secret_decoder()),
+        )
+        use total_count <- decode.field("total_count", decode.int)
+        decode.success(CodespacesListOrgSecretsResponse(
+          secrets: secrets,
+          total_count: total_count,
+        ))
+      })
+      |> result.map(Ok)
     _ -> response |> Error |> Ok
   }
 }
@@ -4547,8 +5361,7 @@ pub fn repos_list_forks_response(response) {
     200 ->
       json.parse_bits(body, decode.list(schema.minimal_repository_decoder()))
       |> result.map(Ok)
-    _ ->
-      json.parse_bits(body, schema.basic_error_decoder()) |> result.map(Error)
+    _ -> Error(Nil) |> Ok
   }
 }
 
@@ -4719,7 +5532,19 @@ pub fn actions_list_repo_secrets_request(
 pub fn actions_list_repo_secrets_response(response) {
   let response.Response(status:, body:, ..) = response
   case status {
-    200 -> json.parse_bits(body, decode.dynamic) |> result.map(Ok)
+    200 ->
+      json.parse_bits(body, {
+        use secrets <- decode.field(
+          "secrets",
+          decode.list(schema.actions_secret_decoder()),
+        )
+        use total_count <- decode.field("total_count", decode.int)
+        decode.success(ActionsListRepoSecretsResponse(
+          secrets: secrets,
+          total_count: total_count,
+        ))
+      })
+      |> result.map(Ok)
     _ -> response |> Error |> Ok
   }
 }
@@ -4766,7 +5591,19 @@ pub fn actions_list_org_variables_request(
 pub fn actions_list_org_variables_response(response) {
   let response.Response(status:, body:, ..) = response
   case status {
-    200 -> json.parse_bits(body, decode.dynamic) |> result.map(Ok)
+    200 ->
+      json.parse_bits(body, {
+        use total_count <- decode.field("total_count", decode.int)
+        use variables <- decode.field(
+          "variables",
+          decode.list(schema.organization_actions_variable_decoder()),
+        )
+        decode.success(ActionsListOrgVariablesResponse(
+          total_count: total_count,
+          variables: variables,
+        ))
+      })
+      |> result.map(Ok)
     _ -> response |> Error |> Ok
   }
 }
@@ -4822,7 +5659,19 @@ pub fn actions_list_self_hosted_runners_for_repo_request(
 pub fn actions_list_self_hosted_runners_for_repo_response(response) {
   let response.Response(status:, body:, ..) = response
   case status {
-    200 -> json.parse_bits(body, decode.dynamic) |> result.map(Ok)
+    200 ->
+      json.parse_bits(body, {
+        use runners <- decode.field(
+          "runners",
+          decode.list(schema.runner_decoder()),
+        )
+        use total_count <- decode.field("total_count", decode.int)
+        decode.success(ActionsListSelfHostedRunnersForRepoResponse(
+          runners: runners,
+          total_count: total_count,
+        ))
+      })
+      |> result.map(Ok)
     _ -> response |> Error |> Ok
   }
 }
@@ -4948,7 +5797,16 @@ pub fn activity_mark_notifications_as_read_request(base, data) {
 pub fn activity_mark_notifications_as_read_response(response) {
   let response.Response(status:, body:, ..) = response
   case status {
-    202 -> json.parse_bits(body, decode.dynamic) |> result.map(Ok)
+    202 ->
+      json.parse_bits(body, {
+        use message <- decode.optional_field(
+          "message",
+          None,
+          decode.optional(decode.string),
+        )
+        decode.success(ActivityMarkNotificationsAsReadResponse(message: message))
+      })
+      |> result.map(Ok)
     _ -> response |> Error |> Ok
   }
 }
@@ -5234,7 +6092,24 @@ pub fn repos_get_all_environments_request(
 pub fn repos_get_all_environments_response(response) {
   let response.Response(status:, body:, ..) = response
   case status {
-    200 -> json.parse_bits(body, decode.dynamic) |> result.map(Ok)
+    200 ->
+      json.parse_bits(body, {
+        use environments <- decode.optional_field(
+          "environments",
+          None,
+          decode.optional(decode.list(schema.environment_decoder())),
+        )
+        use total_count <- decode.optional_field(
+          "total_count",
+          None,
+          decode.optional(decode.int),
+        )
+        decode.success(ReposGetAllEnvironmentsResponse(
+          environments: environments,
+          total_count: total_count,
+        ))
+      })
+      |> result.map(Ok)
     _ -> response |> Error |> Ok
   }
 }
@@ -6394,7 +7269,24 @@ pub fn search_labels_request(
 pub fn search_labels_response(response) {
   let response.Response(status:, body:, ..) = response
   case status {
-    200 -> json.parse_bits(body, decode.dynamic) |> result.map(Ok)
+    200 ->
+      json.parse_bits(body, {
+        use items <- decode.field(
+          "items",
+          decode.list(schema.label_search_result_item_decoder()),
+        )
+        use total_count <- decode.field("total_count", decode.int)
+        use incomplete_results <- decode.field(
+          "incomplete_results",
+          decode.bool,
+        )
+        decode.success(SearchLabelsResponse(
+          items: items,
+          total_count: total_count,
+          incomplete_results: incomplete_results,
+        ))
+      })
+      |> result.map(Ok)
     _ -> response |> Error |> Ok
   }
 }
@@ -6423,7 +7315,19 @@ pub fn actions_list_artifacts_for_repo_request(
 pub fn actions_list_artifacts_for_repo_response(response) {
   let response.Response(status:, body:, ..) = response
   case status {
-    200 -> json.parse_bits(body, decode.dynamic) |> result.map(Ok)
+    200 ->
+      json.parse_bits(body, {
+        use artifacts <- decode.field(
+          "artifacts",
+          decode.list(schema.artifact_decoder()),
+        )
+        use total_count <- decode.field("total_count", decode.int)
+        decode.success(ActionsListArtifactsForRepoResponse(
+          artifacts: artifacts,
+          total_count: total_count,
+        ))
+      })
+      |> result.map(Ok)
     _ -> response |> Error |> Ok
   }
 }
@@ -6845,7 +7749,19 @@ pub fn dependabot_list_selected_repos_for_org_secret_request(
 pub fn dependabot_list_selected_repos_for_org_secret_response(response) {
   let response.Response(status:, body:, ..) = response
   case status {
-    200 -> json.parse_bits(body, decode.dynamic) |> result.map(Ok)
+    200 ->
+      json.parse_bits(body, {
+        use repositories <- decode.field(
+          "repositories",
+          decode.list(schema.minimal_repository_decoder()),
+        )
+        use total_count <- decode.field("total_count", decode.int)
+        decode.success(DependabotListSelectedReposForOrgSecretResponse(
+          repositories: repositories,
+          total_count: total_count,
+        ))
+      })
+      |> result.map(Ok)
     _ -> response |> Error |> Ok
   }
 }
@@ -7106,7 +8022,19 @@ pub fn actions_list_environment_secrets_request(
 pub fn actions_list_environment_secrets_response(response) {
   let response.Response(status:, body:, ..) = response
   case status {
-    200 -> json.parse_bits(body, decode.dynamic) |> result.map(Ok)
+    200 ->
+      json.parse_bits(body, {
+        use secrets <- decode.field(
+          "secrets",
+          decode.list(schema.actions_secret_decoder()),
+        )
+        use total_count <- decode.field("total_count", decode.int)
+        decode.success(ActionsListEnvironmentSecretsResponse(
+          secrets: secrets,
+          total_count: total_count,
+        ))
+      })
+      |> result.map(Ok)
     _ -> response |> Error |> Ok
   }
 }
@@ -7178,7 +8106,21 @@ pub fn actions_remove_all_custom_labels_from_self_hosted_runner_for_repo_respons
 ) {
   let response.Response(status:, body:, ..) = response
   case status {
-    200 -> json.parse_bits(body, decode.dynamic) |> result.map(Ok)
+    200 ->
+      json.parse_bits(body, {
+        use total_count <- decode.field("total_count", decode.int)
+        use labels <- decode.field(
+          "labels",
+          decode.list(schema.runner_label_decoder()),
+        )
+        decode.success(
+          ActionsRemoveAllCustomLabelsFromSelfHostedRunnerForRepoResponse(
+            total_count: total_count,
+            labels: labels,
+          ),
+        )
+      })
+      |> result.map(Ok)
     _ ->
       json.parse_bits(body, schema.basic_error_decoder()) |> result.map(Error)
   }
@@ -7214,7 +8156,19 @@ pub fn actions_add_custom_labels_to_self_hosted_runner_for_repo_response(
 ) {
   let response.Response(status:, body:, ..) = response
   case status {
-    200 -> json.parse_bits(body, decode.dynamic) |> result.map(Ok)
+    200 ->
+      json.parse_bits(body, {
+        use total_count <- decode.field("total_count", decode.int)
+        use labels <- decode.field(
+          "labels",
+          decode.list(schema.runner_label_decoder()),
+        )
+        decode.success(ActionsAddCustomLabelsToSelfHostedRunnerForRepoResponse(
+          total_count: total_count,
+          labels: labels,
+        ))
+      })
+      |> result.map(Ok)
     _ -> response |> Error |> Ok
   }
 }
@@ -7249,7 +8203,19 @@ pub fn actions_set_custom_labels_for_self_hosted_runner_for_repo_response(
 ) {
   let response.Response(status:, body:, ..) = response
   case status {
-    200 -> json.parse_bits(body, decode.dynamic) |> result.map(Ok)
+    200 ->
+      json.parse_bits(body, {
+        use total_count <- decode.field("total_count", decode.int)
+        use labels <- decode.field(
+          "labels",
+          decode.list(schema.runner_label_decoder()),
+        )
+        decode.success(ActionsSetCustomLabelsForSelfHostedRunnerForRepoResponse(
+          total_count: total_count,
+          labels: labels,
+        ))
+      })
+      |> result.map(Ok)
     _ -> response |> Error |> Ok
   }
 }
@@ -7279,7 +8245,19 @@ pub fn actions_list_labels_for_self_hosted_runner_for_repo_request(
 pub fn actions_list_labels_for_self_hosted_runner_for_repo_response(response) {
   let response.Response(status:, body:, ..) = response
   case status {
-    200 -> json.parse_bits(body, decode.dynamic) |> result.map(Ok)
+    200 ->
+      json.parse_bits(body, {
+        use total_count <- decode.field("total_count", decode.int)
+        use labels <- decode.field(
+          "labels",
+          decode.list(schema.runner_label_decoder()),
+        )
+        decode.success(ActionsListLabelsForSelfHostedRunnerForRepoResponse(
+          total_count: total_count,
+          labels: labels,
+        ))
+      })
+      |> result.map(Ok)
     _ ->
       json.parse_bits(body, schema.basic_error_decoder()) |> result.map(Error)
   }
@@ -7536,7 +8514,16 @@ pub fn actions_list_jobs_for_workflow_run_request(
 pub fn actions_list_jobs_for_workflow_run_response(response) {
   let response.Response(status:, body:, ..) = response
   case status {
-    200 -> json.parse_bits(body, decode.dynamic) |> result.map(Ok)
+    200 ->
+      json.parse_bits(body, {
+        use total_count <- decode.field("total_count", decode.int)
+        use jobs <- decode.field("jobs", decode.list(schema.job_decoder()))
+        decode.success(ActionsListJobsForWorkflowRunResponse(
+          total_count: total_count,
+          jobs: jobs,
+        ))
+      })
+      |> result.map(Ok)
     _ -> response |> Error |> Ok
   }
 }
@@ -7935,7 +8922,14 @@ pub fn copilot_cancel_copilot_seat_assignment_for_teams_request(base, org, data)
 pub fn copilot_cancel_copilot_seat_assignment_for_teams_response(response) {
   let response.Response(status:, body:, ..) = response
   case status {
-    200 -> json.parse_bits(body, decode.dynamic) |> result.map(Ok)
+    200 ->
+      json.parse_bits(body, {
+        use seats_cancelled <- decode.field("seats_cancelled", decode.int)
+        decode.success(CopilotCancelCopilotSeatAssignmentForTeamsResponse(
+          seats_cancelled: seats_cancelled,
+        ))
+      })
+      |> result.map(Ok)
     _ -> response |> Error |> Ok
   }
 }
@@ -7955,7 +8949,14 @@ pub fn copilot_add_copilot_seats_for_teams_request(base, org, data) {
 pub fn copilot_add_copilot_seats_for_teams_response(response) {
   let response.Response(status:, body:, ..) = response
   case status {
-    201 -> json.parse_bits(body, decode.dynamic) |> result.map(Ok)
+    201 ->
+      json.parse_bits(body, {
+        use seats_created <- decode.field("seats_created", decode.int)
+        decode.success(CopilotAddCopilotSeatsForTeamsResponse(
+          seats_created: seats_created,
+        ))
+      })
+      |> result.map(Ok)
     _ -> response |> Error |> Ok
   }
 }
@@ -8031,7 +9032,24 @@ pub fn copilot_list_copilot_seats_for_enterprise_request(
 pub fn copilot_list_copilot_seats_for_enterprise_response(response) {
   let response.Response(status:, body:, ..) = response
   case status {
-    200 -> json.parse_bits(body, decode.dynamic) |> result.map(Ok)
+    200 ->
+      json.parse_bits(body, {
+        use seats <- decode.optional_field(
+          "seats",
+          None,
+          decode.optional(decode.list(schema.copilot_seat_details_decoder())),
+        )
+        use total_seats <- decode.optional_field(
+          "total_seats",
+          None,
+          decode.optional(decode.int),
+        )
+        decode.success(CopilotListCopilotSeatsForEnterpriseResponse(
+          seats: seats,
+          total_seats: total_seats,
+        ))
+      })
+      |> result.map(Ok)
     _ -> response |> Error |> Ok
   }
 }
@@ -8084,7 +9102,19 @@ pub fn checks_list_suites_for_ref_request(
 pub fn checks_list_suites_for_ref_response(response) {
   let response.Response(status:, body:, ..) = response
   case status {
-    200 -> json.parse_bits(body, decode.dynamic) |> result.map(Ok)
+    200 ->
+      json.parse_bits(body, {
+        use check_suites <- decode.field(
+          "check_suites",
+          decode.list(schema.check_suite_decoder()),
+        )
+        use total_count <- decode.field("total_count", decode.int)
+        decode.success(ChecksListSuitesForRefResponse(
+          check_suites: check_suites,
+          total_count: total_count,
+        ))
+      })
+      |> result.map(Ok)
     _ -> response |> Error |> Ok
   }
 }
@@ -8346,7 +9376,19 @@ pub fn actions_generate_runner_jitconfig_for_repo_request(
 pub fn actions_generate_runner_jitconfig_for_repo_response(response) {
   let response.Response(status:, body:, ..) = response
   case status {
-    201 -> json.parse_bits(body, decode.dynamic) |> result.map(Ok)
+    201 ->
+      json.parse_bits(body, {
+        use runner <- decode.field("runner", schema.runner_decoder())
+        use encoded_jit_config <- decode.field(
+          "encoded_jit_config",
+          decode.string,
+        )
+        decode.success(ActionsGenerateRunnerJitconfigForRepoResponse(
+          runner: runner,
+          encoded_jit_config: encoded_jit_config,
+        ))
+      })
+      |> result.map(Ok)
     _ -> response |> Error |> Ok
   }
 }
@@ -8836,24 +9878,6 @@ pub fn copilot_usage_metrics_for_team_response(response) {
   }
 }
 
-pub fn orgs_remove_outside_collaborator_request(base, org, username) {
-  let method = http.Delete
-  let path = "/orgs/" <> org <> "/outside_collaborators/" <> username
-  let query = []
-  base
-  |> utils.set_method(method)
-  |> utils.append_path(path)
-  |> utils.set_query(query)
-}
-
-pub fn orgs_remove_outside_collaborator_response(response) {
-  let response.Response(status:, body:, ..) = response
-  case status {
-    204 -> Ok(Nil) |> Ok
-    _ -> json.parse_bits(body, decode.dynamic) |> result.map(Error)
-  }
-}
-
 pub fn orgs_convert_member_to_outside_collaborator_request(
   base,
   org,
@@ -8874,7 +9898,11 @@ pub fn orgs_convert_member_to_outside_collaborator_request(
 pub fn orgs_convert_member_to_outside_collaborator_response(response) {
   let response.Response(status:, body:, ..) = response
   case status {
-    202 -> json.parse_bits(body, decode.dynamic) |> result.map(Ok)
+    202 ->
+      json.parse_bits(body, {
+        decode.success(OrgsConvertMemberToOutsideCollaboratorResponse)
+      })
+      |> result.map(Ok)
     _ -> response |> Error |> Ok
   }
 }
@@ -9039,7 +10067,16 @@ pub fn actions_list_jobs_for_workflow_run_attempt_request(
 pub fn actions_list_jobs_for_workflow_run_attempt_response(response) {
   let response.Response(status:, body:, ..) = response
   case status {
-    200 -> json.parse_bits(body, decode.dynamic) |> result.map(Ok)
+    200 ->
+      json.parse_bits(body, {
+        use total_count <- decode.field("total_count", decode.int)
+        use jobs <- decode.field("jobs", decode.list(schema.job_decoder()))
+        decode.success(ActionsListJobsForWorkflowRunAttemptResponse(
+          total_count: total_count,
+          jobs: jobs,
+        ))
+      })
+      |> result.map(Ok)
     _ ->
       json.parse_bits(body, schema.basic_error_decoder()) |> result.map(Error)
   }
@@ -9259,7 +10296,19 @@ pub fn actions_list_self_hosted_runner_groups_for_org_request(
 pub fn actions_list_self_hosted_runner_groups_for_org_response(response) {
   let response.Response(status:, body:, ..) = response
   case status {
-    200 -> json.parse_bits(body, decode.dynamic) |> result.map(Ok)
+    200 ->
+      json.parse_bits(body, {
+        use runner_groups <- decode.field(
+          "runner_groups",
+          decode.list(schema.runner_groups_org_decoder()),
+        )
+        use total_count <- decode.field("total_count", decode.float)
+        decode.success(ActionsListSelfHostedRunnerGroupsForOrgResponse(
+          runner_groups: runner_groups,
+          total_count: total_count,
+        ))
+      })
+      |> result.map(Ok)
     _ -> response |> Error |> Ok
   }
 }
@@ -9316,7 +10365,19 @@ pub fn actions_list_repo_organization_secrets_request(
 pub fn actions_list_repo_organization_secrets_response(response) {
   let response.Response(status:, body:, ..) = response
   case status {
-    200 -> json.parse_bits(body, decode.dynamic) |> result.map(Ok)
+    200 ->
+      json.parse_bits(body, {
+        use secrets <- decode.field(
+          "secrets",
+          decode.list(schema.actions_secret_decoder()),
+        )
+        use total_count <- decode.field("total_count", decode.int)
+        decode.success(ActionsListRepoOrganizationSecretsResponse(
+          secrets: secrets,
+          total_count: total_count,
+        ))
+      })
+      |> result.map(Ok)
     _ -> response |> Error |> Ok
   }
 }
@@ -9544,7 +10605,21 @@ pub fn pulls_update_branch_request(base, owner, repo, pull_number, data) {
 pub fn pulls_update_branch_response(response) {
   let response.Response(status:, body:, ..) = response
   case status {
-    202 -> json.parse_bits(body, decode.dynamic) |> result.map(Ok)
+    202 ->
+      json.parse_bits(body, {
+        use message <- decode.optional_field(
+          "message",
+          None,
+          decode.optional(decode.string),
+        )
+        use url <- decode.optional_field(
+          "url",
+          None,
+          decode.optional(decode.string),
+        )
+        decode.success(PullsUpdateBranchResponse(message: message, url: url))
+      })
+      |> result.map(Ok)
     _ -> response |> Error |> Ok
   }
 }
@@ -9741,7 +10816,19 @@ pub fn dependabot_list_org_secrets_request(
 pub fn dependabot_list_org_secrets_response(response) {
   let response.Response(status:, body:, ..) = response
   case status {
-    200 -> json.parse_bits(body, decode.dynamic) |> result.map(Ok)
+    200 ->
+      json.parse_bits(body, {
+        use secrets <- decode.field(
+          "secrets",
+          decode.list(schema.organization_dependabot_secret_decoder()),
+        )
+        use total_count <- decode.field("total_count", decode.int)
+        decode.success(DependabotListOrgSecretsResponse(
+          secrets: secrets,
+          total_count: total_count,
+        ))
+      })
+      |> result.map(Ok)
     _ -> response |> Error |> Ok
   }
 }
@@ -10215,7 +11302,19 @@ pub fn codespaces_list_in_repository_for_authenticated_user_request(
 pub fn codespaces_list_in_repository_for_authenticated_user_response(response) {
   let response.Response(status:, body:, ..) = response
   case status {
-    200 -> json.parse_bits(body, decode.dynamic) |> result.map(Ok)
+    200 ->
+      json.parse_bits(body, {
+        use total_count <- decode.field("total_count", decode.int)
+        use codespaces <- decode.field(
+          "codespaces",
+          decode.list(schema.codespace_decoder()),
+        )
+        decode.success(CodespacesListInRepositoryForAuthenticatedUserResponse(
+          total_count: total_count,
+          codespaces: codespaces,
+        ))
+      })
+      |> result.map(Ok)
     _ -> response |> Error |> Ok
   }
 }
@@ -10315,7 +11414,24 @@ pub fn search_issues_and_pull_requests_request(
 pub fn search_issues_and_pull_requests_response(response) {
   let response.Response(status:, body:, ..) = response
   case status {
-    200 -> json.parse_bits(body, decode.dynamic) |> result.map(Ok)
+    200 ->
+      json.parse_bits(body, {
+        use items <- decode.field(
+          "items",
+          decode.list(schema.issue_search_result_item_decoder()),
+        )
+        use total_count <- decode.field("total_count", decode.int)
+        use incomplete_results <- decode.field(
+          "incomplete_results",
+          decode.bool,
+        )
+        decode.success(SearchIssuesAndPullRequestsResponse(
+          items: items,
+          total_count: total_count,
+          incomplete_results: incomplete_results,
+        ))
+      })
+      |> result.map(Ok)
     _ -> response |> Error |> Ok
   }
 }
@@ -10569,7 +11685,19 @@ pub fn actions_list_workflow_runs_for_repo_request(
 pub fn actions_list_workflow_runs_for_repo_response(response) {
   let response.Response(status:, body:, ..) = response
   case status {
-    200 -> json.parse_bits(body, decode.dynamic) |> result.map(Ok)
+    200 ->
+      json.parse_bits(body, {
+        use workflow_runs <- decode.field(
+          "workflow_runs",
+          decode.list(schema.workflow_run_decoder()),
+        )
+        use total_count <- decode.field("total_count", decode.int)
+        decode.success(ActionsListWorkflowRunsForRepoResponse(
+          workflow_runs: workflow_runs,
+          total_count: total_count,
+        ))
+      })
+      |> result.map(Ok)
     _ -> response |> Error |> Ok
   }
 }
@@ -10727,7 +11855,21 @@ pub fn actions_list_selected_repositories_enabled_github_actions_organization_re
 ) {
   let response.Response(status:, body:, ..) = response
   case status {
-    200 -> json.parse_bits(body, decode.dynamic) |> result.map(Ok)
+    200 ->
+      json.parse_bits(body, {
+        use repositories <- decode.field(
+          "repositories",
+          decode.list(schema.repository_decoder()),
+        )
+        use total_count <- decode.field("total_count", decode.float)
+        decode.success(
+          ActionsListSelectedRepositoriesEnabledGithubActionsOrganizationResponse(
+            repositories: repositories,
+            total_count: total_count,
+          ),
+        )
+      })
+      |> result.map(Ok)
     _ -> response |> Error |> Ok
   }
 }
@@ -10804,7 +11946,11 @@ pub fn apps_redeliver_webhook_delivery_request(base, delivery_id) {
 pub fn apps_redeliver_webhook_delivery_response(response) {
   let response.Response(status:, body:, ..) = response
   case status {
-    202 -> json.parse_bits(body, decode.dynamic) |> result.map(Ok)
+    202 ->
+      json.parse_bits(body, {
+        decode.success(AppsRedeliverWebhookDeliveryResponse)
+      })
+      |> result.map(Ok)
     _ -> response |> Error |> Ok
   }
 }
@@ -11121,7 +12267,11 @@ pub fn codespaces_delete_for_authenticated_user_request(base, codespace_name) {
 pub fn codespaces_delete_for_authenticated_user_response(response) {
   let response.Response(status:, body:, ..) = response
   case status {
-    202 -> json.parse_bits(body, decode.dynamic) |> result.map(Ok)
+    202 ->
+      json.parse_bits(body, {
+        decode.success(CodespacesDeleteForAuthenticatedUserResponse)
+      })
+      |> result.map(Ok)
     _ -> response |> Error |> Ok
   }
 }
@@ -11658,7 +12808,21 @@ pub fn actions_remove_custom_label_from_self_hosted_runner_for_repo_response(
 ) {
   let response.Response(status:, body:, ..) = response
   case status {
-    200 -> json.parse_bits(body, decode.dynamic) |> result.map(Ok)
+    200 ->
+      json.parse_bits(body, {
+        use total_count <- decode.field("total_count", decode.int)
+        use labels <- decode.field(
+          "labels",
+          decode.list(schema.runner_label_decoder()),
+        )
+        decode.success(
+          ActionsRemoveCustomLabelFromSelfHostedRunnerForRepoResponse(
+            total_count: total_count,
+            labels: labels,
+          ),
+        )
+      })
+      |> result.map(Ok)
     _ -> response |> Error |> Ok
   }
 }
@@ -12080,7 +13244,24 @@ pub fn activity_mark_repo_notifications_as_read_request(base, owner, repo, data)
 pub fn activity_mark_repo_notifications_as_read_response(response) {
   let response.Response(status:, body:, ..) = response
   case status {
-    202 -> json.parse_bits(body, decode.dynamic) |> result.map(Ok)
+    202 ->
+      json.parse_bits(body, {
+        use message <- decode.optional_field(
+          "message",
+          None,
+          decode.optional(decode.string),
+        )
+        use url <- decode.optional_field(
+          "url",
+          None,
+          decode.optional(decode.string),
+        )
+        decode.success(ActivityMarkRepoNotificationsAsReadResponse(
+          message: message,
+          url: url,
+        ))
+      })
+      |> result.map(Ok)
     _ -> response |> Error |> Ok
   }
 }
@@ -12150,7 +13331,24 @@ pub fn search_users_request(
 pub fn search_users_response(response) {
   let response.Response(status:, body:, ..) = response
   case status {
-    200 -> json.parse_bits(body, decode.dynamic) |> result.map(Ok)
+    200 ->
+      json.parse_bits(body, {
+        use items <- decode.field(
+          "items",
+          decode.list(schema.user_search_result_item_decoder()),
+        )
+        use total_count <- decode.field("total_count", decode.int)
+        use incomplete_results <- decode.field(
+          "incomplete_results",
+          decode.bool,
+        )
+        decode.success(SearchUsersResponse(
+          items: items,
+          total_count: total_count,
+          incomplete_results: incomplete_results,
+        ))
+      })
+      |> result.map(Ok)
     _ -> response |> Error |> Ok
   }
 }
@@ -12256,14 +13454,16 @@ pub fn codespaces_get_org_public_key_response(response) {
   }
 }
 
-pub fn projects_create_card_request(base, column_id) {
+pub fn projects_create_card_request(base, column_id, data) {
   let method = http.Post
   let path = "/projects/columns/" <> int.to_string(column_id) <> "/cards"
   let query = []
+  let body = data
   base
   |> utils.set_method(method)
   |> utils.append_path(path)
   |> utils.set_query(query)
+  |> utils.set_body("application/json", body)
 }
 
 pub fn projects_create_card_response(response) {
@@ -12480,7 +13680,9 @@ pub fn projects_move_column_request(base, column_id, data) {
 pub fn projects_move_column_response(response) {
   let response.Response(status:, body:, ..) = response
   case status {
-    201 -> json.parse_bits(body, decode.dynamic) |> result.map(Ok)
+    201 ->
+      json.parse_bits(body, { decode.success(ProjectsMoveColumnResponse) })
+      |> result.map(Ok)
     _ -> response |> Error |> Ok
   }
 }
@@ -12724,14 +13926,16 @@ pub fn actions_create_registration_token_for_org_response(response) {
   }
 }
 
-pub fn codespaces_create_for_authenticated_user_request(base) {
+pub fn codespaces_create_for_authenticated_user_request(base, data) {
   let method = http.Post
   let path = "/user/codespaces"
   let query = []
+  let body = data
   base
   |> utils.set_method(method)
   |> utils.append_path(path)
   |> utils.set_query(query)
+  |> utils.set_body("application/json", body)
 }
 
 pub fn codespaces_create_for_authenticated_user_response(response) {
@@ -12764,7 +13968,19 @@ pub fn codespaces_list_for_authenticated_user_request(
 pub fn codespaces_list_for_authenticated_user_response(response) {
   let response.Response(status:, body:, ..) = response
   case status {
-    200 -> json.parse_bits(body, decode.dynamic) |> result.map(Ok)
+    200 ->
+      json.parse_bits(body, {
+        use total_count <- decode.field("total_count", decode.int)
+        use codespaces <- decode.field(
+          "codespaces",
+          decode.list(schema.codespace_decoder()),
+        )
+        decode.success(CodespacesListForAuthenticatedUserResponse(
+          total_count: total_count,
+          codespaces: codespaces,
+        ))
+      })
+      |> result.map(Ok)
     _ -> response |> Error |> Ok
   }
 }
@@ -12782,7 +13998,24 @@ pub fn orgs_list_org_roles_request(base, org) {
 pub fn orgs_list_org_roles_response(response) {
   let response.Response(status:, body:, ..) = response
   case status {
-    200 -> json.parse_bits(body, decode.dynamic) |> result.map(Ok)
+    200 ->
+      json.parse_bits(body, {
+        use total_count <- decode.optional_field(
+          "total_count",
+          None,
+          decode.optional(decode.int),
+        )
+        use roles <- decode.optional_field(
+          "roles",
+          None,
+          decode.optional(decode.list(schema.organization_role_decoder())),
+        )
+        decode.success(OrgsListOrgRolesResponse(
+          total_count: total_count,
+          roles: roles,
+        ))
+      })
+      |> result.map(Ok)
     _ -> response |> Error |> Ok
   }
 }
@@ -13045,7 +14278,19 @@ pub fn codespaces_list_selected_repos_for_org_secret_request(
 pub fn codespaces_list_selected_repos_for_org_secret_response(response) {
   let response.Response(status:, body:, ..) = response
   case status {
-    200 -> json.parse_bits(body, decode.dynamic) |> result.map(Ok)
+    200 ->
+      json.parse_bits(body, {
+        use repositories <- decode.field(
+          "repositories",
+          decode.list(schema.minimal_repository_decoder()),
+        )
+        use total_count <- decode.field("total_count", decode.int)
+        decode.success(CodespacesListSelectedReposForOrgSecretResponse(
+          repositories: repositories,
+          total_count: total_count,
+        ))
+      })
+      |> result.map(Ok)
     _ ->
       json.parse_bits(body, schema.basic_error_decoder()) |> result.map(Error)
   }
@@ -13506,7 +14751,25 @@ pub fn apps_list_repos_accessible_to_installation_request(
 pub fn apps_list_repos_accessible_to_installation_response(response) {
   let response.Response(status:, body:, ..) = response
   case status {
-    200 -> json.parse_bits(body, decode.dynamic) |> result.map(Ok)
+    200 ->
+      json.parse_bits(body, {
+        use repositories <- decode.field(
+          "repositories",
+          decode.list(schema.repository_decoder()),
+        )
+        use total_count <- decode.field("total_count", decode.int)
+        use repository_selection <- decode.optional_field(
+          "repository_selection",
+          None,
+          decode.optional(decode.string),
+        )
+        decode.success(AppsListReposAccessibleToInstallationResponse(
+          repositories: repositories,
+          total_count: total_count,
+          repository_selection: repository_selection,
+        ))
+      })
+      |> result.map(Ok)
     _ -> response |> Error |> Ok
   }
 }
@@ -13719,7 +14982,19 @@ pub fn orgs_list_app_installations_request(
 pub fn orgs_list_app_installations_response(response) {
   let response.Response(status:, body:, ..) = response
   case status {
-    200 -> json.parse_bits(body, decode.dynamic) |> result.map(Ok)
+    200 ->
+      json.parse_bits(body, {
+        use total_count <- decode.field("total_count", decode.int)
+        use installations <- decode.field(
+          "installations",
+          decode.list(schema.installation_decoder()),
+        )
+        decode.success(OrgsListAppInstallationsResponse(
+          total_count: total_count,
+          installations: installations,
+        ))
+      })
+      |> result.map(Ok)
     _ -> response |> Error |> Ok
   }
 }
@@ -13927,7 +15202,19 @@ pub fn actions_list_repo_variables_request(
 pub fn actions_list_repo_variables_response(response) {
   let response.Response(status:, body:, ..) = response
   case status {
-    200 -> json.parse_bits(body, decode.dynamic) |> result.map(Ok)
+    200 ->
+      json.parse_bits(body, {
+        use total_count <- decode.field("total_count", decode.int)
+        use variables <- decode.field(
+          "variables",
+          decode.list(schema.actions_variable_decoder()),
+        )
+        decode.success(ActionsListRepoVariablesResponse(
+          total_count: total_count,
+          variables: variables,
+        ))
+      })
+      |> result.map(Ok)
     _ -> response |> Error |> Ok
   }
 }
@@ -14050,38 +15337,6 @@ pub fn teams_remove_project_in_org_response(response) {
   case status {
     204 -> Ok(Nil) |> Ok
     _ -> response |> Error |> Ok
-  }
-}
-
-pub fn teams_add_or_update_project_permissions_in_org_request(
-  base,
-  org,
-  team_slug,
-  project_id,
-  data,
-) {
-  let method = http.Put
-  let path =
-    "/orgs/"
-    <> org
-    <> "/teams/"
-    <> team_slug
-    <> "/projects/"
-    <> int.to_string(project_id)
-  let query = []
-  let body = data
-  base
-  |> utils.set_method(method)
-  |> utils.append_path(path)
-  |> utils.set_query(query)
-  |> utils.set_body("application/json", body)
-}
-
-pub fn teams_add_or_update_project_permissions_in_org_response(response) {
-  let response.Response(status:, body:, ..) = response
-  case status {
-    204 -> Ok(Nil) |> Ok
-    _ -> json.parse_bits(body, decode.dynamic) |> result.map(Error)
   }
 }
 
@@ -14300,7 +15555,13 @@ pub fn security_advisories_create_repository_advisory_cve_request_response(
 ) {
   let response.Response(status:, body:, ..) = response
   case status {
-    202 -> json.parse_bits(body, decode.dynamic) |> result.map(Ok)
+    202 ->
+      json.parse_bits(body, {
+        decode.success(
+          SecurityAdvisoriesCreateRepositoryAdvisoryCveRequestResponse,
+        )
+      })
+      |> result.map(Ok)
     _ -> response |> Error |> Ok
   }
 }
@@ -14370,7 +15631,13 @@ pub fn teams_list_child_in_org_response(response) {
   }
 }
 
-pub fn repos_remove_status_check_contexts_request(base, owner, repo, branch) {
+pub fn repos_remove_status_check_contexts_request(
+  base,
+  owner,
+  repo,
+  branch,
+  data,
+) {
   let method = http.Delete
   let path =
     "/repos/"
@@ -14381,10 +15648,12 @@ pub fn repos_remove_status_check_contexts_request(base, owner, repo, branch) {
     <> branch
     <> "/protection/required_status_checks/contexts"
   let query = []
+  let body = data
   base
   |> utils.set_method(method)
   |> utils.append_path(path)
   |> utils.set_query(query)
+  |> utils.set_body("application/json", body)
 }
 
 pub fn repos_remove_status_check_contexts_response(response) {
@@ -14397,7 +15666,7 @@ pub fn repos_remove_status_check_contexts_response(response) {
   }
 }
 
-pub fn repos_add_status_check_contexts_request(base, owner, repo, branch) {
+pub fn repos_add_status_check_contexts_request(base, owner, repo, branch, data) {
   let method = http.Post
   let path =
     "/repos/"
@@ -14408,10 +15677,12 @@ pub fn repos_add_status_check_contexts_request(base, owner, repo, branch) {
     <> branch
     <> "/protection/required_status_checks/contexts"
   let query = []
+  let body = data
   base
   |> utils.set_method(method)
   |> utils.append_path(path)
   |> utils.set_query(query)
+  |> utils.set_body("application/json", body)
 }
 
 pub fn repos_add_status_check_contexts_response(response) {
@@ -14424,7 +15695,7 @@ pub fn repos_add_status_check_contexts_response(response) {
   }
 }
 
-pub fn repos_set_status_check_contexts_request(base, owner, repo, branch) {
+pub fn repos_set_status_check_contexts_request(base, owner, repo, branch, data) {
   let method = http.Put
   let path =
     "/repos/"
@@ -14435,10 +15706,12 @@ pub fn repos_set_status_check_contexts_request(base, owner, repo, branch) {
     <> branch
     <> "/protection/required_status_checks/contexts"
   let query = []
+  let body = data
   base
   |> utils.set_method(method)
   |> utils.append_path(path)
   |> utils.set_query(query)
+  |> utils.set_body("application/json", body)
 }
 
 pub fn repos_set_status_check_contexts_response(response) {
@@ -14582,7 +15855,24 @@ pub fn code_security_set_configuration_as_default_request(
 pub fn code_security_set_configuration_as_default_response(response) {
   let response.Response(status:, body:, ..) = response
   case status {
-    200 -> json.parse_bits(body, decode.dynamic) |> result.map(Ok)
+    200 ->
+      json.parse_bits(body, {
+        use default_for_new_repos <- decode.optional_field(
+          "default_for_new_repos",
+          None,
+          decode.optional(decode.string),
+        )
+        use configuration <- decode.optional_field(
+          "configuration",
+          None,
+          decode.optional(schema.code_security_configuration_decoder()),
+        )
+        decode.success(CodeSecuritySetConfigurationAsDefaultResponse(
+          default_for_new_repos: default_for_new_repos,
+          configuration: configuration,
+        ))
+      })
+      |> result.map(Ok)
     _ -> response |> Error |> Ok
   }
 }
@@ -14659,14 +15949,16 @@ pub fn oidc_get_oidc_custom_sub_template_for_org_response(response) {
   }
 }
 
-pub fn users_delete_email_for_authenticated_user_request(base) {
+pub fn users_delete_email_for_authenticated_user_request(base, data) {
   let method = http.Delete
   let path = "/user/emails"
   let query = []
+  let body = data
   base
   |> utils.set_method(method)
   |> utils.append_path(path)
   |> utils.set_query(query)
+  |> utils.set_body("application/json", body)
 }
 
 pub fn users_delete_email_for_authenticated_user_response(response) {
@@ -14677,14 +15969,16 @@ pub fn users_delete_email_for_authenticated_user_response(response) {
   }
 }
 
-pub fn users_add_email_for_authenticated_user_request(base) {
+pub fn users_add_email_for_authenticated_user_request(base, data) {
   let method = http.Post
   let path = "/user/emails"
   let query = []
+  let body = data
   base
   |> utils.set_method(method)
   |> utils.append_path(path)
   |> utils.set_query(query)
+  |> utils.set_body("application/json", body)
 }
 
 pub fn users_add_email_for_authenticated_user_response(response) {
@@ -15624,7 +16918,18 @@ pub fn orgs_list_attestations_request(
 pub fn orgs_list_attestations_response(response) {
   let response.Response(status:, body:, ..) = response
   case status {
-    200 -> json.parse_bits(body, decode.dynamic) |> result.map(Ok)
+    200 ->
+      json.parse_bits(body, {
+        use attestations <- decode.optional_field(
+          "attestations",
+          None,
+          decode.optional(
+            decode.list(decode.new_primitive_decoder("Nil", fn(_) { Ok(Nil) })),
+          ),
+        )
+        decode.success(OrgsListAttestationsResponse(attestations: attestations))
+      })
+      |> result.map(Ok)
     _ -> response |> Error |> Ok
   }
 }
@@ -16145,7 +17450,24 @@ pub fn copilot_list_copilot_seats_request(
 pub fn copilot_list_copilot_seats_response(response) {
   let response.Response(status:, body:, ..) = response
   case status {
-    200 -> json.parse_bits(body, decode.dynamic) |> result.map(Ok)
+    200 ->
+      json.parse_bits(body, {
+        use seats <- decode.optional_field(
+          "seats",
+          None,
+          decode.optional(decode.list(schema.copilot_seat_details_decoder())),
+        )
+        use total_seats <- decode.optional_field(
+          "total_seats",
+          None,
+          decode.optional(decode.int),
+        )
+        decode.success(CopilotListCopilotSeatsResponse(
+          seats: seats,
+          total_seats: total_seats,
+        ))
+      })
+      |> result.map(Ok)
     _ -> response |> Error |> Ok
   }
 }
@@ -16642,7 +17964,19 @@ pub fn codespaces_codespace_machines_for_authenticated_user_request(
 pub fn codespaces_codespace_machines_for_authenticated_user_response(response) {
   let response.Response(status:, body:, ..) = response
   case status {
-    200 -> json.parse_bits(body, decode.dynamic) |> result.map(Ok)
+    200 ->
+      json.parse_bits(body, {
+        use machines <- decode.field(
+          "machines",
+          decode.list(schema.codespace_machine_decoder()),
+        )
+        use total_count <- decode.field("total_count", decode.int)
+        decode.success(CodespacesCodespaceMachinesForAuthenticatedUserResponse(
+          machines: machines,
+          total_count: total_count,
+        ))
+      })
+      |> result.map(Ok)
     _ -> response |> Error |> Ok
   }
 }
@@ -16729,7 +18063,25 @@ pub fn apps_list_installation_repos_for_authenticated_user_request(
 pub fn apps_list_installation_repos_for_authenticated_user_response(response) {
   let response.Response(status:, body:, ..) = response
   case status {
-    200 -> json.parse_bits(body, decode.dynamic) |> result.map(Ok)
+    200 ->
+      json.parse_bits(body, {
+        use repositories <- decode.field(
+          "repositories",
+          decode.list(schema.repository_decoder()),
+        )
+        use total_count <- decode.field("total_count", decode.int)
+        use repository_selection <- decode.optional_field(
+          "repository_selection",
+          None,
+          decode.optional(decode.string),
+        )
+        decode.success(AppsListInstallationReposForAuthenticatedUserResponse(
+          repositories: repositories,
+          total_count: total_count,
+          repository_selection: repository_selection,
+        ))
+      })
+      |> result.map(Ok)
     _ -> response |> Error |> Ok
   }
 }
@@ -16802,7 +18154,21 @@ pub fn actions_remove_all_custom_labels_from_self_hosted_runner_for_org_response
 ) {
   let response.Response(status:, body:, ..) = response
   case status {
-    200 -> json.parse_bits(body, decode.dynamic) |> result.map(Ok)
+    200 ->
+      json.parse_bits(body, {
+        use total_count <- decode.field("total_count", decode.int)
+        use labels <- decode.field(
+          "labels",
+          decode.list(schema.runner_label_decoder()),
+        )
+        decode.success(
+          ActionsRemoveAllCustomLabelsFromSelfHostedRunnerForOrgResponse(
+            total_count: total_count,
+            labels: labels,
+          ),
+        )
+      })
+      |> result.map(Ok)
     _ ->
       json.parse_bits(body, schema.basic_error_decoder()) |> result.map(Error)
   }
@@ -16835,7 +18201,19 @@ pub fn actions_add_custom_labels_to_self_hosted_runner_for_org_response(
 ) {
   let response.Response(status:, body:, ..) = response
   case status {
-    200 -> json.parse_bits(body, decode.dynamic) |> result.map(Ok)
+    200 ->
+      json.parse_bits(body, {
+        use total_count <- decode.field("total_count", decode.int)
+        use labels <- decode.field(
+          "labels",
+          decode.list(schema.runner_label_decoder()),
+        )
+        decode.success(ActionsAddCustomLabelsToSelfHostedRunnerForOrgResponse(
+          total_count: total_count,
+          labels: labels,
+        ))
+      })
+      |> result.map(Ok)
     _ -> response |> Error |> Ok
   }
 }
@@ -16867,7 +18245,19 @@ pub fn actions_set_custom_labels_for_self_hosted_runner_for_org_response(
 ) {
   let response.Response(status:, body:, ..) = response
   case status {
-    200 -> json.parse_bits(body, decode.dynamic) |> result.map(Ok)
+    200 ->
+      json.parse_bits(body, {
+        use total_count <- decode.field("total_count", decode.int)
+        use labels <- decode.field(
+          "labels",
+          decode.list(schema.runner_label_decoder()),
+        )
+        decode.success(ActionsSetCustomLabelsForSelfHostedRunnerForOrgResponse(
+          total_count: total_count,
+          labels: labels,
+        ))
+      })
+      |> result.map(Ok)
     _ -> response |> Error |> Ok
   }
 }
@@ -16894,7 +18284,19 @@ pub fn actions_list_labels_for_self_hosted_runner_for_org_request(
 pub fn actions_list_labels_for_self_hosted_runner_for_org_response(response) {
   let response.Response(status:, body:, ..) = response
   case status {
-    200 -> json.parse_bits(body, decode.dynamic) |> result.map(Ok)
+    200 ->
+      json.parse_bits(body, {
+        use total_count <- decode.field("total_count", decode.int)
+        use labels <- decode.field(
+          "labels",
+          decode.list(schema.runner_label_decoder()),
+        )
+        decode.success(ActionsListLabelsForSelfHostedRunnerForOrgResponse(
+          total_count: total_count,
+          labels: labels,
+        ))
+      })
+      |> result.map(Ok)
     _ ->
       json.parse_bits(body, schema.basic_error_decoder()) |> result.map(Error)
   }
@@ -17127,7 +18529,19 @@ pub fn actions_list_environment_variables_request(
 pub fn actions_list_environment_variables_response(response) {
   let response.Response(status:, body:, ..) = response
   case status {
-    200 -> json.parse_bits(body, decode.dynamic) |> result.map(Ok)
+    200 ->
+      json.parse_bits(body, {
+        use total_count <- decode.field("total_count", decode.int)
+        use variables <- decode.field(
+          "variables",
+          decode.list(schema.actions_variable_decoder()),
+        )
+        decode.success(ActionsListEnvironmentVariablesResponse(
+          total_count: total_count,
+          variables: variables,
+        ))
+      })
+      |> result.map(Ok)
     _ -> response |> Error |> Ok
   }
 }
@@ -17261,7 +18675,18 @@ pub fn users_list_attestations_request(
 pub fn users_list_attestations_response(response) {
   let response.Response(status:, body:, ..) = response
   case status {
-    200 -> json.parse_bits(body, decode.dynamic) |> result.map(Ok)
+    200 ->
+      json.parse_bits(body, {
+        use attestations <- decode.optional_field(
+          "attestations",
+          None,
+          decode.optional(
+            decode.list(decode.new_primitive_decoder("Nil", fn(_) { Ok(Nil) })),
+          ),
+        )
+        decode.success(UsersListAttestationsResponse(attestations: attestations))
+      })
+      |> result.map(Ok)
     _ ->
       json.parse_bits(body, schema.basic_error_decoder()) |> result.map(Error)
   }
@@ -17289,7 +18714,19 @@ pub fn actions_list_repo_workflows_request(
 pub fn actions_list_repo_workflows_response(response) {
   let response.Response(status:, body:, ..) = response
   case status {
-    200 -> json.parse_bits(body, decode.dynamic) |> result.map(Ok)
+    200 ->
+      json.parse_bits(body, {
+        use total_count <- decode.field("total_count", decode.int)
+        use workflows <- decode.field(
+          "workflows",
+          decode.list(schema.workflow_decoder()),
+        )
+        decode.success(ActionsListRepoWorkflowsResponse(
+          total_count: total_count,
+          workflows: workflows,
+        ))
+      })
+      |> result.map(Ok)
     _ -> response |> Error |> Ok
   }
 }
@@ -17636,11 +19073,9 @@ pub fn activity_list_repos_starred_by_authenticated_user_request(
 }
 
 pub fn activity_list_repos_starred_by_authenticated_user_response(response) {
-  let response.Response(status:, body:, ..) = response
+  let response.Response(status:, ..) = response
   case status {
-    200 ->
-      json.parse_bits(body, decode.list(schema.repository_decoder()))
-      |> result.map(Ok)
+    200 -> Ok(Nil) |> Ok
     _ -> response |> Error |> Ok
   }
 }
@@ -17669,7 +19104,21 @@ pub fn codespaces_list_devcontainers_in_repository_for_authenticated_user_respon
 ) {
   let response.Response(status:, body:, ..) = response
   case status {
-    200 -> json.parse_bits(body, decode.dynamic) |> result.map(Ok)
+    200 ->
+      json.parse_bits(body, {
+        use devcontainers <- decode.field(
+          "devcontainers",
+          decode.list(decode.new_primitive_decoder("Nil", fn(_) { Ok(Nil) })),
+        )
+        use total_count <- decode.field("total_count", decode.int)
+        decode.success(
+          CodespacesListDevcontainersInRepositoryForAuthenticatedUserResponse(
+            devcontainers: devcontainers,
+            total_count: total_count,
+          ),
+        )
+      })
+      |> result.map(Ok)
     _ -> response |> Error |> Ok
   }
 }
@@ -17793,7 +19242,19 @@ pub fn actions_list_selected_repos_for_org_variable_request(
 pub fn actions_list_selected_repos_for_org_variable_response(response) {
   let response.Response(status:, body:, ..) = response
   case status {
-    200 -> json.parse_bits(body, decode.dynamic) |> result.map(Ok)
+    200 ->
+      json.parse_bits(body, {
+        use repositories <- decode.field(
+          "repositories",
+          decode.list(schema.minimal_repository_decoder()),
+        )
+        use total_count <- decode.field("total_count", decode.int)
+        decode.success(ActionsListSelectedReposForOrgVariableResponse(
+          repositories: repositories,
+          total_count: total_count,
+        ))
+      })
+      |> result.map(Ok)
     _ -> Error(Nil) |> Ok
   }
 }
@@ -18221,7 +19682,19 @@ pub fn actions_get_actions_cache_usage_by_repo_for_org_request(
 pub fn actions_get_actions_cache_usage_by_repo_for_org_response(response) {
   let response.Response(status:, body:, ..) = response
   case status {
-    200 -> json.parse_bits(body, decode.dynamic) |> result.map(Ok)
+    200 ->
+      json.parse_bits(body, {
+        use repository_cache_usages <- decode.field(
+          "repository_cache_usages",
+          decode.list(schema.actions_cache_usage_by_repository_decoder()),
+        )
+        use total_count <- decode.field("total_count", decode.int)
+        decode.success(ActionsGetActionsCacheUsageByRepoForOrgResponse(
+          repository_cache_usages: repository_cache_usages,
+          total_count: total_count,
+        ))
+      })
+      |> result.map(Ok)
     _ -> response |> Error |> Ok
   }
 }
@@ -18282,7 +19755,19 @@ pub fn actions_generate_runner_jitconfig_for_org_request(base, org, data) {
 pub fn actions_generate_runner_jitconfig_for_org_response(response) {
   let response.Response(status:, body:, ..) = response
   case status {
-    201 -> json.parse_bits(body, decode.dynamic) |> result.map(Ok)
+    201 ->
+      json.parse_bits(body, {
+        use runner <- decode.field("runner", schema.runner_decoder())
+        use encoded_jit_config <- decode.field(
+          "encoded_jit_config",
+          decode.string,
+        )
+        decode.success(ActionsGenerateRunnerJitconfigForOrgResponse(
+          runner: runner,
+          encoded_jit_config: encoded_jit_config,
+        ))
+      })
+      |> result.map(Ok)
     _ -> response |> Error |> Ok
   }
 }
@@ -18504,7 +19989,19 @@ pub fn codespaces_repo_machines_for_authenticated_user_request(
 pub fn codespaces_repo_machines_for_authenticated_user_response(response) {
   let response.Response(status:, body:, ..) = response
   case status {
-    200 -> json.parse_bits(body, decode.dynamic) |> result.map(Ok)
+    200 ->
+      json.parse_bits(body, {
+        use machines <- decode.field(
+          "machines",
+          decode.list(schema.codespace_machine_decoder()),
+        )
+        use total_count <- decode.field("total_count", decode.int)
+        decode.success(CodespacesRepoMachinesForAuthenticatedUserResponse(
+          machines: machines,
+          total_count: total_count,
+        ))
+      })
+      |> result.map(Ok)
     _ -> response |> Error |> Ok
   }
 }
@@ -19268,7 +20765,19 @@ pub fn actions_list_repo_organization_variables_request(
 pub fn actions_list_repo_organization_variables_response(response) {
   let response.Response(status:, body:, ..) = response
   case status {
-    200 -> json.parse_bits(body, decode.dynamic) |> result.map(Ok)
+    200 ->
+      json.parse_bits(body, {
+        use total_count <- decode.field("total_count", decode.int)
+        use variables <- decode.field(
+          "variables",
+          decode.list(schema.actions_variable_decoder()),
+        )
+        decode.success(ActionsListRepoOrganizationVariablesResponse(
+          total_count: total_count,
+          variables: variables,
+        ))
+      })
+      |> result.map(Ok)
     _ -> response |> Error |> Ok
   }
 }
@@ -19721,7 +21230,14 @@ pub fn copilot_cancel_copilot_seat_assignment_for_users_request(base, org, data)
 pub fn copilot_cancel_copilot_seat_assignment_for_users_response(response) {
   let response.Response(status:, body:, ..) = response
   case status {
-    200 -> json.parse_bits(body, decode.dynamic) |> result.map(Ok)
+    200 ->
+      json.parse_bits(body, {
+        use seats_cancelled <- decode.field("seats_cancelled", decode.int)
+        decode.success(CopilotCancelCopilotSeatAssignmentForUsersResponse(
+          seats_cancelled: seats_cancelled,
+        ))
+      })
+      |> result.map(Ok)
     _ -> response |> Error |> Ok
   }
 }
@@ -19741,7 +21257,14 @@ pub fn copilot_add_copilot_seats_for_users_request(base, org, data) {
 pub fn copilot_add_copilot_seats_for_users_response(response) {
   let response.Response(status:, body:, ..) = response
   case status {
-    201 -> json.parse_bits(body, decode.dynamic) |> result.map(Ok)
+    201 ->
+      json.parse_bits(body, {
+        use seats_created <- decode.field("seats_created", decode.int)
+        decode.success(CopilotAddCopilotSeatsForUsersResponse(
+          seats_created: seats_created,
+        ))
+      })
+      |> result.map(Ok)
     _ -> response |> Error |> Ok
   }
 }
@@ -19761,7 +21284,7 @@ pub fn migrations_set_lfs_preference_request(base, owner, repo, data) {
 pub fn migrations_set_lfs_preference_response(response) {
   let response.Response(status:, body:, ..) = response
   case status {
-    200 -> json.parse_bits(body, schema.import__decoder()) |> result.map(Ok)
+    200 -> json.parse_bits(body, schema.import_decoder()) |> result.map(Ok)
     _ -> response |> Error |> Ok
   }
 }
@@ -19894,7 +21417,13 @@ pub fn gitignore_get_template_response(response) {
   }
 }
 
-pub fn actions_review_custom_gates_for_run_request(base, owner, repo, run_id) {
+pub fn actions_review_custom_gates_for_run_request(
+  base,
+  owner,
+  repo,
+  run_id,
+  data,
+) {
   let method = http.Post
   let path =
     "/repos/"
@@ -19905,10 +21434,12 @@ pub fn actions_review_custom_gates_for_run_request(base, owner, repo, run_id) {
     <> int.to_string(run_id)
     <> "/deployment_protection_rule"
   let query = []
+  let body = data
   base
   |> utils.set_method(method)
   |> utils.append_path(path)
   |> utils.set_query(query)
+  |> utils.set_body("application/json", body)
 }
 
 pub fn actions_review_custom_gates_for_run_response(response) {
@@ -20183,7 +21714,11 @@ pub fn orgs_redeliver_webhook_delivery_request(base, org, hook_id, delivery_id) 
 pub fn orgs_redeliver_webhook_delivery_response(response) {
   let response.Response(status:, body:, ..) = response
   case status {
-    202 -> json.parse_bits(body, decode.dynamic) |> result.map(Ok)
+    202 ->
+      json.parse_bits(body, {
+        decode.success(OrgsRedeliverWebhookDeliveryResponse)
+      })
+      |> result.map(Ok)
     _ -> response |> Error |> Ok
   }
 }
@@ -20364,7 +21899,19 @@ pub fn codespaces_list_in_organization_request(
 pub fn codespaces_list_in_organization_response(response) {
   let response.Response(status:, body:, ..) = response
   case status {
-    200 -> json.parse_bits(body, decode.dynamic) |> result.map(Ok)
+    200 ->
+      json.parse_bits(body, {
+        use total_count <- decode.field("total_count", decode.int)
+        use codespaces <- decode.field(
+          "codespaces",
+          decode.list(schema.codespace_decoder()),
+        )
+        decode.success(CodespacesListInOrganizationResponse(
+          total_count: total_count,
+          codespaces: codespaces,
+        ))
+      })
+      |> result.map(Ok)
     _ -> response |> Error |> Ok
   }
 }
@@ -20476,7 +22023,19 @@ pub fn actions_list_self_hosted_runners_in_group_for_org_request(
 pub fn actions_list_self_hosted_runners_in_group_for_org_response(response) {
   let response.Response(status:, body:, ..) = response
   case status {
-    200 -> json.parse_bits(body, decode.dynamic) |> result.map(Ok)
+    200 ->
+      json.parse_bits(body, {
+        use runners <- decode.field(
+          "runners",
+          decode.list(schema.runner_decoder()),
+        )
+        use total_count <- decode.field("total_count", decode.float)
+        decode.success(ActionsListSelfHostedRunnersInGroupForOrgResponse(
+          runners: runners,
+          total_count: total_count,
+        ))
+      })
+      |> result.map(Ok)
     _ -> response |> Error |> Ok
   }
 }
@@ -21246,7 +22805,19 @@ pub fn codespaces_list_repo_secrets_request(
 pub fn codespaces_list_repo_secrets_response(response) {
   let response.Response(status:, body:, ..) = response
   case status {
-    200 -> json.parse_bits(body, decode.dynamic) |> result.map(Ok)
+    200 ->
+      json.parse_bits(body, {
+        use secrets <- decode.field(
+          "secrets",
+          decode.list(schema.repo_codespaces_secret_decoder()),
+        )
+        use total_count <- decode.field("total_count", decode.int)
+        decode.success(CodespacesListRepoSecretsResponse(
+          secrets: secrets,
+          total_count: total_count,
+        ))
+      })
+      |> result.map(Ok)
     _ -> response |> Error |> Ok
   }
 }
@@ -21706,7 +23277,21 @@ pub fn actions_list_repo_access_to_self_hosted_runner_group_in_org_response(
 ) {
   let response.Response(status:, body:, ..) = response
   case status {
-    200 -> json.parse_bits(body, decode.dynamic) |> result.map(Ok)
+    200 ->
+      json.parse_bits(body, {
+        use repositories <- decode.field(
+          "repositories",
+          decode.list(schema.minimal_repository_decoder()),
+        )
+        use total_count <- decode.field("total_count", decode.float)
+        decode.success(
+          ActionsListRepoAccessToSelfHostedRunnerGroupInOrgResponse(
+            repositories: repositories,
+            total_count: total_count,
+          ),
+        )
+      })
+      |> result.map(Ok)
     _ -> response |> Error |> Ok
   }
 }
@@ -21849,7 +23434,24 @@ pub fn search_code_request(
 pub fn search_code_response(response) {
   let response.Response(status:, body:, ..) = response
   case status {
-    200 -> json.parse_bits(body, decode.dynamic) |> result.map(Ok)
+    200 ->
+      json.parse_bits(body, {
+        use items <- decode.field(
+          "items",
+          decode.list(schema.code_search_result_item_decoder()),
+        )
+        use total_count <- decode.field("total_count", decode.int)
+        use incomplete_results <- decode.field(
+          "incomplete_results",
+          decode.bool,
+        )
+        decode.success(SearchCodeResponse(
+          items: items,
+          total_count: total_count,
+          incomplete_results: incomplete_results,
+        ))
+      })
+      |> result.map(Ok)
     _ -> response |> Error |> Ok
   }
 }
@@ -21946,7 +23548,21 @@ pub fn codespaces_list_repositories_for_secret_for_authenticated_user_response(
 ) {
   let response.Response(status:, body:, ..) = response
   case status {
-    200 -> json.parse_bits(body, decode.dynamic) |> result.map(Ok)
+    200 ->
+      json.parse_bits(body, {
+        use repositories <- decode.field(
+          "repositories",
+          decode.list(schema.minimal_repository_decoder()),
+        )
+        use total_count <- decode.field("total_count", decode.int)
+        decode.success(
+          CodespacesListRepositoriesForSecretForAuthenticatedUserResponse(
+            repositories: repositories,
+            total_count: total_count,
+          ),
+        )
+      })
+      |> result.map(Ok)
     _ -> response |> Error |> Ok
   }
 }
@@ -21975,7 +23591,11 @@ pub fn codespaces_delete_from_organization_request(
 pub fn codespaces_delete_from_organization_response(response) {
   let response.Response(status:, body:, ..) = response
   case status {
-    202 -> json.parse_bits(body, decode.dynamic) |> result.map(Ok)
+    202 ->
+      json.parse_bits(body, {
+        decode.success(CodespacesDeleteFromOrganizationResponse)
+      })
+      |> result.map(Ok)
     _ -> response |> Error |> Ok
   }
 }
@@ -22125,7 +23745,19 @@ pub fn actions_list_org_secrets_request(base, org, per_page per_page, page page)
 pub fn actions_list_org_secrets_response(response) {
   let response.Response(status:, body:, ..) = response
   case status {
-    200 -> json.parse_bits(body, decode.dynamic) |> result.map(Ok)
+    200 ->
+      json.parse_bits(body, {
+        use secrets <- decode.field(
+          "secrets",
+          decode.list(schema.organization_actions_secret_decoder()),
+        )
+        use total_count <- decode.field("total_count", decode.int)
+        decode.success(ActionsListOrgSecretsResponse(
+          secrets: secrets,
+          total_count: total_count,
+        ))
+      })
+      |> result.map(Ok)
     _ -> response |> Error |> Ok
   }
 }
@@ -22258,7 +23890,19 @@ pub fn actions_list_self_hosted_runners_for_org_request(
 pub fn actions_list_self_hosted_runners_for_org_response(response) {
   let response.Response(status:, body:, ..) = response
   case status {
-    200 -> json.parse_bits(body, decode.dynamic) |> result.map(Ok)
+    200 ->
+      json.parse_bits(body, {
+        use runners <- decode.field(
+          "runners",
+          decode.list(schema.runner_decoder()),
+        )
+        use total_count <- decode.field("total_count", decode.int)
+        decode.success(ActionsListSelfHostedRunnersForOrgResponse(
+          runners: runners,
+          total_count: total_count,
+        ))
+      })
+      |> result.map(Ok)
     _ -> response |> Error |> Ok
   }
 }
@@ -22678,7 +24322,24 @@ pub fn search_commits_request(
 pub fn search_commits_response(response) {
   let response.Response(status:, body:, ..) = response
   case status {
-    200 -> json.parse_bits(body, decode.dynamic) |> result.map(Ok)
+    200 ->
+      json.parse_bits(body, {
+        use items <- decode.field(
+          "items",
+          decode.list(schema.commit_search_result_item_decoder()),
+        )
+        use total_count <- decode.field("total_count", decode.int)
+        use incomplete_results <- decode.field(
+          "incomplete_results",
+          decode.bool,
+        )
+        decode.success(SearchCommitsResponse(
+          items: items,
+          total_count: total_count,
+          incomplete_results: incomplete_results,
+        ))
+      })
+      |> result.map(Ok)
     _ -> response |> Error |> Ok
   }
 }
@@ -22836,7 +24497,20 @@ pub fn dependency_graph_create_repository_snapshot_request(
 pub fn dependency_graph_create_repository_snapshot_response(response) {
   let response.Response(status:, body:, ..) = response
   case status {
-    201 -> json.parse_bits(body, decode.dynamic) |> result.map(Ok)
+    201 ->
+      json.parse_bits(body, {
+        use message <- decode.field("message", decode.string)
+        use created_at <- decode.field("created_at", decode.string)
+        use id <- decode.field("id", decode.int)
+        use result <- decode.field("result", decode.string)
+        decode.success(DependencyGraphCreateRepositorySnapshotResponse(
+          message: message,
+          created_at: created_at,
+          id: id,
+          result: result,
+        ))
+      })
+      |> result.map(Ok)
     _ -> response |> Error |> Ok
   }
 }
@@ -23173,7 +24847,19 @@ pub fn apps_list_installations_for_authenticated_user_request(
 pub fn apps_list_installations_for_authenticated_user_response(response) {
   let response.Response(status:, body:, ..) = response
   case status {
-    200 -> json.parse_bits(body, decode.dynamic) |> result.map(Ok)
+    200 ->
+      json.parse_bits(body, {
+        use total_count <- decode.field("total_count", decode.int)
+        use installations <- decode.field(
+          "installations",
+          decode.list(schema.installation_decoder()),
+        )
+        decode.success(AppsListInstallationsForAuthenticatedUserResponse(
+          total_count: total_count,
+          installations: installations,
+        ))
+      })
+      |> result.map(Ok)
     _ -> response |> Error |> Ok
   }
 }
@@ -23286,7 +24972,26 @@ pub fn codespaces_pre_flight_with_repo_for_authenticated_user_request(
 pub fn codespaces_pre_flight_with_repo_for_authenticated_user_response(response) {
   let response.Response(status:, body:, ..) = response
   case status {
-    200 -> json.parse_bits(body, decode.dynamic) |> result.map(Ok)
+    200 ->
+      json.parse_bits(body, {
+        use defaults <- decode.optional_field(
+          "defaults",
+          None,
+          decode.optional(
+            decode.new_primitive_decoder("Nil", fn(_) { Ok(Nil) }),
+          ),
+        )
+        use billable_owner <- decode.optional_field(
+          "billable_owner",
+          None,
+          decode.optional(schema.simple_user_decoder()),
+        )
+        decode.success(CodespacesPreFlightWithRepoForAuthenticatedUserResponse(
+          defaults: defaults,
+          billable_owner: billable_owner,
+        ))
+      })
+      |> result.map(Ok)
     _ -> response |> Error |> Ok
   }
 }
@@ -23368,7 +25073,19 @@ pub fn codespaces_list_secrets_for_authenticated_user_request(
 pub fn codespaces_list_secrets_for_authenticated_user_response(response) {
   let response.Response(status:, body:, ..) = response
   case status {
-    200 -> json.parse_bits(body, decode.dynamic) |> result.map(Ok)
+    200 ->
+      json.parse_bits(body, {
+        use secrets <- decode.field(
+          "secrets",
+          decode.list(schema.codespaces_secret_decoder()),
+        )
+        use total_count <- decode.field("total_count", decode.int)
+        decode.success(CodespacesListSecretsForAuthenticatedUserResponse(
+          secrets: secrets,
+          total_count: total_count,
+        ))
+      })
+      |> result.map(Ok)
     _ -> response |> Error |> Ok
   }
 }
@@ -23440,7 +25157,9 @@ pub fn orgs_delete_request(base, org) {
 pub fn orgs_delete_response(response) {
   let response.Response(status:, body:, ..) = response
   case status {
-    202 -> json.parse_bits(body, decode.dynamic) |> result.map(Ok)
+    202 ->
+      json.parse_bits(body, { decode.success(OrgsDeleteResponse) })
+      |> result.map(Ok)
     _ -> response |> Error |> Ok
   }
 }
@@ -23650,7 +25369,19 @@ pub fn actions_list_selected_repos_for_org_secret_request(
 pub fn actions_list_selected_repos_for_org_secret_response(response) {
   let response.Response(status:, body:, ..) = response
   case status {
-    200 -> json.parse_bits(body, decode.dynamic) |> result.map(Ok)
+    200 ->
+      json.parse_bits(body, {
+        use repositories <- decode.field(
+          "repositories",
+          decode.list(schema.minimal_repository_decoder()),
+        )
+        use total_count <- decode.field("total_count", decode.int)
+        decode.success(ActionsListSelectedReposForOrgSecretResponse(
+          repositories: repositories,
+          total_count: total_count,
+        ))
+      })
+      |> result.map(Ok)
     _ -> response |> Error |> Ok
   }
 }
@@ -23716,7 +25447,26 @@ pub fn repos_list_custom_deployment_rule_integrations_request(
 pub fn repos_list_custom_deployment_rule_integrations_response(response) {
   let response.Response(status:, body:, ..) = response
   case status {
-    200 -> json.parse_bits(body, decode.dynamic) |> result.map(Ok)
+    200 ->
+      json.parse_bits(body, {
+        use total_count <- decode.optional_field(
+          "total_count",
+          None,
+          decode.optional(decode.int),
+        )
+        use available_custom_deployment_protection_rule_integrations <- decode.optional_field(
+          "available_custom_deployment_protection_rule_integrations",
+          None,
+          decode.optional(
+            decode.list(schema.custom_deployment_rule_app_decoder()),
+          ),
+        )
+        decode.success(ReposListCustomDeploymentRuleIntegrationsResponse(
+          total_count: total_count,
+          available_custom_deployment_protection_rule_integrations: available_custom_deployment_protection_rule_integrations,
+        ))
+      })
+      |> result.map(Ok)
     _ -> response |> Error |> Ok
   }
 }
@@ -24115,7 +25865,19 @@ pub fn checks_list_for_ref_request(
 pub fn checks_list_for_ref_response(response) {
   let response.Response(status:, body:, ..) = response
   case status {
-    200 -> json.parse_bits(body, decode.dynamic) |> result.map(Ok)
+    200 ->
+      json.parse_bits(body, {
+        use total_count <- decode.field("total_count", decode.int)
+        use check_runs <- decode.field(
+          "check_runs",
+          decode.list(schema.check_run_decoder()),
+        )
+        decode.success(ChecksListForRefResponse(
+          total_count: total_count,
+          check_runs: check_runs,
+        ))
+      })
+      |> result.map(Ok)
     _ -> response |> Error |> Ok
   }
 }
@@ -24218,7 +25980,9 @@ pub fn orgs_update_pat_accesses_request(base, org, data) {
 pub fn orgs_update_pat_accesses_response(response) {
   let response.Response(status:, body:, ..) = response
   case status {
-    202 -> json.parse_bits(body, decode.dynamic) |> result.map(Ok)
+    202 ->
+      json.parse_bits(body, { decode.success(OrgsUpdatePatAccessesResponse) })
+      |> result.map(Ok)
     _ -> response |> Error |> Ok
   }
 }
@@ -24471,7 +26235,19 @@ pub fn actions_list_workflow_run_artifacts_request(
 pub fn actions_list_workflow_run_artifacts_response(response) {
   let response.Response(status:, body:, ..) = response
   case status {
-    200 -> json.parse_bits(body, decode.dynamic) |> result.map(Ok)
+    200 ->
+      json.parse_bits(body, {
+        use artifacts <- decode.field(
+          "artifacts",
+          decode.list(schema.artifact_decoder()),
+        )
+        use total_count <- decode.field("total_count", decode.int)
+        decode.success(ActionsListWorkflowRunArtifactsResponse(
+          artifacts: artifacts,
+          total_count: total_count,
+        ))
+      })
+      |> result.map(Ok)
     _ -> response |> Error |> Ok
   }
 }
@@ -25524,7 +27300,24 @@ pub fn search_repos_request(
 pub fn search_repos_response(response) {
   let response.Response(status:, body:, ..) = response
   case status {
-    200 -> json.parse_bits(body, decode.dynamic) |> result.map(Ok)
+    200 ->
+      json.parse_bits(body, {
+        use items <- decode.field(
+          "items",
+          decode.list(schema.repo_search_result_item_decoder()),
+        )
+        use total_count <- decode.field("total_count", decode.int)
+        use incomplete_results <- decode.field(
+          "incomplete_results",
+          decode.bool,
+        )
+        decode.success(SearchReposResponse(
+          items: items,
+          total_count: total_count,
+          incomplete_results: incomplete_results,
+        ))
+      })
+      |> result.map(Ok)
     _ -> response |> Error |> Ok
   }
 }
@@ -25544,7 +27337,11 @@ pub fn orgs_review_pat_grant_requests_in_bulk_request(base, org, data) {
 pub fn orgs_review_pat_grant_requests_in_bulk_response(response) {
   let response.Response(status:, body:, ..) = response
   case status {
-    202 -> json.parse_bits(body, decode.dynamic) |> result.map(Ok)
+    202 ->
+      json.parse_bits(body, {
+        decode.success(OrgsReviewPatGrantRequestsInBulkResponse)
+      })
+      |> result.map(Ok)
     _ -> response |> Error |> Ok
   }
 }
@@ -25693,7 +27490,19 @@ pub fn repos_list_deployment_branch_policies_request(
 pub fn repos_list_deployment_branch_policies_response(response) {
   let response.Response(status:, body:, ..) = response
   case status {
-    200 -> json.parse_bits(body, decode.dynamic) |> result.map(Ok)
+    200 ->
+      json.parse_bits(body, {
+        use branch_policies <- decode.field(
+          "branch_policies",
+          decode.list(schema.deployment_branch_policy_decoder()),
+        )
+        use total_count <- decode.field("total_count", decode.int)
+        decode.success(ReposListDeploymentBranchPoliciesResponse(
+          branch_policies: branch_policies,
+          total_count: total_count,
+        ))
+      })
+      |> result.map(Ok)
     _ -> response |> Error |> Ok
   }
 }

@@ -584,10 +584,16 @@ pub fn issues_remove_all_labels(token, owner, repo, issue_number) {
   t.Done(data)
 }
 
-pub fn issues_add_labels(token, owner, repo, issue_number) {
+pub fn issues_add_labels(token, owner, repo, issue_number, data) {
   let request = base_request(token)
   let request =
-    operations.issues_add_labels_request(request, owner, repo, issue_number)
+    operations.issues_add_labels_request(
+      request,
+      owner,
+      repo,
+      issue_number,
+      data,
+    )
   use response <- t.do(t.fetch(request))
   use data <- t.try(
     handle_errors(operations.issues_add_labels_response(response)),
@@ -595,10 +601,16 @@ pub fn issues_add_labels(token, owner, repo, issue_number) {
   t.Done(data)
 }
 
-pub fn issues_set_labels(token, owner, repo, issue_number) {
+pub fn issues_set_labels(token, owner, repo, issue_number, data) {
   let request = base_request(token)
   let request =
-    operations.issues_set_labels_request(request, owner, repo, issue_number)
+    operations.issues_set_labels_request(
+      request,
+      owner,
+      repo,
+      issue_number,
+      data,
+    )
   use response <- t.do(t.fetch(request))
   use data <- t.try(
     handle_errors(operations.issues_set_labels_response(response)),
@@ -1654,7 +1666,7 @@ pub fn repos_get_all_topics(token, owner, repo, page page, per_page per_page) {
   t.Done(data)
 }
 
-pub fn repos_remove_team_access_restrictions(token, owner, repo, branch) {
+pub fn repos_remove_team_access_restrictions(token, owner, repo, branch, data) {
   let request = base_request(token)
   let request =
     operations.repos_remove_team_access_restrictions_request(
@@ -1662,6 +1674,7 @@ pub fn repos_remove_team_access_restrictions(token, owner, repo, branch) {
       owner,
       repo,
       branch,
+      data,
     )
   use response <- t.do(t.fetch(request))
   use data <- t.try(
@@ -1672,7 +1685,7 @@ pub fn repos_remove_team_access_restrictions(token, owner, repo, branch) {
   t.Done(data)
 }
 
-pub fn repos_add_team_access_restrictions(token, owner, repo, branch) {
+pub fn repos_add_team_access_restrictions(token, owner, repo, branch, data) {
   let request = base_request(token)
   let request =
     operations.repos_add_team_access_restrictions_request(
@@ -1680,6 +1693,7 @@ pub fn repos_add_team_access_restrictions(token, owner, repo, branch) {
       owner,
       repo,
       branch,
+      data,
     )
   use response <- t.do(t.fetch(request))
   use data <- t.try(
@@ -1690,7 +1704,7 @@ pub fn repos_add_team_access_restrictions(token, owner, repo, branch) {
   t.Done(data)
 }
 
-pub fn repos_set_team_access_restrictions(token, owner, repo, branch) {
+pub fn repos_set_team_access_restrictions(token, owner, repo, branch, data) {
   let request = base_request(token)
   let request =
     operations.repos_set_team_access_restrictions_request(
@@ -1698,6 +1712,7 @@ pub fn repos_set_team_access_restrictions(token, owner, repo, branch) {
       owner,
       repo,
       branch,
+      data,
     )
   use response <- t.do(t.fetch(request))
   use data <- t.try(
@@ -6183,17 +6198,6 @@ pub fn copilot_usage_metrics_for_team(
   t.Done(data)
 }
 
-pub fn orgs_remove_outside_collaborator(token, org, username) {
-  let request = base_request(token)
-  let request =
-    operations.orgs_remove_outside_collaborator_request(request, org, username)
-  use response <- t.do(t.fetch(request))
-  use data <- t.try(
-    handle_errors(operations.orgs_remove_outside_collaborator_response(response)),
-  )
-  t.Done(data)
-}
-
 pub fn orgs_convert_member_to_outside_collaborator(token, org, username, data) {
   let request = base_request(token)
   let request =
@@ -8566,9 +8570,10 @@ pub fn codespaces_get_org_public_key(token, org) {
   t.Done(data)
 }
 
-pub fn projects_create_card(token, column_id) {
+pub fn projects_create_card(token, column_id, data) {
   let request = base_request(token)
-  let request = operations.projects_create_card_request(request, column_id)
+  let request =
+    operations.projects_create_card_request(request, column_id, data)
   use response <- t.do(t.fetch(request))
   use data <- t.try(
     handle_errors(operations.projects_create_card_response(response)),
@@ -8863,10 +8868,10 @@ pub fn actions_create_registration_token_for_org(token, org) {
   t.Done(data)
 }
 
-pub fn codespaces_create_for_authenticated_user(token) {
+pub fn codespaces_create_for_authenticated_user(token, data) {
   let request = base_request(token)
   let request =
-    operations.codespaces_create_for_authenticated_user_request(request)
+    operations.codespaces_create_for_authenticated_user_request(request, data)
   use response <- t.do(t.fetch(request))
   use data <- t.try(
     handle_errors(operations.codespaces_create_for_authenticated_user_response(
@@ -9740,33 +9745,6 @@ pub fn teams_remove_project_in_org(token, org, team_slug, project_id) {
   t.Done(data)
 }
 
-pub fn teams_add_or_update_project_permissions_in_org(
-  token,
-  org,
-  team_slug,
-  project_id,
-  data,
-) {
-  let request = base_request(token)
-  let request =
-    operations.teams_add_or_update_project_permissions_in_org_request(
-      request,
-      org,
-      team_slug,
-      project_id,
-      data,
-    )
-  use response <- t.do(t.fetch(request))
-  use data <- t.try(
-    handle_errors(
-      operations.teams_add_or_update_project_permissions_in_org_response(
-        response,
-      ),
-    ),
-  )
-  t.Done(data)
-}
-
 pub fn teams_check_permissions_for_project_in_org(
   token,
   org,
@@ -10000,7 +9978,7 @@ pub fn teams_list_child_in_org(
   t.Done(data)
 }
 
-pub fn repos_remove_status_check_contexts(token, owner, repo, branch) {
+pub fn repos_remove_status_check_contexts(token, owner, repo, branch, data) {
   let request = base_request(token)
   let request =
     operations.repos_remove_status_check_contexts_request(
@@ -10008,6 +9986,7 @@ pub fn repos_remove_status_check_contexts(token, owner, repo, branch) {
       owner,
       repo,
       branch,
+      data,
     )
   use response <- t.do(t.fetch(request))
   use data <- t.try(
@@ -10018,7 +9997,7 @@ pub fn repos_remove_status_check_contexts(token, owner, repo, branch) {
   t.Done(data)
 }
 
-pub fn repos_add_status_check_contexts(token, owner, repo, branch) {
+pub fn repos_add_status_check_contexts(token, owner, repo, branch, data) {
   let request = base_request(token)
   let request =
     operations.repos_add_status_check_contexts_request(
@@ -10026,6 +10005,7 @@ pub fn repos_add_status_check_contexts(token, owner, repo, branch) {
       owner,
       repo,
       branch,
+      data,
     )
   use response <- t.do(t.fetch(request))
   use data <- t.try(
@@ -10034,7 +10014,7 @@ pub fn repos_add_status_check_contexts(token, owner, repo, branch) {
   t.Done(data)
 }
 
-pub fn repos_set_status_check_contexts(token, owner, repo, branch) {
+pub fn repos_set_status_check_contexts(token, owner, repo, branch, data) {
   let request = base_request(token)
   let request =
     operations.repos_set_status_check_contexts_request(
@@ -10042,6 +10022,7 @@ pub fn repos_set_status_check_contexts(token, owner, repo, branch) {
       owner,
       repo,
       branch,
+      data,
     )
   use response <- t.do(t.fetch(request))
   use data <- t.try(
@@ -10180,10 +10161,10 @@ pub fn oidc_get_oidc_custom_sub_template_for_org(token, org) {
   t.Done(data)
 }
 
-pub fn users_delete_email_for_authenticated_user(token) {
+pub fn users_delete_email_for_authenticated_user(token, data) {
   let request = base_request(token)
   let request =
-    operations.users_delete_email_for_authenticated_user_request(request)
+    operations.users_delete_email_for_authenticated_user_request(request, data)
   use response <- t.do(t.fetch(request))
   use data <- t.try(
     handle_errors(operations.users_delete_email_for_authenticated_user_response(
@@ -10193,10 +10174,10 @@ pub fn users_delete_email_for_authenticated_user(token) {
   t.Done(data)
 }
 
-pub fn users_add_email_for_authenticated_user(token) {
+pub fn users_add_email_for_authenticated_user(token, data) {
   let request = base_request(token)
   let request =
-    operations.users_add_email_for_authenticated_user_request(request)
+    operations.users_add_email_for_authenticated_user_request(request, data)
   use response <- t.do(t.fetch(request))
   use data <- t.try(
     handle_errors(operations.users_add_email_for_authenticated_user_response(
@@ -13789,7 +13770,7 @@ pub fn gitignore_get_template(token, name) {
   t.Done(data)
 }
 
-pub fn actions_review_custom_gates_for_run(token, owner, repo, run_id) {
+pub fn actions_review_custom_gates_for_run(token, owner, repo, run_id, data) {
   let request = base_request(token)
   let request =
     operations.actions_review_custom_gates_for_run_request(
@@ -13797,6 +13778,7 @@ pub fn actions_review_custom_gates_for_run(token, owner, repo, run_id) {
       owner,
       repo,
       run_id,
+      data,
     )
   use response <- t.do(t.fetch(request))
   use data <- t.try(
