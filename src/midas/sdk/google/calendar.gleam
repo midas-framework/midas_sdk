@@ -1,10 +1,8 @@
-import gleam/bit_array
-import gleam/dynamic
-import gleam/http
+import gleam/dynamic/decode
 import gleam/http/request
 import gleam/http/response
 import gleam/json
-import gleam/option.{type Option}
+import gleam/option.{type Option, None, Some}
 import gleam/result.{try}
 import gleam/string
 import midas/task as t
@@ -24,13 +22,13 @@ fn get(token, path) {
   |> request.set_body(<<>>)
 }
 
-fn post(token, path, mime, content) {
-  base_request(token)
-  |> request.set_method(http.Post)
-  |> request.set_path(path)
-  |> request.prepend_header("content-type", mime)
-  |> request.set_body(content)
-}
+// fn post(token, path, mime, content) {
+//   base_request(token)
+//   |> request.set_method(http.Post)
+//   |> request.set_path(path)
+//   |> request.prepend_header("content-type", mime)
+//   |> request.set_body(content)
+// }
 
 // https://developers.google.com/calendar/api/v3/reference/events/list
 pub fn list_events(token, calendar_id, time_min) {
@@ -51,13 +49,12 @@ pub fn list_events_request(token, calendar_id, time_min) {
 }
 
 pub fn list_events_response(response: response.Response(BitArray)) {
-  use json <- try(
-    bit_array.to_string(response.body)
-    |> result.replace_error(snag.new("not utf8 encoded")),
-  )
-  let decoder = dynamic.field("items", dynamic.list(event_decoder))
+  let decoder = {
+    use items <- decode.field("items", decode.list(event_decoder()))
+    decode.success(items)
+  }
   use message <- try(
-    json.decode_bits(response.body, decoder)
+    json.parse_bits(response.body, decoder)
     |> result.map_error(fn(reason) {
       snag.new(string.inspect(reason))
       |> snag.layer("failed to decode message")
@@ -75,14 +72,16 @@ pub type Event {
   )
 }
 
-pub fn event_decoder(raw) {
-  dynamic.decode4(
-    Event,
-    dynamic.field("summary", dynamic.string),
-    dynamic.optional_field("location", dynamic.string),
-    dynamic.field("start", date_or_datetime_decoder),
-    dynamic.field("end", date_or_datetime_decoder),
-  )(raw)
+pub fn event_decoder() {
+  use summary <- decode.field("summary", decode.string)
+  use location <- decode.optional_field(
+    "location",
+    None,
+    decode.string |> decode.map(Some),
+  )
+  use start <- decode.field("start", date_or_datetime_decoder())
+  use end <- decode.field("end", date_or_datetime_decoder())
+  decode.success(Event(summary, location, start, end))
 }
 
 pub type DateOrDatetime {
@@ -90,9 +89,17 @@ pub type DateOrDatetime {
   Datetime(String)
 }
 
-pub fn date_or_datetime_decoder(raw) {
-  dynamic.any([
-    dynamic.decode1(Date, dynamic.field("date", dynamic.string)),
-    dynamic.decode1(Datetime, dynamic.field("dateTime", dynamic.string)),
-  ])(raw)
+pub fn date_or_datetime_decoder() {
+  decode.one_of(
+    {
+      use date <- decode.field("date", decode.string)
+      decode.success(Date(date))
+    },
+    [
+      {
+        use datetime <- decode.field("dateTime", decode.string)
+        decode.success(Datetime(datetime))
+      },
+    ],
+  )
 }

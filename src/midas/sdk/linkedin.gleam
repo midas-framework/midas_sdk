@@ -1,5 +1,5 @@
 import gleam/bit_array
-import gleam/dynamic
+import gleam/dynamic/decode
 import gleam/http
 import gleam/http/request
 import gleam/http/response.{Response}
@@ -98,8 +98,11 @@ pub fn token_request(client_id, redirect_uri, client_secret, code) {
 pub fn token_response(response) {
   let Response(body: body, ..) = response
   let assert Ok(body) = bit_array.to_string(body)
-  let decoder = dynamic.field("access_token", dynamic.string)
-  let assert Ok(token) = json.decode(body, decoder)
+  let decoder = {
+    use token <- decode.field("access_token", decode.string)
+    decode.success(token)
+  }
+  let assert Ok(token) = json.parse(body, decoder)
   Ok(token)
 }
 
@@ -148,28 +151,23 @@ pub type Userinfo {
   Userinfo(sub: String)
 }
 
-fn userinfo_decoder(raw) {
-  dynamic.decode1(Userinfo, dynamic.field("sub", dynamic.string))(raw)
+fn userinfo_decoder() {
+  use sub <- decode.field("sub", decode.string)
+  decode.success(Userinfo(sub))
 }
 
 pub fn userinfo_response(response: response.Response(BitArray)) {
-  use json <- try(
-    bit_array.to_string(response.body)
-    |> result.replace_error(snag.new("not utf8 encoded")),
-  )
-  // let decoder = dynamic.list(site_decoder)
-  use info <- try(
-    json.decode_bits(response.body, userinfo_decoder)
-    |> result.map_error(fn(reason) {
-      snag.new(string.inspect(reason))
-      |> snag.layer("failed to decode sites")
-    }),
-  )
-  Ok(info)
+  let response.Response(body:, ..) = response
+  json.parse_bits(body, userinfo_decoder())
+  |> result.map_error(fn(reason) {
+    snag.new(string.inspect(reason))
+    |> snag.layer("failed to decode sites")
+  })
 }
 
-fn error_decoder(raw) {
-  dynamic.field("message", dynamic.string)(raw)
+fn error_decoder() {
+  use message <- decode.field("message", decode.string)
+  decode.success(message)
 }
 
 pub type Author {
@@ -292,7 +290,7 @@ pub fn create_post_response(response: response.Response(BitArray)) {
         _ -> Error(snag.new("no post id"))
       }
     status -> {
-      case json.decode_bits(response.body, error_decoder) {
+      case json.parse_bits(response.body, error_decoder()) {
         Ok(message) -> snag.new(message)
         Error(reason) -> snag.new(string.inspect(reason))
       }
@@ -399,29 +397,31 @@ pub type InitializeImageUpload {
   )
 }
 
-pub fn initialize_image_upload_decoder(raw) {
-  dynamic.field(
-    "value",
-    dynamic.decode3(
-      InitializeImageUpload,
-      dynamic.field("uploadUrlExpiresAt", dynamic.int),
-      dynamic.field("uploadUrl", dynamic.string),
-      dynamic.field("image", dynamic.string),
-    ),
-  )(raw)
+pub fn initialize_image_upload_decoder() {
+  use upload <- decode.field("value", {
+    use upload_url_expires_at <- decode.field("uploadUrlExpiresAt", decode.int)
+    use upload_url <- decode.field("uploadUrl", decode.string)
+    use image <- decode.field("image", decode.string)
+    decode.success(InitializeImageUpload(
+      upload_url_expires_at,
+      upload_url,
+      image,
+    ))
+  })
+  decode.success(upload)
 }
 
 pub fn initialize_image_upload_response(response: response.Response(BitArray)) {
   use id <- try(case response.status {
     200 ->
-      json.decode_bits(response.body, initialize_image_upload_decoder)
+      json.parse_bits(response.body, initialize_image_upload_decoder())
       |> result.map_error(fn(reason) {
         snag.new(string.inspect(reason))
         |> snag.layer("failed to decode initialize image upload ")
       })
 
     status -> {
-      case json.decode_bits(response.body, error_decoder) {
+      case json.parse_bits(response.body, error_decoder()) {
         Ok(message) -> snag.new(message)
         Error(reason) -> snag.new(string.inspect(reason))
       }

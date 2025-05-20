@@ -1,5 +1,4 @@
-import gleam/bit_array
-import gleam/dynamic
+import gleam/dynamic/decode
 import gleam/http/request
 import gleam/http/response
 import gleam/int
@@ -94,17 +93,14 @@ pub fn userinfo_request(token) {
   |> request.set_body(<<>>)
 }
 
-pub fn userinfo_response(response: response.Response(BitArray)) {
-  use json <- try(
-    bit_array.to_string(response.body)
-    |> result.replace_error(snag.new("not utf8 encoded")),
-  )
-  use message <- try(
-    json.decode_bits(response.body, dynamic.field("email", dynamic.string))
-    |> result.map_error(fn(reason) {
-      snag.new(string.inspect(reason))
-      |> snag.layer("failed to decode message")
-    }),
-  )
-  Ok(message)
+pub fn userinfo_response(response) {
+  let response.Response(body:, ..) = response
+  json.parse_bits(body, {
+    use email <- decode.field("email", decode.string)
+    decode.success(email)
+  })
+  |> result.map_error(fn(reason) {
+    snag.new(string.inspect(reason))
+    |> snag.layer("failed to decode message")
+  })
 }

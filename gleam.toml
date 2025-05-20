@@ -1,5 +1,5 @@
 name = "midas_sdk"
-version = "0.4.2"
+version = "0.5.0"
 target = "javascript"
 
 description = "A bag of SDK's that can be used with midas."
@@ -9,10 +9,9 @@ links = [{ title = "midas", href = "https://github.com/midas-framework/midas" }]
 
 [dependencies]
 gleam_stdlib = ">= 0.34.0 and < 2.0.0"
-gleam_http = ">= 3.7.0 and < 4.0.0"
+gleam_http = ">= 3.7.0 and < 5.0.0"
 midas = ">= 1.0.0 and < 2.0.0"
-gleam_json = ">= 1.0.0 and < 3.0.0"
-decode = ">= 0.5.0 and < 1.0.0"
+gleam_json = ">= 1.0.0 and < 4.0.0"
 snag = ">= 1.1.0 and < 2.0.0"
 
 [dev-dependencies]

@@ -1,5 +1,5 @@
 import gleam/bit_array
-import gleam/dynamic
+import gleam/dynamic/decode
 import gleam/http
 import gleam/http/request
 import gleam/http/response
@@ -55,13 +55,11 @@ pub fn send_request(token, from, to, message) {
   |> request.set_query([#("alt", "json")])
 }
 
-pub fn send_response(response: response.Response(BitArray)) {
-  use json <- try(
-    bit_array.to_string(response.body)
-    |> result.replace_error(snag.new("not utf8 encoded")),
-  )
+pub fn send_response(response) {
+  let response.Response(body:, ..) = response
+
   use message <- try(
-    json.decode_bits(response.body, message_decoder)
+    json.parse_bits(body, message_decoder())
     |> result.map_error(fn(reason) {
       snag.new(string.inspect(reason))
       |> snag.layer("failed to decode message")
@@ -74,13 +72,10 @@ pub type Message {
   Message(id: String, thread_id: String)
 }
 
-fn message_decoder(raw) {
-  dynamic.decode2(
-    Message,
-    dynamic.field("id", dynamic.string),
-    dynamic.field("threadId", dynamic.string),
-    // dynamic.field("labelIds", dynamic.list(dynamic.string)),
-  )(raw)
+fn message_decoder() {
+  use id <- decode.field("id", decode.string)
+  use thread_id <- decode.field("threadId", decode.string)
+  decode.success(Message(id, thread_id))
 }
 
 pub fn list_messages(token, user_id) {
@@ -96,13 +91,12 @@ pub fn list_messages_request(token, user_id) {
 }
 
 pub fn list_messages_response(response: response.Response(BitArray)) {
-  use json <- try(
-    bit_array.to_string(response.body)
-    |> result.replace_error(snag.new("not utf8 encoded")),
-  )
-  let decoder = dynamic.field("messages", dynamic.list(message_decoder))
+  let decoder = {
+    use messages <- decode.field("messages", decode.list(message_decoder()))
+    decode.success(messages)
+  }
   use message <- try(
-    json.decode_bits(response.body, decoder)
+    json.parse_bits(response.body, decoder)
     |> result.map_error(fn(reason) {
       snag.new(string.inspect(reason))
       |> snag.layer("failed to decode messages")

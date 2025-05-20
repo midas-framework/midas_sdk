@@ -1,5 +1,4 @@
-import gleam/bit_array
-import gleam/dynamic
+import gleam/dynamic/decode
 import gleam/http/request
 import gleam/http/response
 import gleam/json
@@ -31,14 +30,15 @@ pub fn five_day_forecast_request(api_key, location) {
 }
 
 pub fn five_day_forecast_response(response: response.Response(BitArray)) {
-  use json <- try(
-    bit_array.to_string(response.body)
-    |> result.replace_error(snag.new("not utf8 encoded")),
-  )
-  let decoder =
-    dynamic.field("DailyForecasts", dynamic.list(daily_forcast_decoder))
+  let decoder = {
+    use daily_forecasts <- decode.field(
+      "DailyForecasts",
+      decode.list(daily_forcast_decoder()),
+    )
+    decode.success(daily_forecasts)
+  }
   use message <- try(
-    json.decode_bits(response.body, decoder)
+    json.parse_bits(response.body, decoder)
     |> result.map_error(fn(reason) {
       snag.new(string.inspect(reason))
       |> snag.layer("failed to decode message")
@@ -59,23 +59,41 @@ pub type DailyForecast {
   )
 }
 
-pub fn daily_forcast_decoder(raw) {
-  dynamic.decode7(
-    DailyForecast,
-    dynamic.field("Date", dynamic.string),
-    dynamic.field("Sun", dynamic.field("Rise", dynamic.string)),
-    dynamic.field("Sun", dynamic.field("Set", dynamic.string)),
-    dynamic.field(
-      "Temperature",
-      dynamic.field("Minimum", dynamic.field("Value", dynamic.float)),
-    ),
-    dynamic.field(
-      "Temperature",
-      dynamic.field("Maximum", dynamic.field("Value", dynamic.float)),
-    ),
-    dynamic.field("Day", detail_decoder),
-    dynamic.field("Night", detail_decoder),
-  )(raw)
+pub fn daily_forcast_decoder() {
+  use date <- decode.field("Date", decode.string)
+  use sunrise <- decode.field("Sun", {
+    use sunrise <- decode.field("Rise", decode.string)
+    decode.success(sunrise)
+  })
+  use sunset <- decode.field("Sun", {
+    use sunrise <- decode.field("Set", decode.string)
+    decode.success(sunrise)
+  })
+  use minimum_temperature <- decode.field("Temperature", {
+    use minimum_temperature <- decode.field("Minimum", {
+      use minimum_temperature <- decode.field("Value", decode.float)
+      decode.success(minimum_temperature)
+    })
+    decode.success(minimum_temperature)
+  })
+  use maximum_temperature <- decode.field("Temperature", {
+    use minimum_temperature <- decode.field("Maximum", {
+      use minimum_temperature <- decode.field("Value", decode.float)
+      decode.success(minimum_temperature)
+    })
+    decode.success(minimum_temperature)
+  })
+  use day <- decode.field("Day", detail_decoder())
+  use night <- decode.field("Night", detail_decoder())
+  decode.success(DailyForecast(
+    date,
+    sunrise,
+    sunset,
+    minimum_temperature,
+    maximum_temperature,
+    day,
+    night,
+  ))
 }
 
 pub type Detail {
@@ -86,17 +104,24 @@ pub type Detail {
   )
 }
 
-fn detail_decoder(raw) {
-  dynamic.decode3(
-    Detail,
-    dynamic.field("PrecipitationProbability", dynamic.int),
-    dynamic.field(
-      "Wind",
-      dynamic.field("Speed", dynamic.field("Value", dynamic.float)),
-    ),
-    dynamic.field(
-      "Wind",
-      dynamic.field("Direction", dynamic.field("English", dynamic.string)),
-    ),
-  )(raw)
+fn detail_decoder() {
+  use precipitation_probability <- decode.field(
+    "PrecipitationProbability",
+    decode.int,
+  )
+  use wind_speed <- decode.field("Wind", {
+    use wind_speed <- decode.field("Speed", {
+      use wind_speed <- decode.field("Value", decode.float)
+      decode.success(wind_speed)
+    })
+    decode.success(wind_speed)
+  })
+  use wind_direction <- decode.field("Wind", {
+    use wind_direction <- decode.field("Direction", {
+      use wind_direction <- decode.field("English", decode.string)
+      decode.success(wind_direction)
+    })
+    decode.success(wind_direction)
+  })
+  decode.success(Detail(precipitation_probability, wind_speed, wind_direction))
 }

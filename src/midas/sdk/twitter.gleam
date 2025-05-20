@@ -1,20 +1,12 @@
 import gleam/bit_array
-
-import gleam/dynamic
-
-// import gleam/fetch
+import gleam/dynamic/decode
 import gleam/http
 import gleam/http/request
-
 import gleam/http/response.{Response}
 import gleam/int
-import gleam/io
-
-// import gleam/javascript/promise
 import gleam/json
 import gleam/list
 import gleam/option.{None, Some}
-
 import gleam/result.{try}
 import gleam/string
 import gleam/uri.{Uri}
@@ -109,8 +101,11 @@ pub fn token_request(client_id, redirect_uri, code_verifier, code) {
 pub fn token_response(response) {
   let Response(body: body, ..) = response
   let assert Ok(body) = bit_array.to_string(body)
-  let decoder = dynamic.field("access_token", dynamic.string)
-  let assert Ok(token) = json.decode(body, decoder)
+  let decoder = {
+    use token <- decode.field("access_token", decode.string)
+    decode.success(token)
+  }
+  let assert Ok(token) = json.parse(body, decoder)
   Ok(token)
 }
 
@@ -163,7 +158,6 @@ pub fn user_by_username_request(token, username) {
 pub fn user_timeline(token, user_id) {
   let request = user_timeline_request(token, user_id)
   use response <- t.do(t.fetch(request))
-  io.debug("==============")
   use response <- t.try(user_timeline_response(response))
   t.Done(response)
 }
@@ -176,7 +170,7 @@ pub fn user_timeline_request(token, user_id) {
 pub fn user_timeline_response(response) {
   let Response(body: body, ..) = response
   let assert Ok(body) = bit_array.to_string(body)
-  let assert Ok(data) = json.decode(body, Ok)
-  io.debug(#(data, "00000000000"))
+  let assert Ok(data) =
+    json.parse(body, decode.new_primitive_decoder("Dynamic", Ok))
   Ok(data)
 }

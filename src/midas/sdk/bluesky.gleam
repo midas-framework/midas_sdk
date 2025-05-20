@@ -1,4 +1,4 @@
-import gleam/dynamic
+import gleam/dynamic/decode
 import gleam/http
 import gleam/http/request
 import gleam/json
@@ -22,11 +22,14 @@ pub fn create_session(handle, password) {
     |> request.set_body(<<json.to_string(body):utf8>>)
     |> request.prepend_header("content-type", "application/json")
   use response <- t.do(t.fetch(request))
-  let decoder = dynamic.field("accessJwt", dynamic.string)
+  let decoder = {
+    use jwt <- decode.field("accessJwt", decode.string)
+    decode.success(jwt)
+  }
 
   use token <- t.try(case response.status {
     200 ->
-      case json.decode_bits(response.body, decoder) {
+      case json.parse_bits(response.body, decoder) {
         Ok(token) -> Ok(token)
         Error(reason) ->
           Error(snag.new("failed to decode response " <> string.inspect(reason)))
@@ -58,10 +61,13 @@ pub fn create_post(access_token, handle, text, at) {
     |> request.prepend_header("content-type", "application/json")
     |> request.prepend_header("authorization", "Bearer " <> access_token)
   use response <- t.do(t.fetch(request))
-  let decoder = dynamic.field("uri", dynamic.string)
+  let decoder = {
+    use uri <- decode.field("uri", decode.string)
+    decode.success(uri)
+  }
   use uri <- t.try(case response.status {
     200 ->
-      case json.decode_bits(response.body, decoder) {
+      case json.parse_bits(response.body, decoder) {
         Ok(uri) -> Ok(uri)
         Error(reason) ->
           Error(snag.new("failed to decode response " <> string.inspect(reason)))

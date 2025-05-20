@@ -1,4 +1,4 @@
-import gleam/dynamic
+import gleam/dynamic/decode
 import gleam/http/request
 import gleam/http/response
 import gleam/int
@@ -34,13 +34,16 @@ pub fn departures_request(api_key, site_id, time_window) {
 }
 
 pub fn departures_response(response: response.Response(BitArray)) {
-  let decoder =
-    dynamic.field(
-      "ResponseData",
-      dynamic.field("Buses", dynamic.list(bus_departure_decoder)),
-    )
+  let decoder = {
+    use departures <- decode.field("ResponseData", {
+      use buses <- decode.field("Buses", decode.list(bus_departure_decoder()))
+      decode.success(buses)
+    })
+    decode.success(departures)
+  }
+
   use departures <- try(
-    json.decode_bits(response.body, decoder)
+    json.parse_bits(response.body, decoder)
     |> result.map_error(fn(reason) {
       snag.new(string.inspect(reason))
       |> snag.layer("failed to decode sites")
@@ -59,13 +62,17 @@ pub type BusDeparture {
   )
 }
 
-pub fn bus_departure_decoder(raw) {
-  dynamic.decode5(
-    BusDeparture,
-    dynamic.field("JourneyDirection", dynamic.int),
-    dynamic.field("Destination", dynamic.string),
-    dynamic.field("TimeTabledDateTime", dynamic.string),
-    dynamic.field("ExpectedDateTime", dynamic.string),
-    dynamic.field("DisplayTime", dynamic.string),
-  )(raw)
+pub fn bus_departure_decoder() {
+  use journey_direction <- decode.field("JourneyDirection", decode.int)
+  use destination <- decode.field("Destination", decode.string)
+  use timetabled <- decode.field("TimeTabledDateTime", decode.string)
+  use expected <- decode.field("ExpectedDateTime", decode.string)
+  use display <- decode.field("DisplayTime", decode.string)
+  decode.success(BusDeparture(
+    journey_direction,
+    destination,
+    timetabled,
+    expected,
+    display,
+  ))
 }
