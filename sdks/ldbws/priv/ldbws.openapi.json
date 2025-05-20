@@ -1,0 +1,1658 @@
+{
+  "openapi": "3.0.1",
+  "info": {
+    "title": "20220120.LDBWebService",
+    "version": "v1"
+  },
+  "servers": [
+    {
+      "url": "http://localhost/LDBWS"
+    }
+  ],
+  "paths": {
+    "/api/20220120/GetDepartureBoard/{crs}": {
+      "get": {
+        "tags": [
+          "_20220120"
+        ],
+        "summary": "All parameters must be supplied, but may be null. Parameters that may be null are marked optional.",
+        "description": "Returns all public departures for the supplied CRS code within a defined time window.",
+        "operationId": "_20220120_GetDepartureBoard",
+        "parameters": [
+          {
+            "name": "crs",
+            "in": "path",
+            "description": "The CRS code of the location for which the request is being made. The CRS code must be passed as UPPERCASE",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "numRows",
+            "in": "query",
+            "description": "The number of services to return in the resulting station board.",
+            "schema": {
+              "type": "integer",
+              "format": "int32",
+              "default": 10
+            }
+          },
+          {
+            "name": "filterCrs",
+            "in": "query",
+            "description": "The CRS code of either an origin or destination location to filter in. Optional.",
+            "schema": {
+              "type": "string",
+              "default": "null"
+            }
+          },
+          {
+            "name": "filterType",
+            "in": "query",
+            "description": "The type of filter to apply. Filters services to include only those originating or terminating at the filterCrs location. Defaults to 'to'. Optional.",
+            "schema": {
+              "type": "string",
+              "default": "to",
+              "enum": [
+                "to",
+                "from"
+              ]
+            }
+          },
+          {
+            "name": "timeOffset",
+            "in": "query",
+            "description": "An offset in minutes against the current time to provide the station board for. Defaults to 0. Optional.",
+            "schema": {
+              "type": "integer",
+              "format": "int32",
+              "default": 0
+            }
+          },
+          {
+            "name": "timeWindow",
+            "in": "query",
+            "description": "How far into the future in minutes, relative to timeOffset, to return services for.",
+            "schema": {
+              "type": "integer",
+              "format": "int32",
+              "default": 120
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StationBoard"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/20220120/GetArrivalBoard/{crs}": {
+      "get": {
+        "tags": [
+          "_20220120"
+        ],
+        "summary": "All parameters must be supplied, but may be null. Parameters that may be null are marked optional.",
+        "description": "Returns all public arrivals for the supplied CRS code within a defined time window.",
+        "operationId": "_20220120_GetArrivalBoard",
+        "parameters": [
+          {
+            "name": "crs",
+            "in": "path",
+            "description": "The CRS code of the location for which the request is being made. The CRS code must be passed as UPPERCASE",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "numRows",
+            "in": "query",
+            "description": "The number of services to return in the resulting station board.",
+            "schema": {
+              "type": "integer",
+              "format": "int32",
+              "default": 10
+            }
+          },
+          {
+            "name": "filterCrs",
+            "in": "query",
+            "description": "The CRS code of either an origin or destination location to filter in. Optional.",
+            "schema": {
+              "type": "string",
+              "default": "null"
+            }
+          },
+          {
+            "name": "filterType",
+            "in": "query",
+            "description": "The type of filter to apply. Filters services to include only those originating or terminating at the filterCrs location. Defaults to 'to'. Optional.",
+            "schema": {
+              "type": "string",
+              "default": "to",
+              "enum": [
+                "to",
+                "from"
+              ]
+            }
+          },
+          {
+            "name": "timeOffset",
+            "in": "query",
+            "description": "An offset in minutes against the current time to provide the station board for. Defaults to 0. Optional.",
+            "schema": {
+              "type": "integer",
+              "format": "int32",
+              "default": 0
+            }
+          },
+          {
+            "name": "timeWindow",
+            "in": "query",
+            "description": "How far into the future in minutes, relative to timeOffset, to return services for.",
+            "schema": {
+              "type": "integer",
+              "format": "int32",
+              "default": 120
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StationBoard"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/20220120/GetArrivalDepartureBoard/{crs}": {
+      "get": {
+        "tags": [
+          "_20220120"
+        ],
+        "summary": "All parameters must be supplied, but may be null. Parameters that may be null are marked optional.",
+        "description": "Returns all public arrivals and departures for the supplied CRS code within a defined time window",
+        "operationId": "_20220120_GetArrivalDepartureBoard",
+        "parameters": [
+          {
+            "name": "crs",
+            "in": "path",
+            "description": "The CRS code of the location for which the request is being made. The CRS code must be passed as UPPERCASE",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "numRows",
+            "in": "query",
+            "description": "The number of services to return in the resulting station board.",
+            "schema": {
+              "type": "integer",
+              "format": "int32",
+              "default": 10
+            }
+          },
+          {
+            "name": "filterCrs",
+            "in": "query",
+            "description": "The CRS code of either an origin or destination location to filter in. Optional.",
+            "schema": {
+              "type": "string",
+              "default": "null"
+            }
+          },
+          {
+            "name": "filterType",
+            "in": "query",
+            "description": "The type of filter to apply. Filters services to include only those originating or terminating at the filterCrs location. Defaults to 'to'. Optional.",
+            "schema": {
+              "type": "string",
+              "default": "to",
+              "enum": [
+                "to",
+                "from"
+              ]
+            }
+          },
+          {
+            "name": "timeOffset",
+            "in": "query",
+            "description": "An offset in minutes against the current time to provide the station board for. Defaults to 0. Optional.",
+            "schema": {
+              "type": "integer",
+              "format": "int32",
+              "default": 0
+            }
+          },
+          {
+            "name": "timeWindow",
+            "in": "query",
+            "description": "How far into the future in minutes, relative to timeOffset, to return services for.",
+            "schema": {
+              "type": "integer",
+              "format": "int32",
+              "default": 120
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StationBoard"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/20220120/GetArrBoardWithDetails/{crs}": {
+      "get": {
+        "tags": [
+          "_20220120"
+        ],
+        "summary": "All parameters must be supplied, but may be null. Parameters that may be null are marked optional.",
+        "description": "Returns all public arrivals for the supplied CRS code within a defined time window, including service details.",
+        "operationId": "_20220120_GetArrBoardWithDetails",
+        "parameters": [
+          {
+            "name": "crs",
+            "in": "path",
+            "description": "The CRS code of the location for which the request is being made. The CRS code must be passed as UPPERCASE",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "numRows",
+            "in": "query",
+            "description": "The number of services to return in the resulting station board.",
+            "schema": {
+              "type": "integer",
+              "format": "int32",
+              "default": 10
+            }
+          },
+          {
+            "name": "filterCrs",
+            "in": "query",
+            "description": "The CRS code of either an origin or destination location to filter in. Optional.",
+            "schema": {
+              "type": "string",
+              "default": "null"
+            }
+          },
+          {
+            "name": "filterType",
+            "in": "query",
+            "description": "The type of filter to apply. Filters services to include only those originating or terminating at the filterCrs location. Defaults to 'to'. Optional.",
+            "schema": {
+              "type": "string",
+              "default": "to",
+              "enum": [
+                "to",
+                "from"
+              ]
+            }
+          },
+          {
+            "name": "timeOffset",
+            "in": "query",
+            "description": "An offset in minutes against the current time to provide the station board for. Defaults to 0. Optional.",
+            "schema": {
+              "type": "integer",
+              "format": "int32",
+              "default": 0
+            }
+          },
+          {
+            "name": "timeWindow",
+            "in": "query",
+            "description": "How far into the future in minutes, relative to timeOffset, to return services for.",
+            "schema": {
+              "type": "integer",
+              "format": "int32",
+              "default": 120
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StationBoardWithDetails"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/20220120/GetDepBoardWithDetails/{crs}": {
+      "get": {
+        "tags": [
+          "_20220120"
+        ],
+        "summary": "All parameters must be supplied, but may be null. Parameters that may be null are marked optional.",
+        "description": "Returns all public departures for the supplied CRS code within a defined time window, including service details.",
+        "operationId": "_20220120_GetDepBoardWithDetails",
+        "parameters": [
+          {
+            "name": "crs",
+            "in": "path",
+            "description": "The CRS code of the location for which the request is being made. The CRS code must be passed as UPPERCASE",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "numRows",
+            "in": "query",
+            "description": "The number of services to return in the resulting station board.",
+            "schema": {
+              "type": "integer",
+              "format": "int32",
+              "default": 10
+            }
+          },
+          {
+            "name": "filterCrs",
+            "in": "query",
+            "description": "The CRS code of either an origin or destination location to filter in. Optional.",
+            "schema": {
+              "type": "string",
+              "default": "null"
+            }
+          },
+          {
+            "name": "filterType",
+            "in": "query",
+            "description": "The type of filter to apply. Filters services to include only those originating or terminating at the filterCrs location. Defaults to 'to'. Optional.",
+            "schema": {
+              "type": "string",
+              "default": "to",
+              "enum": [
+                "to",
+                "from"
+              ]
+            }
+          },
+          {
+            "name": "timeOffset",
+            "in": "query",
+            "description": "An offset in minutes against the current time to provide the station board for. Defaults to 0. Optional.",
+            "schema": {
+              "type": "integer",
+              "format": "int32",
+              "default": 0
+            }
+          },
+          {
+            "name": "timeWindow",
+            "in": "query",
+            "description": "How far into the future in minutes, relative to timeOffset, to return services for.",
+            "schema": {
+              "type": "integer",
+              "format": "int32",
+              "default": 120
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StationBoardWithDetails"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/20220120/GetArrDepBoardWithDetails/{crs}": {
+      "get": {
+        "tags": [
+          "_20220120"
+        ],
+        "summary": "All parameters must be supplied, but may be null. Parameters that may be null are marked optional.",
+        "description": "Returns all public arrivals and departures for the supplied CRS code within a defined time window, including service details.",
+        "operationId": "_20220120_GetArrDepBoardWithDetails",
+        "parameters": [
+          {
+            "name": "crs",
+            "in": "path",
+            "description": "The CRS code of the location for which the request is being made. The CRS code must be passed as UPPERCASE",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "numRows",
+            "in": "query",
+            "description": "The number of services to return in the resulting station board.",
+            "schema": {
+              "type": "integer",
+              "format": "int32",
+              "default": 10
+            }
+          },
+          {
+            "name": "filterCrs",
+            "in": "query",
+            "description": "The CRS code of either an origin or destination location to filter in. Optional.",
+            "schema": {
+              "type": "string",
+              "default": "null"
+            }
+          },
+          {
+            "name": "filterType",
+            "in": "query",
+            "description": "The type of filter to apply. Filters services to include only those originating or terminating at the filterCrs location. Defaults to 'to'. Optional.",
+            "schema": {
+              "type": "string",
+              "default": "to",
+              "enum": [
+                "to",
+                "from"
+              ]
+            }
+          },
+          {
+            "name": "timeOffset",
+            "in": "query",
+            "description": "An offset in minutes against the current time to provide the station board for. Defaults to 0. Optional.",
+            "schema": {
+              "type": "integer",
+              "format": "int32",
+              "default": 0
+            }
+          },
+          {
+            "name": "timeWindow",
+            "in": "query",
+            "description": "How far into the future in minutes, relative to timeOffset, to return services for.",
+            "schema": {
+              "type": "integer",
+              "format": "int32",
+              "default": 120
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StationBoardWithDetails"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/20220120/GetFastestDepartures/{crs}/{filterList}": {
+      "get": {
+        "tags": [
+          "_20220120"
+        ],
+        "summary": "All parameters must be supplied, but may be null. Parameters that may be null are marked optional.",
+        "description": "Returns the public departure for the supplied CRS code within a defined time window to the locations specified in the filter with the earliest arrival time at the filtered location.",
+        "operationId": "_20220120_GetFastestDepartures",
+        "parameters": [
+          {
+            "name": "crs",
+            "in": "path",
+            "description": "The CRS code of the location for which the request is being made. The CRS code must be passed as UPPERCASE",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "filterList",
+            "in": "path",
+            "description": "A list of CRS codes of the destinations location to filter, at least 1 but not greater than 15 must be supplied.",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "timeOffset",
+            "in": "query",
+            "description": "An offset in minutes against the current time to provide the station board for. Defaults to 0. Optional.",
+            "schema": {
+              "type": "integer",
+              "format": "int32",
+              "default": 0
+            }
+          },
+          {
+            "name": "timeWindow",
+            "in": "query",
+            "description": "How far into the future in minutes, relative to timeOffset, to return services for.",
+            "schema": {
+              "type": "integer",
+              "format": "int32",
+              "default": 120
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DeparturesBoard"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/20220120/GetFastestDeparturesWithDetails/{crs}/{filterList}": {
+      "get": {
+        "tags": [
+          "_20220120"
+        ],
+        "summary": "All parameters must be supplied, but may be null. Parameters that may be null are marked optional.",
+        "description": "Returns the public departure for the supplied CRS code within a defined time window to the locations specified in the filter with the earliest arrival time at the filtered location, including service details.",
+        "operationId": "_20220120_GetFastestDeparturesWithDetails",
+        "parameters": [
+          {
+            "name": "crs",
+            "in": "path",
+            "description": "The CRS code of the location for which the request is being made. The CRS code must be passed as UPPERCASE",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "filterList",
+            "in": "path",
+            "description": "A list of CRS codes of the destinations location to filter, at least 1 but not greater than 10 must be supplied.",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "timeOffset",
+            "in": "query",
+            "description": "An offset in minutes against the current time to provide the station board for. Defaults to 0. Optional.",
+            "schema": {
+              "type": "integer",
+              "format": "int32",
+              "default": 0
+            }
+          },
+          {
+            "name": "timeWindow",
+            "in": "query",
+            "description": "How far into the future in minutes, relative to timeOffset, to return services for.",
+            "schema": {
+              "type": "integer",
+              "format": "int32",
+              "default": 120
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DeparturesBoardWithDetails"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/20220120/GetNextDepartures/{crs}/{filterList}": {
+      "get": {
+        "tags": [
+          "_20220120"
+        ],
+        "summary": "All parameters must be supplied, but may be null. Parameters that may be null are marked optional.",
+        "description": "Returns the next public departure for the supplied CRS code within a defined time window to the locations specified in the filter.",
+        "operationId": "_20220120_GetNextDepartures",
+        "parameters": [
+          {
+            "name": "crs",
+            "in": "path",
+            "description": "The CRS code of the location for which the request is being made. The CRS code must be passed as UPPERCASE",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "filterList",
+            "in": "path",
+            "description": "A list of CRS codes of the destinations location to filter, at least 1 but not greater than 25 must be supplied.",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "timeOffset",
+            "in": "query",
+            "description": "An offset in minutes against the current time to provide the station board for. Defaults to 0. Optional.",
+            "schema": {
+              "type": "integer",
+              "format": "int32",
+              "default": 0
+            }
+          },
+          {
+            "name": "timeWindow",
+            "in": "query",
+            "description": "How far into the future in minutes, relative to timeOffset, to return services for.",
+            "schema": {
+              "type": "integer",
+              "format": "int32",
+              "default": 120
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DeparturesBoard"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/20220120/GetNextDeparturesWithDetails/{crs}/{filterList}": {
+      "get": {
+        "tags": [
+          "_20220120"
+        ],
+        "summary": "All parameters must be supplied, but may be null. Parameters that may be null are marked optional.",
+        "description": "Returns the next public departure for the supplied CRS code within a defined time window to the locations specified in the filter, including service details.",
+        "operationId": "_20220120_GetNextDeparturesWithDetails",
+        "parameters": [
+          {
+            "name": "crs",
+            "in": "path",
+            "description": "The CRS code of the location for which the request is being made. The CRS code must be passed as UPPERCASE",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "filterList",
+            "in": "path",
+            "description": "A list of CRS codes of the destinations location to filter, at least 1 but not greater than 10 must be supplied.",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "timeOffset",
+            "in": "query",
+            "description": "An offset in minutes against the current time to provide the station board for. Defaults to 0. Optional.",
+            "schema": {
+              "type": "integer",
+              "format": "int32",
+              "default": 0
+            }
+          },
+          {
+            "name": "timeWindow",
+            "in": "query",
+            "description": "How far into the future in minutes, relative to timeOffset, to return services for.",
+            "schema": {
+              "type": "integer",
+              "format": "int32",
+              "default": 120
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DeparturesBoardWithDetails"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/20220120/GetServiceDetails/{serviceId}": {
+      "get": {
+        "tags": [
+          "_20220120"
+        ],
+        "summary": "All parameters must be supplied, but may be null. Parameters that may be null are marked optional.",
+        "description": "Returns service details for a specific service identified by a station board. These details are supplied relative to the station board from which the serviceID field value was generated. Service details are only available while the service appears on the station board from which it was obtained. This is normally for two minutes after it is expected to have departed, or after a terminal arrival. If a request is made for a service that is no longer available then a null value is returned.",
+        "operationId": "_20220120_GetServiceDetails",
+        "parameters": [
+          {
+            "name": "serviceId",
+            "in": "path",
+            "description": "The LDBWS service ID of the service to request the details of. The service ID is obtained from a service listed in a StationBoard object returned from any other request.",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ServiceDetails"
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "StationBoard": {
+        "type": "object",
+        "properties": {
+          "trainServices": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ServiceItem"
+            }
+          },
+          "busServices": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ServiceItem"
+            }
+          },
+          "ferryServices": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ServiceItem"
+            }
+          },
+          "Xmlns": {
+            "$ref": "#/components/schemas/XmlSerializerNamespaces"
+          },
+          "generatedAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "locationName": {
+            "type": "string"
+          },
+          "crs": {
+            "type": "string"
+          },
+          "filterLocationName": {
+            "type": "string"
+          },
+          "filtercrs": {
+            "type": "string"
+          },
+          "filterType": {
+            "type": "string",
+            "enum": [
+              "to",
+              "from"
+            ]
+          },
+          "nrccMessages": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/NRCCMessage"
+            }
+          },
+          "platformAvailable": {
+            "type": "boolean"
+          },
+          "areServicesAvailable": {
+            "type": "boolean"
+          }
+        }
+      },
+      "ServiceItem": {
+        "type": "object",
+        "properties": {
+          "uncertainty": {
+            "$ref": "#/components/schemas/UncertaintyType"
+          },
+          "affectedBy": {
+            "type": "string"
+          },
+          "formation": {
+            "$ref": "#/components/schemas/FormationData"
+          },
+          "futureCancellation": {
+            "type": "boolean"
+          },
+          "futureDelay": {
+            "type": "boolean"
+          },
+          "diversion": {
+            "$ref": "#/components/schemas/ServiceItemDiversion"
+          },
+          "origin": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ServiceLocation"
+            }
+          },
+          "destination": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ServiceLocation"
+            }
+          },
+          "currentOrigins": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ServiceLocation"
+            }
+          },
+          "currentDestinations": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ServiceLocation"
+            }
+          },
+          "rsid": {
+            "type": "string"
+          },
+          "sta": {
+            "type": "string"
+          },
+          "eta": {
+            "type": "string"
+          },
+          "std": {
+            "type": "string"
+          },
+          "etd": {
+            "type": "string"
+          },
+          "platform": {
+            "type": "string"
+          },
+          "operator": {
+            "type": "string"
+          },
+          "operatorCode": {
+            "type": "string"
+          },
+          "isCircularRoute": {
+            "type": "boolean"
+          },
+          "isCancelled": {
+            "type": "boolean"
+          },
+          "filterLocationCancelled": {
+            "type": "boolean"
+          },
+          "serviceType": {
+            "type": "string",
+            "enum": [
+              "train",
+              "bus",
+              "ferry"
+            ]
+          },
+          "length": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "detachFront": {
+            "type": "boolean"
+          },
+          "isReverseFormation": {
+            "type": "boolean"
+          },
+          "cancelReason": {
+            "type": "string"
+          },
+          "delayReason": {
+            "type": "string"
+          },
+          "serviceID": {
+            "type": "string"
+          },
+          "adhocAlerts": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          }
+        }
+      },
+      "XmlSerializerNamespaces": {
+        "type": "object",
+        "properties": {
+          "Count": {
+            "type": "integer",
+            "format": "int32",
+            "readOnly": true
+          }
+        }
+      },
+      "NRCCMessage": {
+        "type": "object",
+        "properties": {
+          "Value": {
+            "type": "string"
+          }
+        }
+      },
+      "UncertaintyType": {
+        "type": "object",
+        "properties": {
+          "reason": {
+            "type": "string"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "Delay",
+              "Cancellation",
+              "Other"
+            ]
+          }
+        }
+      },
+      "FormationData": {
+        "type": "object",
+        "properties": {
+          "loadingCategory": {
+            "$ref": "#/components/schemas/LoadingCategory"
+          },
+          "coaches": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/CoachData"
+            }
+          }
+        }
+      },
+      "ServiceItemDiversion": {
+        "type": "object",
+        "properties": {
+          "reason": {
+            "type": "string"
+          },
+          "divertedVia": {
+            "type": "string"
+          },
+          "between": {
+            "$ref": "#/components/schemas/ServiceItemDiversionBetween"
+          },
+          "rerouteDelay": {
+            "type": "integer",
+            "format": "int32"
+          }
+        }
+      },
+      "ServiceLocation": {
+        "type": "object",
+        "properties": {
+          "locationName": {
+            "type": "string"
+          },
+          "crs": {
+            "type": "string"
+          },
+          "via": {
+            "type": "string"
+          },
+          "futureChangeTo": {
+            "type": "string"
+          },
+          "assocIsCancelled": {
+            "type": "boolean"
+          }
+        }
+      },
+      "LoadingCategory": {
+        "type": "object",
+        "properties": {
+          "code": {
+            "type": "string"
+          },
+          "colour": {
+            "type": "string"
+          },
+          "image": {
+            "type": "string"
+          },
+          "Value": {
+            "type": "string"
+          }
+        }
+      },
+      "CoachData": {
+        "type": "object",
+        "properties": {
+          "coachClass": {
+            "type": "string"
+          },
+          "toilet": {
+            "$ref": "#/components/schemas/ToiletAvailabilityType"
+          },
+          "loading": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "loadingSpecified": {
+            "type": "boolean"
+          },
+          "number": {
+            "type": "string"
+          }
+        }
+      },
+      "ServiceItemDiversionBetween": {
+        "type": "object",
+        "properties": {
+          "start": {
+            "$ref": "#/components/schemas/ServiceItemDiversionBetweenStart"
+          },
+          "end": {
+            "$ref": "#/components/schemas/ServiceItemDiversionBetweenEnd"
+          }
+        }
+      },
+      "ToiletAvailabilityType": {
+        "type": "object",
+        "properties": {
+          "status": {
+            "type": "string",
+            "enum": [
+              "Unknown",
+              "InService",
+              "NotInService"
+            ]
+          },
+          "Value": {
+            "type": "string"
+          }
+        }
+      },
+      "ServiceItemDiversionBetweenStart": {
+        "type": "object",
+        "properties": {
+          "crs": {
+            "type": "string"
+          },
+          "Value": {
+            "type": "string"
+          }
+        }
+      },
+      "ServiceItemDiversionBetweenEnd": {
+        "type": "object",
+        "properties": {
+          "crs": {
+            "type": "string"
+          },
+          "Value": {
+            "type": "string"
+          }
+        }
+      },
+      "StationBoardWithDetails": {
+        "type": "object",
+        "properties": {
+          "trainServices": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ServiceItemWithCallingPoints"
+            }
+          },
+          "busServices": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ServiceItemWithCallingPoints"
+            }
+          },
+          "ferryServices": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ServiceItemWithCallingPoints"
+            }
+          },
+          "Xmlns": {
+            "$ref": "#/components/schemas/XmlSerializerNamespaces"
+          },
+          "generatedAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "locationName": {
+            "type": "string"
+          },
+          "crs": {
+            "type": "string"
+          },
+          "filterLocationName": {
+            "type": "string"
+          },
+          "filtercrs": {
+            "type": "string"
+          },
+          "filterType": {
+            "type": "string",
+            "enum": [
+              "to",
+              "from"
+            ]
+          },
+          "nrccMessages": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/NRCCMessage"
+            }
+          },
+          "platformAvailable": {
+            "type": "boolean"
+          },
+          "areServicesAvailable": {
+            "type": "boolean"
+          }
+        }
+      },
+      "ServiceItemWithCallingPoints": {
+        "type": "object",
+        "properties": {
+          "uncertainty": {
+            "$ref": "#/components/schemas/UncertaintyType"
+          },
+          "affectedBy": {
+            "type": "string"
+          },
+          "previousCallingPoints": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ArrayOfCallingPoints"
+            }
+          },
+          "subsequentCallingPoints": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ArrayOfCallingPoints"
+            }
+          },
+          "formation": {
+            "$ref": "#/components/schemas/FormationData"
+          },
+          "futureCancellation": {
+            "type": "boolean"
+          },
+          "futureDelay": {
+            "type": "boolean"
+          },
+          "diversion": {
+            "$ref": "#/components/schemas/ServiceItemDiversion"
+          },
+          "origin": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ServiceLocation"
+            }
+          },
+          "destination": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ServiceLocation"
+            }
+          },
+          "currentOrigins": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ServiceLocation"
+            }
+          },
+          "currentDestinations": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ServiceLocation"
+            }
+          },
+          "rsid": {
+            "type": "string"
+          },
+          "sta": {
+            "type": "string"
+          },
+          "eta": {
+            "type": "string"
+          },
+          "std": {
+            "type": "string"
+          },
+          "etd": {
+            "type": "string"
+          },
+          "platform": {
+            "type": "string"
+          },
+          "operator": {
+            "type": "string"
+          },
+          "operatorCode": {
+            "type": "string"
+          },
+          "isCircularRoute": {
+            "type": "boolean"
+          },
+          "isCancelled": {
+            "type": "boolean"
+          },
+          "filterLocationCancelled": {
+            "type": "boolean"
+          },
+          "serviceType": {
+            "type": "string",
+            "enum": [
+              "train",
+              "bus",
+              "ferry"
+            ]
+          },
+          "length": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "detachFront": {
+            "type": "boolean"
+          },
+          "isReverseFormation": {
+            "type": "boolean"
+          },
+          "cancelReason": {
+            "type": "string"
+          },
+          "delayReason": {
+            "type": "string"
+          },
+          "serviceID": {
+            "type": "string"
+          },
+          "adhocAlerts": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          }
+        }
+      },
+      "ArrayOfCallingPoints": {
+        "type": "object",
+        "properties": {
+          "callingPoint": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/CallingPoint"
+            }
+          },
+          "serviceType": {
+            "type": "string",
+            "enum": [
+              "train",
+              "bus",
+              "ferry"
+            ]
+          },
+          "serviceChangeRequired": {
+            "type": "boolean"
+          },
+          "assocIsCancelled": {
+            "type": "boolean"
+          }
+        }
+      },
+      "CallingPoint": {
+        "type": "object",
+        "properties": {
+          "uncertainty": {
+            "$ref": "#/components/schemas/UncertaintyType"
+          },
+          "affectedBy": {
+            "type": "string"
+          },
+          "locationName": {
+            "type": "string"
+          },
+          "crs": {
+            "type": "string"
+          },
+          "st": {
+            "type": "string"
+          },
+          "et": {
+            "type": "string"
+          },
+          "at": {
+            "type": "string"
+          },
+          "isCancelled": {
+            "type": "boolean"
+          },
+          "length": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "detachFront": {
+            "type": "boolean"
+          },
+          "formation": {
+            "$ref": "#/components/schemas/FormationData"
+          },
+          "adhocAlerts": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "cancelReason": {
+            "type": "string"
+          },
+          "delayReason": {
+            "type": "string"
+          },
+          "affectedByDiversion": {
+            "type": "boolean"
+          },
+          "rerouteDelay": {
+            "type": "integer",
+            "format": "int32"
+          }
+        }
+      },
+      "DeparturesBoard": {
+        "type": "object",
+        "properties": {
+          "departures": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/DepartureItem"
+            }
+          },
+          "Xmlns": {
+            "$ref": "#/components/schemas/XmlSerializerNamespaces"
+          },
+          "generatedAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "locationName": {
+            "type": "string"
+          },
+          "crs": {
+            "type": "string"
+          },
+          "filterLocationName": {
+            "type": "string"
+          },
+          "filtercrs": {
+            "type": "string"
+          },
+          "filterType": {
+            "type": "string",
+            "enum": [
+              "to",
+              "from"
+            ]
+          },
+          "nrccMessages": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/NRCCMessage"
+            }
+          },
+          "platformAvailable": {
+            "type": "boolean"
+          },
+          "areServicesAvailable": {
+            "type": "boolean"
+          }
+        }
+      },
+      "DepartureItem": {
+        "type": "object",
+        "properties": {
+          "service": {
+            "$ref": "#/components/schemas/ServiceItem"
+          },
+          "crs": {
+            "type": "string"
+          }
+        }
+      },
+      "DeparturesBoardWithDetails": {
+        "type": "object",
+        "properties": {
+          "departures": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/DepartureItemWithCallingPoints"
+            }
+          },
+          "Xmlns": {
+            "$ref": "#/components/schemas/XmlSerializerNamespaces"
+          },
+          "generatedAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "locationName": {
+            "type": "string"
+          },
+          "crs": {
+            "type": "string"
+          },
+          "filterLocationName": {
+            "type": "string"
+          },
+          "filtercrs": {
+            "type": "string"
+          },
+          "filterType": {
+            "type": "string",
+            "enum": [
+              "to",
+              "from"
+            ]
+          },
+          "nrccMessages": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/NRCCMessage"
+            }
+          },
+          "platformAvailable": {
+            "type": "boolean"
+          },
+          "areServicesAvailable": {
+            "type": "boolean"
+          }
+        }
+      },
+      "DepartureItemWithCallingPoints": {
+        "type": "object",
+        "properties": {
+          "service": {
+            "$ref": "#/components/schemas/ServiceItemWithCallingPoints"
+          },
+          "crs": {
+            "type": "string"
+          }
+        }
+      },
+      "ServiceDetails": {
+        "type": "object",
+        "properties": {
+          "adhocAlerts": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "formation": {
+            "$ref": "#/components/schemas/FormationData"
+          },
+          "previousCallingPoints": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ArrayOfCallingPoints"
+            }
+          },
+          "subsequentCallingPoints": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ArrayOfCallingPoints"
+            }
+          },
+          "generatedAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "serviceType": {
+            "type": "string",
+            "enum": [
+              "train",
+              "bus",
+              "ferry"
+            ]
+          },
+          "locationName": {
+            "type": "string"
+          },
+          "crs": {
+            "type": "string"
+          },
+          "operator": {
+            "type": "string"
+          },
+          "operatorCode": {
+            "type": "string"
+          },
+          "rsid": {
+            "type": "string"
+          },
+          "isCancelled": {
+            "type": "boolean"
+          },
+          "cancelReason": {
+            "type": "string"
+          },
+          "delayReason": {
+            "type": "string"
+          },
+          "overdueMessage": {
+            "type": "string"
+          },
+          "length": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "detachFront": {
+            "type": "boolean"
+          },
+          "isReverseFormation": {
+            "type": "boolean"
+          },
+          "platform": {
+            "type": "string"
+          },
+          "sta": {
+            "type": "string"
+          },
+          "eta": {
+            "type": "string"
+          },
+          "ata": {
+            "type": "string"
+          },
+          "std": {
+            "type": "string"
+          },
+          "etd": {
+            "type": "string"
+          },
+          "atd": {
+            "type": "string"
+          },
+          "divertedVia": {
+            "type": "string"
+          },
+          "diversionReason": {
+            "type": "string"
+          },
+          "Xmlns": {
+            "$ref": "#/components/schemas/XmlSerializerNamespaces"
+          }
+        }
+      }
+    },
+    "securitySchemes": {
+      "basic": {
+        "type": "http",
+        "description": "Basic Authentication",
+        "scheme": "basic"
+      }
+    }
+  },
+  "x-original-swagger-version": "2.0"
+}
