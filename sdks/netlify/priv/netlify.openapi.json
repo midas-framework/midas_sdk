@@ -5298,6 +5298,7 @@
             "$ref": "#/components/schemas/site"
           },
           {
+            "type": "object",
             "properties": {
               "repo": {
                 "$ref": "#/components/schemas/repoInfo"

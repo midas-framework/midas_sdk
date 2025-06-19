@@ -1,5 +1,6 @@
 import gleam/bit_array
 import gleam/http/request
+import gleam/javascript/array
 import gleam/json
 import gleam/list
 import gleam/option
@@ -37,4 +38,19 @@ pub fn json_to_bits(json) {
   json
   |> json.to_string
   |> bit_array.from_string
+}
+
+pub fn dict(dict, values) {
+  json.dict(dict, fn(x) { x }, values)
+}
+
+@external(javascript, "../netlify_ffi.mjs", "merge")
+fn do_merge(items: array.Array(json.Json)) -> json.Json
+
+pub fn merge(items) {
+  do_merge(array.from_list(items))
+}
+
+pub fn decode_additional(except, decoder, next) {
+  todo
 }
