@@ -54,3 +54,15 @@ pub fn merge(items) {
 pub fn decode_additional(except, decoder, next) {
   todo
 }
+
+pub fn object(entries: List(#(String, json.Json))) {
+  list.filter(entries, fn(entry) {
+    let #(_, v) = entry
+    v != json.null()
+  })
+  |> json.object
+}
+
+pub fn dynamic_to_json() {
+  todo
+}

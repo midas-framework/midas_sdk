@@ -126,6 +126,8 @@ pub fn base_request(token) {
   request.new()
   |> request.set_host(api_host)
   |> request.prepend_header("Authorization", string.append("Bearer ", token))
+  |> request.prepend_header("Accept", "application/vnd.github+json")
+  |> request.prepend_header("X-GitHub-Api-Version", "2022-11-28")
   |> request.set_body(<<>>)
 }
 
@@ -138,6 +140,59 @@ fn handle_errors(response) {
       |> Error
   }
 }
+
 // GENERATED -------------
 
+pub fn repos_list_for_org(
+  token,
+  org,
+  type_ type_,
+  sort sort,
+  direction direction,
+  per_page per_page,
+  page page,
+) {
+  let request = base_request(token)
+  let request =
+    operations.repos_list_for_org_request(
+      request,
+      org,
+      type_,
+      sort,
+      direction,
+      per_page,
+      page,
+    )
+  use response <- t.do(t.fetch(request))
+  use data <- t.try(
+    handle_errors(operations.repos_list_for_org_response(response)),
+  )
+  t.Done(data)
+}
 
+pub fn repos_list_for_user(
+  token,
+  username,
+  type_ type_,
+  sort sort,
+  direction direction,
+  per_page per_page,
+  page page,
+) {
+  let request = base_request(token)
+  let request =
+    operations.repos_list_for_user_request(
+      request,
+      username,
+      type_,
+      sort,
+      direction,
+      per_page,
+      page,
+    )
+  use response <- t.do(t.fetch(request))
+  use data <- t.try(
+    handle_errors(operations.repos_list_for_user_response(response)),
+  )
+  t.Done(data)
+}
