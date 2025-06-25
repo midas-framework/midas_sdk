@@ -1,7 +1,9 @@
+import gleam/bit_array
 import gleam/dynamic/decode
 import gleam/http
 import gleam/http/request
 import gleam/json
+import gleam/result
 import gleam/string
 import midas/task as t
 import snag
@@ -34,7 +36,10 @@ pub fn create_session(handle, password) {
         Error(reason) ->
           Error(snag.new("failed to decode response " <> string.inspect(reason)))
       }
-    _ -> Error(snag.new("Did not get a 200 response"))
+    _ -> {
+      let body = bit_array.to_string(response.body) |> result.unwrap("")
+      Error(snag.new("Did not get a 200 response.\n" <> body))
+    }
   })
   t.done(token)
 }
@@ -72,7 +77,10 @@ pub fn create_post(access_token, handle, text, at) {
         Error(reason) ->
           Error(snag.new("failed to decode response " <> string.inspect(reason)))
       }
-    _ -> Error(snag.new("Did not get a 200 response"))
+    _ -> {
+      let body = bit_array.to_string(response.body) |> result.unwrap("")
+      Error(snag.new("Did not get a 200 response.\n" <> body))
+    }
   })
   t.done(uri)
 }
