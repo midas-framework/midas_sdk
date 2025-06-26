@@ -3794,7 +3794,7 @@
                         "fallback": {
                           "type": [
                             "string",
-                            null
+                            "null"
                           ],
                           "description": "A default value for the field, used in campaigns when there is no other value available.",
                           "example": "Unknown"
@@ -4078,7 +4078,7 @@
                       "fallback": {
                         "type": [
                           "string",
-                          null
+                          "null"
                         ],
                         "description": "A default value for the field, used in campaigns when there is no other value available.",
                         "example": "Unknown"
@@ -4170,7 +4170,7 @@
                         "fallback": {
                           "type": [
                             "string",
-                            null
+                            "null"
                           ],
                           "description": "A default value for the field, used in campaigns when there is no other value available.",
                           "example": "Unknown"
@@ -4459,7 +4459,7 @@
                       "fallback": {
                         "type": [
                           "string",
-                          null
+                          "null"
                         ],
                         "description": "A default value for the field, used in campaigns when there is no other value available.",
                         "example": "Unknown"
@@ -7240,12 +7240,12 @@
                   "example": "https://example.com/promo-1"
                 },
                 "clicked_total": {
-                  "type": "int",
+                  "type": "integer",
                   "description": "The number of total clicks.",
                   "example": 10
                 },
                 "clicked_unique": {
-                  "type": "int",
+                  "type": "integer",
                   "description": "The number of unique clicks.",
                   "example": 7
                 }
@@ -7265,7 +7265,7 @@
             "example": "00000000-0000-0000-0000-000000000000"
           },
           "sent": {
-            "type": "int",
+            "type": "integer",
             "description": "The number of contacts that were sent to.",
             "example": 200
           },
@@ -7274,12 +7274,12 @@
             "description": "Statistics related to bounces.",
             "properties": {
               "hard": {
-                "type": "int",
+                "type": "integer",
                 "description": "The number of contacts who hard bounced.",
                 "example": 10
               },
               "soft": {
-                "type": "int",
+                "type": "integer",
                 "description": "The number of contacts who soft bounced.",
                 "example": 5
               }
@@ -7290,12 +7290,12 @@
             "description": "Statistics related to opens.",
             "properties": {
               "total": {
-                "type": "int",
+                "type": "integer",
                 "description": "The number of all opens.",
                 "example": 110
               },
               "unique": {
-                "type": "int",
+                "type": "integer",
                 "description": "The number of unique opens.",
                 "example": 85
               }
@@ -7306,24 +7306,24 @@
             "description": "Statistics related to clicks.",
             "properties": {
               "total": {
-                "type": "int",
+                "type": "integer",
                 "description": "The number of all opens.",
                 "example": 110
               },
               "unique": {
-                "type": "int",
+                "type": "integer",
                 "description": "The number of unique opens.",
                 "example": 85
               }
             }
           },
           "complained": {
-            "type": "int",
+            "type": "integer",
             "description": "The number of contacts who complained.",
             "example": 50
           },
           "unsubscribed": {
-            "type": "int",
+            "type": "integer",
             "description": "The number of contacts who unsubscribed.",
             "example": 25
           }
@@ -7383,7 +7383,7 @@
                     "fallback": {
                       "type": [
                         "string",
-                        null
+                        "null"
                       ],
                       "description": "A default value for the field, used in campaigns when there is no other value available.",
                       "example": "Unknown"
@@ -7733,7 +7733,7 @@
           "fallback": {
             "type": [
               "string",
-              null
+              "null"
             ],
             "description": "A default value for the field, used in campaigns when there is no other value available.",
             "example": "Unknown"
